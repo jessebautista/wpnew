@@ -22,6 +22,7 @@ import { SignupPage } from './pages/auth/SignupPage'
 import { EmailConfirmationPage } from './pages/auth/EmailConfirmationPage'
 import { OAuthCallbackPage } from './pages/auth/OAuthCallbackPage'
 import { DashboardPage } from './pages/profile/DashboardPage'
+import { ProfilePage } from './pages/profile/ProfilePage'
 import { PianoPassportPage } from './pages/profile/PianoPassportPage'
 import { UnauthorizedPage } from './pages/auth/UnauthorizedPage'
 import { UnsubscribePage } from './pages/newsletter/UnsubscribePage'
@@ -72,6 +73,7 @@ function App() {
                   <Route path="/auth/confirm-email" element={<EmailConfirmationPage />} />
                   <Route path="/auth/callback" element={<OAuthCallbackPage />} />
                   <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/passport" element={<PianoPassportPage />} />
                   <Route path="/unauthorized" element={<UnauthorizedPage />} />
                   <Route path="/unsubscribe" element={<UnsubscribePage />} />

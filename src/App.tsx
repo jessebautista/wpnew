@@ -19,6 +19,8 @@ import { ModerationRulesPage } from './pages/moderation/ModerationRulesPage'
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage'
 import { LoginPage } from './pages/auth/LoginPage'
 import { SignupPage } from './pages/auth/SignupPage'
+import { EmailConfirmationPage } from './pages/auth/EmailConfirmationPage'
+import { OAuthCallbackPage } from './pages/auth/OAuthCallbackPage'
 import { DashboardPage } from './pages/profile/DashboardPage'
 import { PianoPassportPage } from './pages/profile/PianoPassportPage'
 import { UnauthorizedPage } from './pages/auth/UnauthorizedPage'
@@ -31,6 +33,15 @@ import { TermsPage } from './pages/static/TermsPage'
 import { AuthProvider } from './components/auth/AuthProvider'
 import { LanguageProvider } from './contexts/LanguageContext'
 import { AccessibilityProvider } from './contexts/AccessibilityContext'
+import { ConfigStatus } from './components/dev/ConfigStatus'
+// Import admin utils for development
+import './utils/adminUtils'
+import './utils/debugUtils'
+import './utils/simpleTest'
+import './utils/connectionTest'
+import './utils/fixSupabaseClient'
+import './utils/directFetch'
+import './utils/directAuth'
 
 function App() {
   return (
@@ -58,6 +69,8 @@ function App() {
                   <Route path="/admin" element={<AdminDashboardPage />} />
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/signup" element={<SignupPage />} />
+                  <Route path="/auth/confirm-email" element={<EmailConfirmationPage />} />
+                  <Route path="/auth/callback" element={<OAuthCallbackPage />} />
                   <Route path="/dashboard" element={<DashboardPage />} />
                   <Route path="/passport" element={<PianoPassportPage />} />
                   <Route path="/unauthorized" element={<UnauthorizedPage />} />
@@ -70,6 +83,7 @@ function App() {
                 </Routes>
               </main>
               <Footer />
+              <ConfigStatus />
             </div>
           </Router>
         </AuthProvider>

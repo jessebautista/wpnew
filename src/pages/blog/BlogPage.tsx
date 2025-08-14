@@ -1,20 +1,10 @@
 import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { BookOpen, Search, User, Calendar, Filter, Plus, Eye, Heart, MessageCircle, Tag } from 'lucide-react'
-import { MockDataService } from '../../data/mockData'
+import { BookOpen, Search, User, Calendar, Filter, Plus, Eye, Heart, MessageCircle, Tag, Clock, Check, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { DataService } from '../../services/dataService'
 import { usePermissions } from '../../hooks/usePermissions'
 import type { BlogPost } from '../../types'
 
-const BLOG_CATEGORIES = [
-  'Community Stories',
-  'Maintenance',
-  'Events',
-  'News',
-  'Artist Spotlights',
-  'Piano History',
-  'Tips & Guides',
-  'Reviews'
-] as const
 
 export function BlogPage() {
   const { canCreate } = usePermissions()
@@ -25,11 +15,13 @@ export function BlogPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>(searchParams.get('category') || '')
   const [selectedTag, setSelectedTag] = useState<string>(searchParams.get('tag') || '')
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'popular'>('newest')
+  const [currentPage, setCurrentPage] = useState(1)
+  const postsPerPage = 10
 
   useEffect(() => {
     const loadPosts = async () => {
       try {
-        const data = await MockDataService.getBlogPosts()
+        const data = await DataService.getBlogPosts()
         setPosts(data)
       } catch (error) {
         console.error('Error loading blog posts:', error)
@@ -40,6 +32,11 @@ export function BlogPage() {
 
     loadPosts()
   }, [])
+
+  // Reset to first page when search query changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery])
 
   const filteredPosts = posts.filter(post => {
     // Text search
@@ -73,18 +70,42 @@ export function BlogPage() {
     }
   })
 
-  // Get all unique tags from posts
-  const allTags = Array.from(new Set(posts.flatMap(post => post.tags || [])))
+  // Get all unique tags from posts with counts for popularity
+  const allTagsWithCounts = posts.reduce((acc, post) => {
+    if (post.tags) {
+      post.tags.forEach(tag => {
+        acc[tag] = (acc[tag] || 0) + 1
+      })
+    }
+    return acc
+  }, {} as Record<string, number>)
+  
+  // Sort tags by popularity (count) and get top tags
+  const popularTags = Object.entries(allTagsWithCounts)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 12)
+    .map(([tag]) => tag)
 
-  // Get category post counts
-  const categoryCounts = BLOG_CATEGORIES.reduce((acc, category) => {
+  // Get dynamic categories from actual posts
+  const actualCategories = Array.from(new Set(posts.map(post => post.category).filter(Boolean))).sort()
+
+  // Get category post counts using actual categories
+  const categoryCounts = actualCategories.reduce((acc, category) => {
     acc[category] = posts.filter(post => post.category === category && post.published).length
     return acc
   }, {} as Record<string, number>)
 
+  // Pagination calculations
+  const totalPosts = filteredPosts.length
+  const totalPages = Math.ceil(totalPosts / postsPerPage)
+  const startIndex = (currentPage - 1) * postsPerPage
+  const endIndex = startIndex + postsPerPage
+  const currentPosts = filteredPosts.slice(startIndex, endIndex)
+
   const handleCategorySelect = (category: string) => {
     setSelectedCategory(category)
     setSelectedTag('') // Clear tag filter when selecting category
+    setCurrentPage(1) // Reset to first page when filtering
     const newParams = new URLSearchParams(searchParams)
     if (category) {
       newParams.set('category', category)
@@ -98,6 +119,7 @@ export function BlogPage() {
   const handleTagSelect = (tag: string) => {
     setSelectedTag(tag)
     setSelectedCategory('') // Clear category filter when selecting tag
+    setCurrentPage(1) // Reset to first page when filtering
     const newParams = new URLSearchParams(searchParams)
     if (tag) {
       newParams.set('tag', tag)
@@ -111,7 +133,29 @@ export function BlogPage() {
   const clearFilters = () => {
     setSelectedCategory('')
     setSelectedTag('')
+    setCurrentPage(1) // Reset to first page when clearing filters
     setSearchParams(new URLSearchParams())
+  }
+
+  // Pagination handlers
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    // Scroll to top when changing pages
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  // Get moderation status badge
+  const getModerationStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <div className="badge badge-warning badge-sm gap-1"><Clock className="w-3 h-3" />Pending</div>
+      case 'approved':
+        return <div className="badge badge-success badge-sm gap-1"><Check className="w-3 h-3" />Approved</div>
+      case 'rejected':
+        return <div className="badge badge-error badge-sm gap-1"><AlertTriangle className="w-3 h-3" />Rejected</div>
+      default:
+        return null
+    }
   }
 
   return (
@@ -163,7 +207,7 @@ export function BlogPage() {
               onChange={(e) => handleCategorySelect(e.target.value)}
             >
               <option value="">All Categories</option>
-              {BLOG_CATEGORIES.map((category) => (
+              {actualCategories.map((category) => (
                 <option key={category} value={category}>
                   {category} ({categoryCounts[category] || 0})
                 </option>
@@ -218,8 +262,13 @@ export function BlogPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
               <div>
                 <p className="text-base-content/70">
-                  Showing {filteredPosts.length} of {posts.filter(p => p.published).length} posts
+                  Showing {startIndex + 1}-{Math.min(endIndex, totalPosts)} of {totalPosts} posts
                   {(selectedCategory || selectedTag) && " with applied filters"}
+                  {totalPages > 1 && (
+                    <span className="ml-2 text-sm">
+                      (Page {currentPage} of {totalPages})
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
@@ -228,7 +277,7 @@ export function BlogPage() {
               {/* Main Content */}
               <div className="lg:col-span-2">
                 <div className="space-y-8">
-                  {filteredPosts.map((post) => (
+                  {currentPosts.map((post) => (
                     <article key={post.id} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
                       {post.featured_image && (
                         <figure>
@@ -245,6 +294,7 @@ export function BlogPage() {
                               {post.category}
                             </button>
                           )}
+                          {post.moderation_status && getModerationStatusBadge(post.moderation_status)}
                           <div className="flex items-center">
                             <Calendar className="w-4 h-4 mr-1" />
                             {new Date(post.created_at).toLocaleDateString('en-US', {
@@ -317,7 +367,62 @@ export function BlogPage() {
                   ))}
                 </div>
 
-                {filteredPosts.length === 0 && (
+                {/* Pagination */}
+                {totalPages > 1 && currentPosts.length > 0 && (
+                  <div className="flex justify-center items-center gap-2 mt-8">
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="btn btn-outline btn-sm"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                      Previous
+                    </button>
+                    
+                    <div className="flex gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                        // Show first, last, current, and pages around current
+                        const showPage = 
+                          page === 1 || 
+                          page === totalPages || 
+                          Math.abs(page - currentPage) <= 1
+                        
+                        if (!showPage && page === 2 && currentPage > 4) {
+                          return <span key={page} className="px-2">...</span>
+                        }
+                        if (!showPage && page === totalPages - 1 && currentPage < totalPages - 3) {
+                          return <span key={page} className="px-2">...</span>
+                        }
+                        if (!showPage) return null
+                        
+                        return (
+                          <button
+                            key={page}
+                            onClick={() => handlePageChange(page)}
+                            className={`btn btn-sm ${
+                              currentPage === page 
+                                ? 'btn-primary' 
+                                : 'btn-outline'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="btn btn-outline btn-sm"
+                    >
+                      Next
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+
+                {totalPosts === 0 && (
                   <div className="text-center py-12">
                     <BookOpen className="w-16 h-16 mx-auto mb-4 text-base-content/50" />
                     <h3 className="text-2xl font-bold mb-2">No Posts Found</h3>
@@ -354,7 +459,7 @@ export function BlogPage() {
                           {posts.filter(p => p.published).length}
                         </span>
                       </button>
-                      {BLOG_CATEGORIES.map((category) => (
+                      {actualCategories.map((category) => (
                         <button
                           key={category}
                           onClick={() => handleCategorySelect(category)}
@@ -380,7 +485,7 @@ export function BlogPage() {
                       Popular Tags
                     </h3>
                     <div className="flex flex-wrap gap-2">
-                      {allTags.slice(0, 12).map((tag) => (
+                      {popularTags.map((tag) => (
                         <button
                           key={tag}
                           onClick={() => handleTagSelect(tag)}

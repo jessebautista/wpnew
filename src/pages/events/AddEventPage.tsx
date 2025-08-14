@@ -14,6 +14,7 @@ import {
 import { useAuth } from '../../components/auth/AuthProvider'
 import { usePermissions } from '../../hooks/usePermissions'
 import { EVENT_CATEGORIES } from '../../types'
+import { DataService } from '../../services/dataService'
 
 interface EventFormData {
   title: string
@@ -189,18 +190,37 @@ export function AddEventPage() {
       // Combine date and time
       const eventDateTime = new Date(`${formData.date}T${formData.time}`)
       
+      // Prepare event data to match database schema
       const eventData = {
-        ...formData,
+        title: formData.title.trim(),
+        description: formData.description.trim() || null,
         date: eventDateTime.toISOString(),
-        created_by: user.id,
-        verified: false // Events need verification
+        end_date: null, // Could be extended to support end dates
+        location_name: formData.location_name.trim(),
+        address: formData.location_name.trim(), // Using same value for now
+        latitude: formData.latitude,
+        longitude: formData.longitude,
+        piano_id: null, // Could be linked to a specific piano
+        category: formData.category,
+        max_attendees: formData.capacity ? parseInt(formData.capacity) : null,
+        is_virtual: false, // Could be extended to support virtual events
+        meeting_url: formData.website_url || null,
+        organizer_id: user.id,
+        organizer: formData.organizer.trim(), // For backward compatibility
+        contact_email: formData.contact_email.trim(),
+        contact_phone: formData.contact_phone.trim() || null,
+        moderation_status: 'pending' as const,
+        status: 'upcoming' as const,
+        verified: false,
+        attendee_count: 0,
+        updated_at: new Date().toISOString()
       }
       
-      // In a real app, this would submit to Supabase
       console.log('Submitting event:', eventData)
       
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Create event in database
+      const newEvent = await DataService.createEvent(eventData)
+      console.log('Event created successfully:', newEvent)
       
       // Navigate to success page or event list
       navigate('/events', { 

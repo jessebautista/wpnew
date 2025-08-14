@@ -1,16 +1,20 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { Calendar, MapPin, Search, User, Filter, Grid, List, Plus } from 'lucide-react'
-import { MockDataService } from '../../data/mockData'
+import { Link, useLocation } from 'react-router-dom'
+import { Calendar, MapPin, Search, User, Filter, Grid, List, Plus, CheckCircle, X } from 'lucide-react'
+import { DataService } from '../../services/dataService'
 import { EventCalendar } from '../../components/events/EventCalendar'
 import { usePermissions } from '../../hooks/usePermissions'
 import type { Event } from '../../types'
 import { EVENT_CATEGORIES } from '../../types'
 
 export function EventsPage() {
+  const location = useLocation()
   const { canCreate } = usePermissions()
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
+  const [successMessage, setSuccessMessage] = useState<string | null>(
+    location.state?.message || null
+  )
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [showVerifiedOnly, setShowVerifiedOnly] = useState(false)
@@ -21,7 +25,7 @@ export function EventsPage() {
   useEffect(() => {
     const loadEvents = async () => {
       try {
-        const data = await MockDataService.getEvents()
+        const data = await DataService.getEvents()
         setEvents(data)
       } catch (error) {
         console.error('Error loading events:', error)
@@ -102,6 +106,27 @@ export function EventsPage() {
           <p className="text-xl">Discover piano-related events in your area</p>
         </div>
       </div>
+
+      {/* Success Message Banner */}
+      {successMessage && (
+        <div className="bg-success text-success-content py-4">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <CheckCircle className="w-6 h-6" />
+                <span className="font-medium">{successMessage}</span>
+              </div>
+              <button
+                onClick={() => setSuccessMessage(null)}
+                className="btn btn-ghost btn-sm"
+                aria-label="Close message"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Search and Filters */}
       <div className="bg-base-200 py-6">

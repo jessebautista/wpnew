@@ -1,8 +1,8 @@
 import { useLanguage } from '../../contexts/LanguageContext'
-import { Shield, Eye, Lock, Users, Globe, Mail, Calendar } from 'lucide-react'
+import { Shield, Eye, Lock, Users, Globe, Mail } from 'lucide-react'
 
 export function PrivacyPage() {
-  const { t } = useLanguage()
+  const { } = useLanguage()
 
   const lastUpdated = 'January 15, 2024'
 

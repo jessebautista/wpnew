@@ -3,9 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { 
   Calendar, 
   Tag, 
-  Share2, 
   Heart, 
-  MessageCircle, 
   ChevronLeft,
   Eye,
   Clock,
@@ -22,8 +20,8 @@ import type { BlogPost } from '../../types'
 
 export function BlogPostPage() {
   const { id } = useParams<{ id: string }>()
-  const { user } = useAuth()
-  const { canEdit, canComment } = usePermissions()
+  const { } = useAuth()
+  const { canEdit } = usePermissions()
   const [post, setPost] = useState<BlogPost | null>(null)
   const [loading, setLoading] = useState(true)
   const [isLiked, setIsLiked] = useState(false)
@@ -66,7 +64,7 @@ export function BlogPostPage() {
       id: post.id,
       title: post.title,
       description: post.excerpt || undefined,
-      author: post.author?.full_name,
+      author: post.author?.full_name || undefined,
       image: post.featured_image || undefined
     })
   }

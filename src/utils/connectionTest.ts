@@ -87,7 +87,7 @@ export async function testURLConnectivity() {
       }
     })
     
-    const response = await Promise.race([fetchPromise, timeoutPromise])
+    const response = await Promise.race([fetchPromise, timeoutPromise]) as Response
     
     if (response.ok || response.status === 401) {
       // 401 is expected without proper auth, but means the server is reachable

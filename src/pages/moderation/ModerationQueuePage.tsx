@@ -18,7 +18,7 @@ import {
 import { useAuth } from '../../components/auth/AuthProvider'
 import { usePermissions } from '../../hooks/usePermissions'
 import { DataService } from '../../services/dataService'
-import type { Piano, Event, BlogPost } from '../../types'
+// import type { Piano, Event, BlogPost } from '../../types'
 
 interface ModerationItem {
   id: string

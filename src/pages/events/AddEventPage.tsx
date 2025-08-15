@@ -214,6 +214,8 @@ export function AddEventPage() {
         status: 'upcoming' as const,
         verified: false,
         attendee_count: 0,
+        created_by: user.id,
+        verified_by: null,
         updated_at: new Date().toISOString()
       }
       
@@ -525,7 +527,7 @@ export function AddEventPage() {
                     <input
                       type="tel"
                       placeholder="+1 (555) 123-4567"
-                      className="input input-bordered"
+                      className="input input-bordered w-full"
                       value={formData.contact_phone}
                       onChange={(e) => handleInputChange('contact_phone', e.target.value)}
                     />
@@ -550,7 +552,7 @@ export function AddEventPage() {
                     <input
                       type="text"
                       placeholder="Free, $10, $5-15"
-                      className="input input-bordered"
+                      className="input input-bordered w-full"
                       value={formData.ticket_price}
                       onChange={(e) => handleInputChange('ticket_price', e.target.value)}
                     />

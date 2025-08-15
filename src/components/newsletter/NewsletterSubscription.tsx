@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Mail, Check, AlertCircle, Settings } from 'lucide-react'
 import { NewsletterService } from '../../services/newsletterService'
-import type { NewsletterSubscriber } from '../../services/newsletterService'
 
 interface NewsletterSubscriptionProps {
   source?: string

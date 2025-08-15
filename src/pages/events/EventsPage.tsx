@@ -9,7 +9,7 @@ import { EVENT_CATEGORIES } from '../../types'
 
 export function EventsPage() {
   const location = useLocation()
-  const { user } = useAuth()
+  const { } = useAuth()
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [successMessage, setSuccessMessage] = useState<string | null>(

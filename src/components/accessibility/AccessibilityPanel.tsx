@@ -21,7 +21,7 @@ interface AccessibilityPanelProps {
 
 export function AccessibilityPanel({ isOpen, onClose }: AccessibilityPanelProps) {
   const { settings, updateSetting, resetSettings, announceToScreenReader } = useAccessibility()
-  const { t } = useLanguage()
+  const { } = useLanguage()
   const [activeTab, setActiveTab] = useState<'visual' | 'audio' | 'navigation'>('visual')
 
   const handleSettingChange = (key: keyof typeof settings, value: any) => {

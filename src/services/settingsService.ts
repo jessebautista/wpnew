@@ -1,3 +1,11 @@
+declare global {
+  interface Window {
+    gtag?: (...args: any[]) => void;
+  }
+}
+
+const gtag = typeof window !== 'undefined' ? window.gtag : undefined;
+
 export interface AnalyticsSettings {
   enabled: boolean
   google_analytics_id: string

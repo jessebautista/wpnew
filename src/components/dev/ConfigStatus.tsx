@@ -9,8 +9,8 @@ import { Settings, Database, Globe, BarChart3, MapPin, X } from 'lucide-react'
 
 export function ConfigStatus() {
   const [isVisible, setIsVisible] = useState(false)
-  const [config, setConfig] = useState(getEnvironmentConfig())
-  const [status, setStatus] = useState(getConfigurationStatus())
+  const [config] = useState(getEnvironmentConfig())
+  const [status] = useState(getConfigurationStatus())
 
   useEffect(() => {
     // Only show in development
@@ -23,9 +23,9 @@ export function ConfigStatus() {
     return null
   }
 
-  const toggleVisibility = () => {
-    setIsVisible(!isVisible)
-  }
+  // const toggleVisibility = () => {
+  //   setIsVisible(!isVisible)
+  // }
 
   if (!isVisible) {
     // Show floating button to open status

@@ -11,7 +11,6 @@ import {
   Flag, 
   User,
   Calendar,
-  MessageCircle,
   ChevronLeft,
   StarIcon,
   Camera

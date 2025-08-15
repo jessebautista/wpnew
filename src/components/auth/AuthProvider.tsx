@@ -51,14 +51,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.log('[AUTH] Found existing Supabase session for:', session.user.email)
           setSupabaseUser(session.user)
           const profile = await getOrCreateUserProfile(session.user)
-          setUser(profile)
+          setUser(profile as User)
         } else {
           // Fallback to stored session (for email/password auth)
           const storedSession = getStoredSession()
           
           if (storedSession?.user) {
             console.log('[AUTH] Found existing stored session for:', storedSession.user.email)
-            setSupabaseUser(storedSession.user)
+            setSupabaseUser(storedSession.user as SupabaseUser)
             const profile = await getOrCreateUserProfile(storedSession.user)
             setUser(profile)
           } else {
@@ -82,7 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (session?.user) {
           setSupabaseUser(session.user)
           const profile = await getOrCreateUserProfile(session.user)
-          setUser(profile)
+          setUser(profile as User)
         } else {
           setSupabaseUser(null)
           setUser(null)
@@ -112,9 +112,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (session?.user) {
       console.log('[AUTH] Sign in successful')
-      setSupabaseUser(session.user)
+      setSupabaseUser(session.user as SupabaseUser)
       const profile = await getOrCreateUserProfile(session.user)
-      setUser(profile)
+      setUser(profile as User)
     }
   }
 
@@ -131,8 +131,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         location: null,
         website: null,
         role: 'user',
-        email_verified: false,
-        last_login: new Date().toISOString(),
+        email_confirmed_at: null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }
@@ -150,9 +149,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (session?.user) {
       console.log('[AUTH] Sign up successful')
-      setSupabaseUser(session.user)
+      setSupabaseUser(session.user as SupabaseUser)
       const profile = await getOrCreateUserProfile(session.user)
-      setUser(profile)
+      setUser(profile as User)
     }
   }
 
@@ -166,7 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     console.log(`[AUTH] Starting OAuth sign in with ${provider}`)
     
-    const { data, error } = await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: provider,
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,

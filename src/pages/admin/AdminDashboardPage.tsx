@@ -7,10 +7,8 @@ import {
   Calendar, 
   BookOpen, 
   TrendingUp, 
-  Activity, 
   AlertTriangle,
   CheckCircle,
-  Clock,
   BarChart3,
   Settings,
   Eye,
@@ -25,7 +23,7 @@ import {
 import { useAuth } from '../../components/auth/AuthProvider'
 import { usePermissions } from '../../hooks/usePermissions'
 import { mockPianos, mockEvents, mockBlogPosts, mockUsers } from '../../data/mockData'
-import { ModerationService } from '../../services/moderationService'
+// import { ModerationService } from '../../services/moderationService'
 import { NewsletterDashboard } from '../../components/admin/NewsletterDashboard'
 import { SettingsDashboard } from '../../components/admin/SettingsDashboard'
 
@@ -611,10 +609,12 @@ function ContentTab() {
     }
   }
 
-  const content = getContent().filter(item =>
-    item.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.name?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const content = getContent().filter(item => {
+    const title = 'title' in item ? item.title : ''
+    const name = 'name' in item ? item.name : ''
+    const query = searchQuery.toLowerCase()
+    return title?.toLowerCase().includes(query) || name?.toLowerCase().includes(query)
+  })
 
   return (
     <div className="space-y-6">

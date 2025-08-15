@@ -70,7 +70,7 @@ export class GeocodingService {
 
     const data = await response.json()
     
-    return data.map((result: any, index: number) => ({
+    return data.map((result: any) => ({
       id: `nominatim-${result.place_id}`,
       place_name: result.display_name,
       address: result.display_name,

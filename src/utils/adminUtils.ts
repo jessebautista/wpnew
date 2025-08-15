@@ -67,7 +67,7 @@ export async function listAllUsers() {
  * Create an admin user (use with caution!)
  * This function is for development/setup purposes only
  */
-export async function createAdminUser(email: string, fullName?: string): Promise<boolean> {
+export async function createAdminUser(email: string, _fullName?: string): Promise<boolean> {
   try {
     console.log(`Creating admin user: ${email}`)
     

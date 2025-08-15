@@ -8,7 +8,6 @@ import {
   MapPin, 
   Globe, 
   Calendar, 
-  Camera, 
   Edit3, 
   Save, 
   X,

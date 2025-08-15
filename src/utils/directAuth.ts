@@ -306,7 +306,7 @@ export async function testDirectAuth() {
   if (session) {
     console.log('[DIRECT AUTH] Current session:', {
       user: session.user.email,
-      expires: new Date((session.expires_at || 0) * 1000).toISOString()
+      expires: new Date((session.expires_in || 0) * 1000).toISOString()
     })
     
     const profile = await getOrCreateUserProfile(session.user)

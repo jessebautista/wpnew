@@ -294,8 +294,11 @@ export function AddPianoPage() {
         category: formData.category,
         condition: formData.condition.toLowerCase() as any,
         accessibility: formData.accessibility.trim() || null,
+        hours: formData.hours.trim() || null,
         hours_available: formData.hours.trim() || null,
         verified: false,
+        created_by: user?.id || '',
+        verified_by: null,
         submitted_by: user?.id,
         moderation_status: 'pending' as any,
         updated_at: new Date().toISOString()
@@ -387,7 +390,7 @@ export function AddPianoPage() {
                   <input
                     type="text"
                     placeholder="e.g. Central Park Piano, JFK Terminal 4 Piano"
-                    className={`input input-bordered w-full w-full ${errors.name ? 'input-error' : ''}`}
+                    className={`input input-bordered w-full ${errors.name ? 'input-error' : ''}`}
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
                   />
@@ -492,7 +495,7 @@ export function AddPianoPage() {
                       <input
                         type="text"
                         placeholder="Enter the full address or location description"
-                        className={`input input-bordered w-full w-full ${errors.location_name ? 'input-error' : ''}`}
+                        className={`input input-bordered w-full ${errors.location_name ? 'input-error' : ''}`}
                         value={formData.location_name}
                         onChange={(e) => handleLocationSearch(e.target.value)}
                         onFocus={() => {
@@ -591,7 +594,7 @@ export function AddPianoPage() {
                     <input
                       type="text"
                       placeholder="e.g. Wheelchair accessible, Ground level"
-                      className="input input-bordered"
+                      className="input input-bordered w-full"
                       value={formData.accessibility}
                       onChange={(e) => handleInputChange('accessibility', e.target.value)}
                     />
@@ -648,7 +651,7 @@ export function AddPianoPage() {
                         <input
                           type="text"
                           placeholder="e.g. Mon-Fri 9AM-5PM, Sat 10AM-4PM, Sun Closed"
-                          className="input input-bordered"
+                          className="input input-bordered w-full"
                           value={formData.hours}
                           onChange={(e) => handleInputChange('hours', e.target.value)}
                         />

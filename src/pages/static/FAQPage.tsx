@@ -4,7 +4,6 @@ import {
   HelpCircle, 
   Piano, 
   Users, 
-  MapPin, 
   Calendar, 
   Shield, 
   Settings,
@@ -21,7 +20,7 @@ interface FAQItem {
 }
 
 export function FAQPage() {
-  const { t } = useLanguage()
+  const { } = useLanguage()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [openItems, setOpenItems] = useState<string[]>([])

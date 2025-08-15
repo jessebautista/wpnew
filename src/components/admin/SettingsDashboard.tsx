@@ -9,10 +9,7 @@ import {
   Check,
   Eye,
   EyeOff,
-  Zap,
-  Globe,
-  Shield,
-  Cpu
+  Zap
 } from 'lucide-react'
 import { SettingsService, type AppSettings } from '../../services/settingsService'
 import { AIEnhancementService } from '../../services/aiEnhancementService'
@@ -93,7 +90,7 @@ export function SettingsDashboard({ onClose }: SettingsDashboardProps) {
     }
   }
 
-  const updateSettings = (path: string, value: any) => {
+  const updateSettings = (path: string, value: any): void => {
     if (!settings) return
 
     const keys = path.split('.')
@@ -163,21 +160,21 @@ export function SettingsDashboard({ onClose }: SettingsDashboardProps) {
       {activeTab === 'analytics' && (
         <AnalyticsTab 
           settings={settings.analytics} 
-          onUpdate={(path, value) => updateSettings(`analytics.${path}`, value)}
+          onUpdate={(path: string, value: any) => updateSettings(`analytics.${path}`, value)}
         />
       )}
       
       {activeTab === 'seo' && (
         <SEOTab 
           settings={settings.seo} 
-          onUpdate={(path, value) => updateSettings(`seo.${path}`, value)}
+          onUpdate={(path: string, value: any) => updateSettings(`seo.${path}`, value)}
         />
       )}
       
       {activeTab === 'ai' && (
         <AITab 
           settings={settings.ai}
-          onUpdate={(path, value) => updateSettings(`ai.${path}`, value)}
+          onUpdate={(path: string, value: any) => updateSettings(`ai.${path}`, value)}
           showApiKeys={showApiKeys}
           onToggleApiKeys={() => setShowApiKeys(!showApiKeys)}
           onTestConnection={handleTestConnection}

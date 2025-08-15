@@ -6,10 +6,10 @@ import { useAuth } from '../../components/auth/AuthProvider'
 import { Piano } from 'lucide-react'
 
 export function OAuthCallbackPage() {
-  const [loading, setLoading] = useState(true)
+  const [, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { } = useAuth()
 
   useEffect(() => {
     const handleOAuthCallback = async () => {

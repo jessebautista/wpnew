@@ -91,7 +91,9 @@ export function BlogPage() {
 
   // Get category post counts using actual categories
   const categoryCounts = actualCategories.reduce((acc, category) => {
-    acc[category] = posts.filter(post => post.category === category && post.published).length
+    if (category) {
+      acc[category] = posts.filter(post => post.category === category && post.published).length
+    }
     return acc
   }, {} as Record<string, number>)
 
@@ -206,8 +208,8 @@ export function BlogPage() {
             >
               <option value="">All Categories</option>
               {actualCategories.map((category) => (
-                <option key={category} value={category}>
-                  {category} ({categoryCounts[category] || 0})
+                <option key={category} value={category || ''}>
+                  {category} ({categoryCounts[category || ''] || 0})
                 </option>
               ))}
             </select>
@@ -460,14 +462,14 @@ export function BlogPage() {
                       {actualCategories.map((category) => (
                         <button
                           key={category}
-                          onClick={() => handleCategorySelect(category)}
+                          onClick={() => handleCategorySelect(category || '')}
                           className={`btn btn-ghost btn-sm w-full justify-between ${
                             selectedCategory === category ? 'btn-active' : ''
                           }`}
                         >
                           <span>{category}</span>
                           <span className="badge badge-neutral badge-sm">
-                            {categoryCounts[category] || 0}
+                            {categoryCounts[category || ''] || 0}
                           </span>
                         </button>
                       ))}

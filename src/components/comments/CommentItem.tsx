@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Edit, Trash2, X, User as UserIcon } from 'lucide-react'
+import { Edit, Trash2, User as UserIcon } from 'lucide-react'
 import { usePermissions } from '../../hooks/usePermissions'
 import { CommentForm } from './CommentForm'
 import type { Comment, User } from '../../types'

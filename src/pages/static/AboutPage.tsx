@@ -5,7 +5,6 @@ import {
   Globe, 
   Heart, 
   Music, 
-  Star,
   MapPin,
   Calendar,
   Share2
@@ -13,7 +12,7 @@ import {
 import { useLanguage } from '../../contexts/LanguageContext'
 
 export function AboutPage() {
-  const { t } = useLanguage()
+  const { } = useLanguage()
 
   const teamMembers = [
     {

@@ -47,7 +47,7 @@ export async function testDatabaseConnection() {
   
   try {
     // Test basic connection
-    const { data: version, error: versionError } = await supabase
+    const { data: _version, error: versionError } = await supabase
       .from('users')
       .select('count')
       .limit(1)
@@ -128,7 +128,7 @@ export async function testDataLoading() {
   try {
     // Test pianos loading
     console.log('Testing pianos table...')
-    const { data: pianos, error: pianosError } = await supabase
+    const { data: _pianos, error: pianosError } = await supabase
       .from('pianos')
       .select('count')
       .limit(1)
@@ -142,7 +142,7 @@ export async function testDataLoading() {
     
     // Test events loading
     console.log('Testing events table...')
-    const { data: events, error: eventsError } = await supabase
+    const { data: _events, error: eventsError } = await supabase
       .from('events')
       .select('count')
       .limit(1)

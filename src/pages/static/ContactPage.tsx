@@ -16,7 +16,7 @@ import { useLanguage } from '../../contexts/LanguageContext'
 import { useAccessibility } from '../../contexts/AccessibilityContext'
 
 export function ContactPage() {
-  const { t } = useLanguage()
+  const { } = useLanguage()
   const { announceToScreenReader } = useAccessibility()
   const [formData, setFormData] = useState({
     name: '',

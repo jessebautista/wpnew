@@ -14,14 +14,14 @@ export interface AIEnhancementResult {
 }
 
 export class AIEnhancementService {
-  private static isEnabled = false
-  private static apiKey = ''
-  private static provider: 'openai' | 'anthropic' | 'local' = 'openai'
+  // private static isEnabled = false
+  // private static apiKey = ''
+  // private static provider: 'openai' | 'anthropic' | 'local' = 'openai'
 
-  static configure(enabled: boolean, apiKey: string, provider: 'openai' | 'anthropic' | 'local' = 'openai') {
-    this.isEnabled = enabled
-    this.apiKey = apiKey
-    this.provider = provider
+  static configure(_enabled: boolean, _apiKey: string, _provider: 'openai' | 'anthropic' | 'local' = 'openai') {
+    // this.isEnabled = enabled
+    // this.apiKey = apiKey
+    // this.provider = provider
   }
 
   // Mock AI enhancement for demonstration (in real app, this would call actual AI APIs)

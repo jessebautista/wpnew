@@ -26,10 +26,10 @@ export function SkipLinks() {
   }
 
   return (
-    <div className="skip-links">
+    <div className="fixed -top-24 left-0 z-50">
       <a
         href="#main-content"
-        className="skip-link"
+        className="absolute top-0 left-0 bg-primary text-primary-content px-4 py-2 no-underline font-semibold rounded-br-lg transition-transform duration-200 ease-in-out -translate-y-full focus:translate-y-24 focus:outline focus:outline-2 focus:outline-yellow-400 focus:outline-offset-2 hover:bg-primary-focus"
         onClick={handleSkipToContent}
         onKeyDown={(e) => e.key === 'Enter' && handleSkipToContent(e)}
       >
@@ -37,57 +37,12 @@ export function SkipLinks() {
       </a>
       <a
         href="#main-navigation"
-        className="skip-link"
+        className="absolute top-0 left-0 bg-primary text-primary-content px-4 py-2 no-underline font-semibold rounded-br-lg transition-transform duration-200 ease-in-out -translate-y-full focus:translate-y-24 focus:outline focus:outline-2 focus:outline-yellow-400 focus:outline-offset-2 hover:bg-primary-focus ml-32"
         onClick={handleSkipToNavigation}
         onKeyDown={(e) => e.key === 'Enter' && handleSkipToNavigation(e)}
       >
         Skip to navigation
       </a>
-      
-      <style jsx>{`
-        .skip-links {
-          position: fixed;
-          top: -100px;
-          left: 0;
-          z-index: 1000;
-        }
-        
-        .skip-link {
-          position: absolute;
-          top: 0;
-          left: 0;
-          background: var(--primary-color, #3b82f6);
-          color: white;
-          padding: 0.5rem 1rem;
-          text-decoration: none;
-          font-weight: 600;
-          border-radius: 0 0 0.375rem 0;
-          transition: transform 0.2s ease-in-out;
-          transform: translateY(-100%);
-        }
-        
-        .skip-link:focus {
-          transform: translateY(100px);
-          outline: 2px solid #fbbf24;
-          outline-offset: 2px;
-        }
-        
-        .skip-link:hover {
-          background: var(--primary-dark, #2563eb);
-        }
-        
-        /* High contrast mode */
-        :global(.high-contrast) .skip-link {
-          background: #000;
-          color: #fff;
-          border: 2px solid #fff;
-        }
-        
-        :global(.high-contrast) .skip-link:hover {
-          background: #fff;
-          color: #000;
-        }
-      `}</style>
     </div>
   )
 }

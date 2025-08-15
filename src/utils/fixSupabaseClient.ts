@@ -68,23 +68,23 @@ export async function testFixedAuth() {
   console.log('🔐 Testing auth with fixed client...')
   
   try {
-    const { data: session, error } = await fixedSupabase.auth.getSession()
+    const { data: authData, error } = await fixedSupabase.auth.getSession()
     
     if (error) {
       console.error('❌ Auth error:', error)
       return false
     }
     
-    console.log('✅ Auth works. Session:', session ? 'Logged in' : 'Not logged in')
+    console.log('✅ Auth works. Session:', authData.session ? 'Logged in' : 'Not logged in')
     
-    if (session?.user) {
-      console.log('👤 User:', session.user.email)
+    if (authData.session?.user) {
+      console.log('👤 User:', authData.session.user.email)
       
       // Try to get user profile
       const { data: profile, error: profileError } = await fixedSupabase
         .from('users')
         .select('*')
-        .eq('id', session.user.id)
+        .eq('id', authData.session.user.id)
         .single()
       
       if (profileError) {

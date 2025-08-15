@@ -11,12 +11,8 @@ import {
   Play,
   Pause,
   BarChart3,
-  Settings,
   Download,
-  Search,
-  Filter,
-  Calendar,
-  Target
+  Search
 } from 'lucide-react'
 import { NewsletterService } from '../../services/newsletterService'
 import type { 

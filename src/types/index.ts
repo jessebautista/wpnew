@@ -11,6 +11,13 @@ export interface User {
   role: UserRole
   created_at: string
   updated_at: string
+  // Supabase auth fields
+  app_metadata?: any
+  aud?: string
+  email_confirmed_at?: string | null
+  user_metadata?: any
+  // Optional website field
+  website?: string | null
 }
 
 export interface Piano {
@@ -24,9 +31,12 @@ export interface Piano {
   condition: string
   accessibility: string | null
   hours: string | null
+  hours_available?: string | null
   verified: boolean
   created_by: string
   verified_by: string | null
+  submitted_by?: string | null
+  moderation_status?: 'pending' | 'approved' | 'rejected'
   created_at: string
   updated_at: string
   images?: PianoImage[]
@@ -98,6 +108,8 @@ export interface BlogPost {
   published: boolean
   allow_comments: boolean
   author_id: string
+  moderation_status?: 'pending' | 'approved' | 'rejected'
+  slug?: string
   created_at: string
   updated_at: string
   author?: User

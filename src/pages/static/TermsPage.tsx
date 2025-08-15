@@ -2,7 +2,7 @@ import { useLanguage } from '../../contexts/LanguageContext'
 import { Scale, Shield, Users, AlertTriangle, Mail, FileText } from 'lucide-react'
 
 export function TermsPage() {
-  const { t } = useLanguage()
+  const { } = useLanguage()
 
   const lastUpdated = 'January 15, 2024'
 

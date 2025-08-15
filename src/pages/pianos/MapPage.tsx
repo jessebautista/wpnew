@@ -9,7 +9,7 @@ export function MapPage() {
   const [pianos, setPianos] = useState<Piano[]>([])
   const [filteredPianos, setFilteredPianos] = useState<Piano[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedPiano, setSelectedPiano] = useState<Piano | null>(null)
+  const [, setSelectedPiano] = useState<Piano | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filters, setFilters] = useState({
     category: '',

@@ -66,8 +66,8 @@ export async function testSupabaseConfig() {
   
   try {
     // Check if Supabase client is properly configured
-    console.log('Supabase URL:', supabase.supabaseUrl)
-    console.log('Supabase Key (first 20 chars):', supabase.supabaseKey.substring(0, 20) + '...')
+    console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL)
+    console.log('Supabase Key (first 20 chars):', (import.meta.env.VITE_SUPABASE_ANON_KEY || '').substring(0, 20) + '...')
     
     // Test if we can access the auth system
     const { data: session, error } = await supabase.auth.getSession()

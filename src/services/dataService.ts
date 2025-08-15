@@ -5,7 +5,7 @@
 
 import { shouldUseMockData } from '../lib/supabase'
 import { supabase } from '../lib/supabase'
-import type { Piano, Event, BlogPost, User, EventAttendee } from '../types'
+import type { Piano, Event, BlogPost, EventAttendee } from '../types'
 
 // Mock data
 const mockPianos: Piano[] = [
@@ -104,10 +104,15 @@ const mockEvents: Event[] = [
     max_attendees: 100,
     is_virtual: false,
     organizer_id: 'user123',
+    organizer: null,
     contact_email: 'events@worldpianos.org',
     moderation_status: 'approved',
     status: 'upcoming',
+    verified: true,
+    created_by: 'user123',
+    verified_by: 'admin',
     created_at: '2024-01-15T10:30:00Z',
+    updated_at: '2024-01-15T10:30:00Z',
     attendee_count: 0
   }
 ]
@@ -124,13 +129,10 @@ const mockBlogPosts: BlogPost[] = [
     tags: ['piano', 'community', 'music'],
     author_id: 'user123',
     published: true,
-    featured: false,
     allow_comments: true,
-    view_count: 1250,
-    reading_time: 5,
     moderation_status: 'approved',
-    published_at: '2023-06-15T12:00:00Z',
-    created_at: '2023-06-10T10:30:00Z'
+    created_at: '2023-06-10T10:30:00Z',
+    updated_at: '2023-06-10T10:30:00Z'
   }
 ]
 
@@ -346,7 +348,7 @@ export class DataService {
   /**
    * Update moderation status for a piano
    */
-  static async updatePianoModerationStatus(pianoId: string, status: 'approved' | 'rejected', reviewerId: string, rejectionReason?: string): Promise<boolean> {
+  static async updatePianoModerationStatus(pianoId: string, status: 'approved' | 'rejected', _reviewerId: string, rejectionReason?: string): Promise<boolean> {
     if (shouldUseMockData('supabase')) {
       console.log(`[MOCK] Updating piano ${pianoId} moderation status to ${status}`)
       return Promise.resolve(true)

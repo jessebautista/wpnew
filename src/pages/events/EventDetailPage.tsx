@@ -5,13 +5,11 @@ import {
   Calendar, 
   MapPin, 
   User, 
-  Share2, 
   Heart, 
   Flag, 
   CheckCircle,
   Users,
-  ChevronLeft,
-  MessageCircle
+  ChevronLeft
 } from 'lucide-react'
 import { useAuth } from '../../components/auth/AuthProvider'
 import { usePermissions } from '../../hooks/usePermissions'
@@ -24,7 +22,7 @@ import 'leaflet/dist/leaflet.css'
 
 export function EventDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const { user } = useAuth()
+  const { } = useAuth()
   const { canEdit, canVerify } = usePermissions()
   const [event, setEvent] = useState<Event | null>(null)
   const [loading, setLoading] = useState(true)

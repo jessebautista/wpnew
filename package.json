@@ -43,5 +43,12 @@
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.35.1",
     "vite": "^5.4.19"
+  },
+  "overrides": {
+    "react-leaflet-cluster": {
+      "react": "^19.1.0",
+      "react-dom": "^19.1.0",
+      "react-leaflet": "^5.0.0"
+    }
   }
 }

@@ -380,14 +380,14 @@ export function AddPianoPage() {
               <div className="card-body">
                 <h2 className="card-title mb-4">Basic Information</h2>
                 
-                <div className="form-control">
+                <div className="form-control w-full">
                   <label className="label">
                     <span className="label-text font-medium">Piano Name *</span>
                   </label>
                   <input
                     type="text"
                     placeholder="e.g. Central Park Piano, JFK Terminal 4 Piano"
-                    className={`input input-bordered ${errors.name ? 'input-error' : ''}`}
+                    className={`input input-bordered w-full w-full ${errors.name ? 'input-error' : ''}`}
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
                   />
@@ -401,13 +401,13 @@ export function AddPianoPage() {
                   )}
                 </div>
 
-                <div className="form-control">
+                <div className="form-control w-full">
                   <label className="label">
                     <span className="label-text font-medium">Description</span>
                     <span className="label-text-alt">{formData.description.length}/1000</span>
                   </label>
                   <textarea
-                    className={`textarea textarea-bordered h-24 ${errors.description ? 'textarea-error' : ''}`}
+                    className={`textarea textarea-bordered w-full h-24 ${errors.description ? 'textarea-error' : ''}`}
                     placeholder="Describe the piano, its condition, and what makes it special..."
                     value={formData.description}
                     onChange={(e) => handleInputChange('description', e.target.value)}
@@ -424,12 +424,12 @@ export function AddPianoPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="form-control">
+                  <div className="form-control w-full">
                     <label className="label">
                       <span className="label-text font-medium">Category *</span>
                     </label>
                     <select
-                      className={`select select-bordered ${errors.category ? 'select-error' : ''}`}
+                      className={`select select-bordered w-full ${errors.category ? 'select-error' : ''}`}
                       value={formData.category}
                       onChange={(e) => handleInputChange('category', e.target.value)}
                     >
@@ -448,12 +448,12 @@ export function AddPianoPage() {
                     )}
                   </div>
 
-                  <div className="form-control">
+                  <div className="form-control w-full">
                     <label className="label">
                       <span className="label-text font-medium">Condition *</span>
                     </label>
                     <select
-                      className={`select select-bordered ${errors.condition ? 'select-error' : ''}`}
+                      className={`select select-bordered w-full ${errors.condition ? 'select-error' : ''}`}
                       value={formData.condition}
                       onChange={(e) => handleInputChange('condition', e.target.value)}
                     >
@@ -483,7 +483,7 @@ export function AddPianoPage() {
                   Location
                 </h2>
                 
-                <div className="form-control">
+                <div className="form-control w-full">
                   <label className="label">
                     <span className="label-text font-medium">Address/Location *</span>
                   </label>
@@ -492,7 +492,7 @@ export function AddPianoPage() {
                       <input
                         type="text"
                         placeholder="Enter the full address or location description"
-                        className={`input input-bordered w-full ${errors.location_name ? 'input-error' : ''}`}
+                        className={`input input-bordered w-full w-full ${errors.location_name ? 'input-error' : ''}`}
                         value={formData.location_name}
                         onChange={(e) => handleLocationSearch(e.target.value)}
                         onFocus={() => {
@@ -584,7 +584,7 @@ export function AddPianoPage() {
                 <h2 className="card-title mb-4">Additional Details</h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="form-control">
+                  <div className="form-control w-full">
                     <label className="label">
                       <span className="label-text font-medium">Accessibility</span>
                     </label>
@@ -597,7 +597,7 @@ export function AddPianoPage() {
                     />
                   </div>
 
-                  <div className="form-control">
+                  <div className="form-control w-full">
                     <label className="label">
                       <span className="label-text font-medium">Operating Hours</span>
                     </label>
@@ -630,7 +630,7 @@ export function AddPianoPage() {
 
                       {hoursType === 'preset' ? (
                         <select
-                          className="select select-bordered"
+                          className="select select-bordered w-full"
                           value={formData.hours}
                           onChange={(e) => handleInputChange('hours', e.target.value)}
                         >
@@ -667,7 +667,7 @@ export function AddPianoPage() {
                   Photos
                 </h2>
                 
-                <div className="form-control">
+                <div className="form-control w-full">
                   <label className="label">
                     <span className="label-text font-medium">Upload Images</span>
                     <span className="label-text-alt">Max 5 images, 10MB each</span>

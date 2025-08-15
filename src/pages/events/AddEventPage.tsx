@@ -288,14 +288,14 @@ export function AddEventPage() {
               <div className="card-body">
                 <h2 className="card-title mb-4">Event Details</h2>
                 
-                <div className="form-control">
+                <div className="form-control w-full">
                   <label className="label">
                     <span className="label-text font-medium">Event Title *</span>
                   </label>
                   <input
                     type="text"
                     placeholder="e.g. Piano Concert in Central Park, Piano Lessons Workshop"
-                    className={`input input-bordered ${errors.title ? 'input-error' : ''}`}
+                    className={`input input-bordered w-full ${errors.title ? 'input-error' : ''}`}
                     value={formData.title}
                     onChange={(e) => handleInputChange('title', e.target.value)}
                   />
@@ -309,13 +309,13 @@ export function AddEventPage() {
                   )}
                 </div>
 
-                <div className="form-control">
+                <div className="form-control w-full">
                   <label className="label">
                     <span className="label-text font-medium">Description</span>
                     <span className="label-text-alt">{formData.description.length}/2000</span>
                   </label>
                   <textarea
-                    className={`textarea textarea-bordered h-32 ${errors.description ? 'textarea-error' : ''}`}
+                    className={`textarea textarea-bordered w-full h-32 ${errors.description ? 'textarea-error' : ''}`}
                     placeholder="Describe the event, what to expect, requirements, and any other important details..."
                     value={formData.description}
                     onChange={(e) => handleInputChange('description', e.target.value)}
@@ -331,12 +331,12 @@ export function AddEventPage() {
                   )}
                 </div>
 
-                <div className="form-control">
+                <div className="form-control w-full">
                   <label className="label">
                     <span className="label-text font-medium">Category *</span>
                   </label>
                   <select
-                    className={`select select-bordered ${errors.category ? 'select-error' : ''}`}
+                    className={`select select-bordered w-full ${errors.category ? 'select-error' : ''}`}
                     value={formData.category}
                     onChange={(e) => handleInputChange('category', e.target.value)}
                   >
@@ -366,14 +366,14 @@ export function AddEventPage() {
                 </h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="form-control">
+                  <div className="form-control w-full">
                     <label className="label">
                       <span className="label-text font-medium">Date *</span>
                     </label>
                     <input
                       type="date"
                       min={today}
-                      className={`input input-bordered ${errors.date ? 'input-error' : ''}`}
+                      className={`input input-bordered w-full ${errors.date ? 'input-error' : ''}`}
                       value={formData.date}
                       onChange={(e) => handleInputChange('date', e.target.value)}
                     />
@@ -387,13 +387,13 @@ export function AddEventPage() {
                     )}
                   </div>
 
-                  <div className="form-control">
+                  <div className="form-control w-full">
                     <label className="label">
                       <span className="label-text font-medium">Time *</span>
                     </label>
                     <input
                       type="time"
-                      className={`input input-bordered ${errors.time ? 'input-error' : ''}`}
+                      className={`input input-bordered w-full ${errors.time ? 'input-error' : ''}`}
                       value={formData.time}
                       onChange={(e) => handleInputChange('time', e.target.value)}
                     />
@@ -418,7 +418,7 @@ export function AddEventPage() {
                   Location
                 </h2>
                 
-                <div className="form-control">
+                <div className="form-control w-full">
                   <label className="label">
                     <span className="label-text font-medium">Venue/Address *</span>
                   </label>
@@ -426,7 +426,7 @@ export function AddEventPage() {
                     <input
                       type="text"
                       placeholder="Enter the venue name and address"
-                      className={`input input-bordered flex-1 ${errors.location_name ? 'input-error' : ''}`}
+                      className={`input input-bordered w-full flex-1 ${errors.location_name ? 'input-error' : ''}`}
                       value={formData.location_name}
                       onChange={(e) => handleInputChange('location_name', e.target.value)}
                     />
@@ -475,14 +475,14 @@ export function AddEventPage() {
                   Organizer Information
                 </h2>
                 
-                <div className="form-control">
+                <div className="form-control w-full">
                   <label className="label">
                     <span className="label-text font-medium">Organizer Name *</span>
                   </label>
                   <input
                     type="text"
                     placeholder="Your name or organization name"
-                    className={`input input-bordered ${errors.organizer ? 'input-error' : ''}`}
+                    className={`input input-bordered w-full ${errors.organizer ? 'input-error' : ''}`}
                     value={formData.organizer}
                     onChange={(e) => handleInputChange('organizer', e.target.value)}
                   />
@@ -497,14 +497,14 @@ export function AddEventPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="form-control">
+                  <div className="form-control w-full">
                     <label className="label">
                       <span className="label-text font-medium">Contact Email *</span>
                     </label>
                     <input
                       type="email"
                       placeholder="contact@example.com"
-                      className={`input input-bordered ${errors.contact_email ? 'input-error' : ''}`}
+                      className={`input input-bordered w-full ${errors.contact_email ? 'input-error' : ''}`}
                       value={formData.contact_email}
                       onChange={(e) => handleInputChange('contact_email', e.target.value)}
                     />
@@ -518,7 +518,7 @@ export function AddEventPage() {
                     )}
                   </div>
 
-                  <div className="form-control">
+                  <div className="form-control w-full">
                     <label className="label">
                       <span className="label-text font-medium">Contact Phone</span>
                     </label>
@@ -543,7 +543,7 @@ export function AddEventPage() {
                 </h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="form-control">
+                  <div className="form-control w-full">
                     <label className="label">
                       <span className="label-text font-medium">Ticket Price</span>
                     </label>
@@ -556,14 +556,14 @@ export function AddEventPage() {
                     />
                   </div>
 
-                  <div className="form-control">
+                  <div className="form-control w-full">
                     <label className="label">
                       <span className="label-text font-medium">Capacity</span>
                     </label>
                     <input
                       type="text"
                       placeholder="50, 100, unlimited"
-                      className={`input input-bordered ${errors.capacity ? 'input-error' : ''}`}
+                      className={`input input-bordered w-full ${errors.capacity ? 'input-error' : ''}`}
                       value={formData.capacity}
                       onChange={(e) => handleInputChange('capacity', e.target.value)}
                     />
@@ -577,14 +577,14 @@ export function AddEventPage() {
                     )}
                   </div>
 
-                  <div className="form-control">
+                  <div className="form-control w-full">
                     <label className="label">
                       <span className="label-text font-medium">Website URL</span>
                     </label>
                     <input
                       type="url"
                       placeholder="https://example.com"
-                      className={`input input-bordered ${errors.website_url ? 'input-error' : ''}`}
+                      className={`input input-bordered w-full ${errors.website_url ? 'input-error' : ''}`}
                       value={formData.website_url}
                       onChange={(e) => handleInputChange('website_url', e.target.value)}
                     />

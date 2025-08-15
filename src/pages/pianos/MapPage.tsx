@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { PianoMap } from '../../components/map/PianoMap'
-import { pianoService } from '../../utils/database'
+import { DataService } from '../../services/dataService'
 import type { Piano } from '../../types'
 import { Map, Search, Filter, Locate, List } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -21,7 +21,10 @@ export function MapPage() {
   useEffect(() => {
     const loadPianos = async () => {
       try {
-        const data = await pianoService.getAll()
+        console.log('[MAP] Loading pianos for map view...')
+        const data = await DataService.getPianos()
+        console.log('[MAP] Loaded pianos:', data.length, 'pianos')
+        console.log('[MAP] Sample piano coordinates:', data.slice(0, 3).map(p => ({id: p.id, name: p.name, lat: p.latitude, lng: p.longitude})))
         setPianos(data)
         setFilteredPianos(data)
       } catch (error) {
@@ -92,6 +95,14 @@ export function MapPage() {
 
   const categories = Array.from(new Set(pianos.map(p => p.category))).sort()
   const conditions = Array.from(new Set(pianos.map(p => p.condition))).sort()
+
+  // Calculate real statistics from filtered pianos
+  const totalPianos = filteredPianos.length
+  const verifiedPianos = filteredPianos.filter(p => p.verified).length
+  const countries = new Set(filteredPianos.map(p => {
+    const parts = p.location_name.split(', ')
+    return parts[parts.length - 1] // Get the last part which should be the country
+  })).size
 
   if (loading) {
     return (
@@ -226,72 +237,30 @@ export function MapPage() {
                 <div className="stats stats-vertical">
                   <div className="stat">
                     <div className="stat-title">Total Pianos</div>
-                    <div className="stat-value text-primary">{filteredPianos.length}</div>
+                    <div className="stat-value text-primary">{totalPianos}</div>
+                    <div className="stat-desc">
+                      {totalPianos !== pianos.length && `${pianos.length} total in database`}
+                    </div>
                   </div>
                   <div className="stat">
                     <div className="stat-title">Verified</div>
-                    <div className="stat-value text-success">
-                      {filteredPianos.filter(p => p.verified).length}
+                    <div className="stat-value text-success">{verifiedPianos}</div>
+                    <div className="stat-desc">
+                      {totalPianos > 0 && `${Math.round((verifiedPianos / totalPianos) * 100)}% verified`}
                     </div>
                   </div>
                   <div className="stat">
                     <div className="stat-title">Countries</div>
-                    <div className="stat-value text-accent">
-                      {new Set(filteredPianos.map(p => {
-                        const parts = p.location_name.split(', ')
-                        return parts[parts.length - 1]
-                      })).size}
+                    <div className="stat-value text-accent">{countries}</div>
+                    <div className="stat-desc">
+                      {totalPianos > 0 && `${Math.round(totalPianos / countries)} avg per country`}
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Selected Piano Info */}
-            {selectedPiano && (
-              <div className="card bg-base-100 shadow-xl">
-                <div className="card-body">
-                  <h3 className="card-title flex items-center justify-between">
-                    <span>{selectedPiano.name}</span>
-                    {selectedPiano.verified && (
-                      <div className="badge badge-success badge-sm">Verified</div>
-                    )}
-                  </h3>
-                  <p className="text-sm text-base-content/70">
-                    {selectedPiano.location_name}
-                  </p>
-                  <p className="text-sm mt-2">
-                    {selectedPiano.description}
-                  </p>
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    <div className="badge badge-outline">{selectedPiano.category}</div>
-                    <div className="badge badge-outline">{selectedPiano.condition}</div>
-                  </div>
-                  <div className="card-actions justify-end mt-4">
-                    <button className="btn btn-primary btn-sm">View Details</button>
-                    <button className="btn btn-outline btn-sm">Mark Visited</button>
-                  </div>
-                </div>
-              </div>
-            )}
 
-            {/* Quick Actions */}
-            <div className="card bg-base-100 shadow-xl">
-              <div className="card-body">
-                <h3 className="card-title text-lg">Quick Actions</h3>
-                <div className="space-y-2">
-                  <button className="btn btn-primary btn-sm w-full">
-                    Add New Piano
-                  </button>
-                  <button className="btn btn-outline btn-sm w-full">
-                    Report Issue
-                  </button>
-                  <button className="btn btn-outline btn-sm w-full">
-                    Download Data
-                  </button>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>

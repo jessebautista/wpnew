@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Calendar, MapPin, Search, User, Filter, Grid, List, Plus, CheckCircle, X } from 'lucide-react'
+import { Calendar, MapPin, Search, User, Filter, Grid, List, CheckCircle, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { DataService } from '../../services/dataService'
 import { EventCalendar } from '../../components/events/EventCalendar'
-import { usePermissions } from '../../hooks/usePermissions'
+import { useAuth } from '../../hooks/useAuth'
 import type { Event } from '../../types'
 import { EVENT_CATEGORIES } from '../../types'
 
 export function EventsPage() {
   const location = useLocation()
-  const { canCreate } = usePermissions()
+  const { user } = useAuth()
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [successMessage, setSuccessMessage] = useState<string | null>(
@@ -21,6 +21,8 @@ export function EventsPage() {
   const [dateFilter, setDateFilter] = useState<'all' | 'upcoming' | 'today' | 'this_week' | 'this_month'>('all')
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list')
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
+  const [currentPage, setCurrentPage] = useState(1)
+  const eventsPerPage = 10
 
   useEffect(() => {
     const loadEvents = async () => {
@@ -88,11 +90,30 @@ export function EventsPage() {
 
   const upcomingEvents = filteredEvents.filter(event => new Date(event.date) >= new Date())
 
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, selectedCategory, showVerifiedOnly, dateFilter, selectedDate])
+
+  // Pagination calculations
+  const totalEvents = filteredEvents.length
+  const totalPages = Math.ceil(totalEvents / eventsPerPage)
+  const startIndex = (currentPage - 1) * eventsPerPage
+  const endIndex = startIndex + eventsPerPage
+  const currentEvents = filteredEvents.slice(startIndex, endIndex)
+
+  // Pagination handlers
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date)
     setDateFilter('all') // Reset date filter when selecting from calendar
     setViewMode('list') // Switch to list view to show filtered results
   }
+
 
   return (
     <div className="min-h-screen bg-base-100">
@@ -158,12 +179,6 @@ export function EventsPage() {
                   <Grid className="w-4 h-4" />
                 </button>
               </div>
-              {canCreate() && (
-                <Link to="/events/add" className="btn btn-primary">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Event
-                </Link>
-              )}
             </div>
           </div>
 
@@ -236,7 +251,21 @@ export function EventsPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
               <div>
                 <p className="text-base-content/70">
-                  Showing {filteredEvents.length} of {events.length} events
+                  {viewMode === 'list' && totalEvents > 0 ? (
+                    <>
+                      Showing {startIndex + 1}-{Math.min(endIndex, totalEvents)} of {totalEvents} events
+                      {totalEvents !== events.length && ` (${events.length} total in database)`}
+                      {totalPages > 1 && (
+                        <span className="ml-2 text-sm">
+                          (Page {currentPage} of {totalPages})
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      Showing {filteredEvents.length} of {events.length} events
+                    </>
+                  )}
                   {selectedDate && (
                     <span className="ml-2 badge badge-secondary">
                       {selectedDate.toLocaleDateString()}
@@ -313,7 +342,7 @@ export function EventsPage() {
             ) : (
               /* List View */
               <div className="space-y-6">
-                {filteredEvents.map((event) => (
+                {currentEvents.map((event) => (
                   <div key={event.id} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
                     <div className="card-body">
                       <div className="flex flex-col lg:flex-row lg:items-start gap-6">
@@ -386,9 +415,6 @@ export function EventsPage() {
                               <Link to={`/events/${event.id}`} className="btn btn-primary">
                                 View Details
                               </Link>
-                              <button className="btn btn-outline btn-sm">
-                                I'm Interested
-                              </button>
                             </div>
                           </div>
                         </div>
@@ -396,6 +422,61 @@ export function EventsPage() {
                     </div>
                   </div>
                 ))}
+
+                {/* Pagination */}
+                {viewMode === 'list' && totalPages > 1 && currentEvents.length > 0 && (
+                  <div className="flex justify-center items-center gap-2 mt-8">
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="btn btn-outline btn-sm"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                      Previous
+                    </button>
+                    
+                    <div className="flex gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                        // Show first, last, current, and pages around current
+                        const showPage = 
+                          page === 1 || 
+                          page === totalPages || 
+                          Math.abs(page - currentPage) <= 1
+                        
+                        if (!showPage && page === 2 && currentPage > 4) {
+                          return <span key={page} className="px-2">...</span>
+                        }
+                        if (!showPage && page === totalPages - 1 && currentPage < totalPages - 3) {
+                          return <span key={page} className="px-2">...</span>
+                        }
+                        if (!showPage) return null
+                        
+                        return (
+                          <button
+                            key={page}
+                            onClick={() => handlePageChange(page)}
+                            className={`btn btn-sm ${
+                              currentPage === page 
+                                ? 'btn-primary' 
+                                : 'btn-outline'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="btn btn-outline btn-sm"
+                    >
+                      Next
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -407,14 +488,8 @@ export function EventsPage() {
                 <p className="text-base-content/70 mb-4">
                   {searchQuery || selectedCategory || selectedDate
                     ? 'Try adjusting your search terms or filters.'
-                    : 'Be the first to add an event!'}
+                    : 'No events are currently available.'}
                 </p>
-                {canCreate() && (
-                  <Link to="/events/add" className="btn btn-primary">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Event
-                  </Link>
-                )}
               </div>
             )}
           </div>

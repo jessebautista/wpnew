@@ -159,13 +159,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Filter Management**: Automatic pagination reset when applying new filters
 - **Mobile Responsiveness**: Pagination controls work well on all screen sizes
 
+### Removed - 2024-08-15
+
+#### Events System Changes
+- **I'm Interested Feature**: Temporarily removed event interest tracking functionality
+  - Removed "I'm Interested" button from event cards on EventsPage
+  - Removed `handleInterestToggle` function and related interest management logic
+  - Removed `interestLoading` state and loading indicators
+  - Removed attendee count display from event badges
+  - Simplified event loading to use basic `DataService.getEvents()` instead of attendance-aware version
+  - Cleaned up unused imports: `Heart`, `UserCheck` icons from Lucide React
+  - Event cards now show only "View Details" button for cleaner interface
+
 ### Technical Details
 
 #### Files Modified
 - `src/pages/pianos/PianosPage.tsx`: Added pagination system and advanced filters modal
 - `src/pages/pianos/MapPage.tsx`: Fixed data integration, statistics calculations, and UX improvements
 - `src/pages/events/AddEventPage.tsx`: Event creation with real database operations
-- `src/pages/events/EventsPage.tsx`: Success message functionality  
+- `src/pages/events/EventsPage.tsx`: Success message functionality, removed I'm Interested feature  
 - `src/services/dataService.ts`: Added createEvent method and enhanced getBlogPosts
 - `src/pages/blog/BlogPage.tsx`: Complete overhaul with pagination, real tags, moderation status, and UI improvements
 - `src/services/newsletterService.ts`: Enhanced with real Supabase database integration

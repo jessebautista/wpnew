@@ -16,28 +16,29 @@ export function Navbar() {
 
   return (
     <>
-      <nav className="navbar bg-base-100/95 backdrop-blur-md shadow-lg sticky top-0 z-50" id="main-navigation" role="navigation" aria-label="Main navigation">
-        <div className="navbar-start">
+      <nav className="navbar bg-base-100/95 backdrop-blur-md shadow-lg sticky top-0 z-50 min-h-16 px-2" id="main-navigation" role="navigation" aria-label="Main navigation">
+        <div className="navbar-start flex-1">
           <div className="dropdown">
             <button 
               tabIndex={0} 
-              className="btn btn-ghost lg:hidden min-h-12 h-12 w-12"
+              className="btn btn-ghost lg:hidden p-2 min-h-12 h-12 w-12 mr-2"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-label={t('a11y.openMenu')}
               aria-expanded={isMobileMenuOpen}
               aria-controls="mobile-menu"
+              type="button"
             >
               {isMobileMenuOpen ? (
-                <X className="w-6 h-6" aria-hidden="true" />
+                <X className="w-6 h-6 text-base-content" aria-hidden="true" />
               ) : (
-                <Menu className="w-6 h-6" aria-hidden="true" />
+                <Menu className="w-6 h-6 text-base-content" aria-hidden="true" />
               )}
             </button>
             {isMobileMenuOpen && (
               <ul 
                 id="mobile-menu"
                 tabIndex={0} 
-                className="menu menu-sm dropdown-content mt-3 z-[1000] p-2 shadow-2xl bg-base-100 rounded-2xl w-64 border border-base-300"
+                className="menu menu-sm dropdown-content mt-3 z-[1000] p-2 shadow-2xl bg-base-100 rounded-2xl w-64 border border-base-300 fixed left-2"
                 role="menu"
               >
                 <li role="none">
@@ -101,12 +102,27 @@ export function Navbar() {
                     </li>
                   </>
                 )}
+                <li className="divider my-2 sm:hidden" role="presentation"></li>
+                <li role="none" className="sm:hidden">
+                  <button
+                    onClick={() => {
+                      setIsAccessibilityPanelOpen(true)
+                      setIsMobileMenuOpen(false)
+                    }}
+                    role="menuitem"
+                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-base-200 transition-colors"
+                  >
+                    <Accessibility className="w-5 h-5 text-info" aria-hidden="true" />
+                    <span className="font-medium">Accessibility</span>
+                  </button>
+                </li>
               </ul>
             )}
           </div>
-          <Link to="/" className="btn btn-ghost text-xl" aria-label="WorldPianos home">
-            <Piano className="w-6 h-6 mr-2" aria-hidden="true" />
-            WorldPianos
+          <Link to="/" className="btn btn-ghost text-lg sm:text-xl px-2 sm:px-4 flex-shrink-0" aria-label="WorldPianos home">
+            <Piano className="w-5 h-5 sm:w-6 sm:h-6 mr-1 sm:mr-2" aria-hidden="true" />
+            <span className="hidden xs:inline sm:inline">WorldPianos</span>
+            <span className="xs:hidden sm:hidden">WP</span>
           </Link>
         </div>
       
@@ -129,15 +145,17 @@ export function Navbar() {
           </ul>
         </div>
       
-        <div className="navbar-end">
-          <div className="flex items-center gap-2">
-            {/* Language Selector */}
-            <LanguageSelector showText={false} />
+        <div className="navbar-end flex-shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2">
+            {/* Language Selector - Hidden on very small screens */}
+            <div className="hidden sm:block z-40">
+              <LanguageSelector showText={false} />
+            </div>
             
-            {/* Accessibility Panel Toggle */}
+            {/* Accessibility Panel Toggle - Hidden on very small screens */}
             <button
               onClick={() => setIsAccessibilityPanelOpen(true)}
-              className="btn btn-ghost btn-sm"
+              className="btn btn-ghost btn-sm hidden sm:flex"
               aria-label="Open accessibility settings"
               title="Accessibility Settings"
             >
@@ -191,9 +209,9 @@ export function Navbar() {
                 </ul>
               </div>
             ) : (
-              <div className="flex gap-2">
-                <Link to="/login" className="btn btn-ghost btn-sm sm:btn-md">{t('nav.login')}</Link>
-                <Link to="/signup" className="btn btn-primary btn-sm sm:btn-md">{t('nav.signup')}</Link>
+              <div className="flex gap-1 sm:gap-2 flex-shrink-0">
+                <Link to="/login" className="btn btn-ghost btn-sm text-xs sm:text-sm px-2 sm:px-4">Sign In</Link>
+                <Link to="/signup" className="btn btn-primary btn-sm text-xs sm:text-sm px-2 sm:px-4">Sign Up</Link>
               </div>
             )}
           </div>

@@ -16,38 +16,89 @@ export function Navbar() {
 
   return (
     <>
-      <nav className="navbar bg-base-100 shadow-lg" id="main-navigation" role="navigation" aria-label="Main navigation">
+      <nav className="navbar bg-base-100/95 backdrop-blur-md shadow-lg sticky top-0 z-50" id="main-navigation" role="navigation" aria-label="Main navigation">
         <div className="navbar-start">
           <div className="dropdown">
             <button 
               tabIndex={0} 
-              className="btn btn-ghost lg:hidden"
+              className="btn btn-ghost lg:hidden min-h-12 h-12 w-12"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-label={t('a11y.openMenu')}
               aria-expanded={isMobileMenuOpen}
               aria-controls="mobile-menu"
             >
               {isMobileMenuOpen ? (
-                <X className="w-5 h-5" aria-hidden="true" />
+                <X className="w-6 h-6" aria-hidden="true" />
               ) : (
-                <Menu className="w-5 h-5" aria-hidden="true" />
+                <Menu className="w-6 h-6" aria-hidden="true" />
               )}
             </button>
             {isMobileMenuOpen && (
               <ul 
                 id="mobile-menu"
                 tabIndex={0} 
-                className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
+                className="menu menu-sm dropdown-content mt-3 z-[1000] p-2 shadow-2xl bg-base-100 rounded-2xl w-64 border border-base-300"
                 role="menu"
               >
-                <li role="none"><Link to="/pianos" role="menuitem"><Piano className="w-4 h-4" aria-hidden="true" />{t('nav.pianos')}</Link></li>
-                <li role="none"><Link to="/events" role="menuitem"><Calendar className="w-4 h-4" aria-hidden="true" />{t('nav.events')}</Link></li>
-                <li role="none"><Link to="/blog" role="menuitem"><BookOpen className="w-4 h-4" aria-hidden="true" />{t('nav.blog')}</Link></li>
+                <li role="none">
+                  <Link 
+                    to="/pianos" 
+                    role="menuitem"
+                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-base-200 transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Piano className="w-5 h-5 text-primary" aria-hidden="true" />
+                    <span className="font-medium">{t('nav.pianos')}</span>
+                  </Link>
+                </li>
+                <li role="none">
+                  <Link 
+                    to="/events" 
+                    role="menuitem"
+                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-base-200 transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Calendar className="w-5 h-5 text-secondary" aria-hidden="true" />
+                    <span className="font-medium">{t('nav.events')}</span>
+                  </Link>
+                </li>
+                <li role="none">
+                  <Link 
+                    to="/blog" 
+                    role="menuitem"
+                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-base-200 transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <BookOpen className="w-5 h-5 text-accent" aria-hidden="true" />
+                    <span className="font-medium">{t('nav.blog')}</span>
+                  </Link>
+                </li>
                 {canCreate() && (
                   <>
-                    <li className="menu-title" role="presentation">Add Content</li>
-                    <li role="none"><Link to="/pianos/add" role="menuitem"><Plus className="w-4 h-4" aria-hidden="true" />Add Piano</Link></li>
-                    <li role="none"><Link to="/events/add" role="menuitem"><Plus className="w-4 h-4" aria-hidden="true" />Add Event</Link></li>
+                    <li className="divider my-2" role="presentation"></li>
+                    <li className="menu-title text-xs font-semibold text-base-content/60 px-3 py-2" role="presentation">Add Content</li>
+                    <li role="none">
+                      <Link 
+                        to="/pianos/add" 
+                        role="menuitem"
+                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-base-200 transition-colors"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <Plus className="w-5 h-5 text-primary" aria-hidden="true" />
+                        <span className="font-medium">Add Piano</span>
+                      </Link>
+                    </li>
+                    <li role="none">
+                      <Link 
+                        to="/events/add" 
+                        role="menuitem"
+                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-base-200 transition-colors"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <Plus className="w-5 h-5 text-secondary" aria-hidden="true" />
+                        <span className="font-medium">Add Event</span>
+                      </Link>
+                    </li>
                   </>
                 )}
               </ul>
@@ -140,9 +191,9 @@ export function Navbar() {
                 </ul>
               </div>
             ) : (
-              <div className="space-x-2">
-                <Link to="/login" className="btn btn-ghost">{t('nav.login')}</Link>
-                <Link to="/signup" className="btn btn-primary">{t('nav.signup')}</Link>
+              <div className="flex gap-2">
+                <Link to="/login" className="btn btn-ghost btn-sm sm:btn-md">{t('nav.login')}</Link>
+                <Link to="/signup" className="btn btn-primary btn-sm sm:btn-md">{t('nav.signup')}</Link>
               </div>
             )}
           </div>

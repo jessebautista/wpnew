@@ -32,31 +32,31 @@ export function HomePage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <div className="hero min-h-[70vh] relative overflow-hidden">
+      <div className="hero min-h-[70vh] lg:min-h-[80vh] relative overflow-hidden">
         {/* Hero Background Image with Blur */}
         <div 
           className="hero-overlay absolute inset-0 bg-cover bg-center bg-no-repeat scale-110 blur-sm"
           style={{ backgroundImage: 'url(/hero-pianos.png)' }}
         />
-        {/* Gradient overlay for better text readability */}
-        <div className="hero-overlay bg-gradient-to-b from-black/60 via-black/50 to-black/70" />
+        {/* Enhanced gradient overlay for better text readability */}
+        <div className="hero-overlay bg-gradient-to-b from-black/80 via-black/75 to-black/85" />
         
-        <div className="hero-content text-center relative z-10">
-          <div className="max-w-4xl backdrop-blur-sm bg-black/20 rounded-2xl p-8 border border-white/10">
-            <h1 className="text-5xl font-bold mb-6 text-white drop-shadow-2xl">
-              Discover Public Pianos <br />
-              <span className="text-primary drop-shadow-2xl">Around the World</span>
+        <div className="hero-content text-center relative z-10 px-4">
+          <div className="max-w-4xl backdrop-blur-md bg-black/30 rounded-3xl p-6 sm:p-8 lg:p-12 border border-white/20 shadow-2xl">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold mb-4 sm:mb-6 text-white drop-shadow-2xl leading-tight">
+              Discover Public Pianos <br className="hidden sm:block" />
+              <span className="text-primary drop-shadow-2xl bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Around the World</span>
             </h1>
-            <p className="text-xl mb-8 max-w-2xl mx-auto text-white/95 drop-shadow-xl">
+            <p className="text-base sm:text-lg lg:text-xl mb-6 sm:mb-8 max-w-2xl mx-auto text-white/95 drop-shadow-xl leading-relaxed">
               From airport lounges to city squares, find playable pianos near you. 
               Connect with fellow piano enthusiasts and share your musical journey.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/pianos" className="btn btn-primary btn-lg shadow-xl">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center">
+              <Link to="/pianos" className="btn btn-primary btn-lg w-full sm:w-auto shadow-2xl hover:shadow-primary/25 transition-all duration-300 transform hover:scale-105">
                 <Map className="w-5 h-5 mr-2" />
                 Explore Piano Map
               </Link>
-              <Link to="/events" className="btn btn-outline btn-lg text-white border-white hover:bg-white hover:text-black shadow-xl backdrop-blur-sm">
+              <Link to="/events" className="btn btn-outline btn-lg w-full sm:w-auto text-white border-white/80 hover:bg-white hover:text-black hover:border-white shadow-2xl backdrop-blur-sm transition-all duration-300 transform hover:scale-105">
                 <Calendar className="w-5 h-5 mr-2" />
                 Find Events
               </Link>
@@ -66,43 +66,43 @@ export function HomePage() {
       </div>
 
       {/* Stats Section */}
-      <div className="py-16 bg-base-200">
+      <div className="py-12 sm:py-16 bg-base-200">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div className="stat">
-              <div className="stat-figure text-primary">
-                <Piano className="w-8 h-8" />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
+            <div className="stat bg-base-100 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 text-center">
+              <div className="stat-figure text-primary mb-2">
+                <Piano className="w-10 h-10 sm:w-8 sm:h-8 mx-auto" />
               </div>
-              <div className="stat-title">Public Pianos</div>
-              <div className="stat-value text-primary">2,500+</div>
-              <div className="stat-desc">Across 50+ countries</div>
+              <div className="stat-title text-base sm:text-sm font-medium">Public Pianos</div>
+              <div className="stat-value text-primary text-2xl sm:text-3xl font-bold">2,500+</div>
+              <div className="stat-desc text-sm opacity-70 mt-1">Across 50+ countries</div>
             </div>
-            <div className="stat">
-              <div className="stat-figure text-secondary">
-                <Users className="w-8 h-8" />
+            <div className="stat bg-base-100 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 text-center">
+              <div className="stat-figure text-secondary mb-2">
+                <Users className="w-10 h-10 sm:w-8 sm:h-8 mx-auto" />
               </div>
-              <div className="stat-title">Community Members</div>
-              <div className="stat-value text-secondary">10,000+</div>
-              <div className="stat-desc">Piano enthusiasts worldwide</div>
+              <div className="stat-title text-base sm:text-sm font-medium">Community Members</div>
+              <div className="stat-value text-secondary text-2xl sm:text-3xl font-bold">10,000+</div>
+              <div className="stat-desc text-sm opacity-70 mt-1">Piano enthusiasts worldwide</div>
             </div>
-            <div className="stat">
-              <div className="stat-figure text-accent">
-                <Calendar className="w-8 h-8" />
+            <div className="stat bg-base-100 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 text-center sm:col-span-1 col-span-1">
+              <div className="stat-figure text-accent mb-2">
+                <Calendar className="w-10 h-10 sm:w-8 sm:h-8 mx-auto" />
               </div>
-              <div className="stat-title">Events Hosted</div>
-              <div className="stat-value text-accent">500+</div>
-              <div className="stat-desc">Meetups and concerts</div>
+              <div className="stat-title text-base sm:text-sm font-medium">Events Hosted</div>
+              <div className="stat-value text-accent text-2xl sm:text-3xl font-bold">500+</div>
+              <div className="stat-desc text-sm opacity-70 mt-1">Meetups and concerts</div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Featured Pianos */}
-      <div className="py-16">
+      <div className="py-12 sm:py-16">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">Featured Pianos</h2>
-            <p className="text-xl">Discover some of our most beloved public pianos</p>
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4">Featured Pianos</h2>
+            <p className="text-base sm:text-lg lg:text-xl text-base-content/80">Discover some of our most beloved public pianos</p>
           </div>
 
           {loading ? (
@@ -110,7 +110,7 @@ export function HomePage() {
               <span className="loading loading-spinner loading-lg"></span>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {featuredPianos.map((piano) => (
                 <div key={piano.id} className="card bg-base-100 shadow-xl">
                   <div className="card-body">
@@ -149,11 +149,11 @@ export function HomePage() {
       </div>
 
       {/* Upcoming Events */}
-      <div className="py-16 bg-base-200">
+      <div className="py-12 sm:py-16 bg-base-200">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">Upcoming Events</h2>
-            <p className="text-xl">Join piano enthusiasts in your area</p>
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4">Upcoming Events</h2>
+            <p className="text-base sm:text-lg lg:text-xl text-base-content/80">Join piano enthusiasts in your area</p>
           </div>
 
           {loading ? (
@@ -161,7 +161,7 @@ export function HomePage() {
               <span className="loading loading-spinner loading-lg"></span>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {upcomingEvents.map((event) => (
                 <div key={event.id} className="card bg-base-100 shadow-xl">
                   <div className="card-body">
@@ -201,19 +201,19 @@ export function HomePage() {
       </div>
 
       {/* CTA Section */}
-      <div className="py-16">
+      <div className="py-12 sm:py-16">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl font-bold mb-4">Join Our Community</h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4">Join Our Community</h2>
+          <p className="text-base sm:text-lg lg:text-xl mb-6 sm:mb-8 max-w-2xl mx-auto text-base-content/80 leading-relaxed">
             Help us map every public piano in the world. Share your discoveries, 
             attend events, and connect with fellow piano lovers.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/pianos/add" className="btn btn-primary btn-lg">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center max-w-md sm:max-w-none mx-auto">
+            <Link to="/pianos/add" className="btn btn-primary btn-lg w-full sm:w-auto shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
               <Piano className="w-5 h-5 mr-2" />
               Add a Piano
             </Link>
-            <Link to="/signup" className="btn btn-outline btn-lg">
+            <Link to="/signup" className="btn btn-outline btn-lg w-full sm:w-auto shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
               <Users className="w-5 h-5 mr-2" />
               Create Account
             </Link>

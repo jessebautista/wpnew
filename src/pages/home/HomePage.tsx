@@ -32,23 +32,31 @@ export function HomePage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <div className="hero min-h-[70vh] bg-gradient-to-br from-primary/20 to-secondary/20">
-        <div className="hero-content text-center">
-          <div className="max-w-4xl">
-            <h1 className="text-5xl font-bold mb-6">
+      <div className="hero min-h-[70vh] relative overflow-hidden">
+        {/* Hero Background Image with Blur */}
+        <div 
+          className="hero-overlay absolute inset-0 bg-cover bg-center bg-no-repeat scale-110 blur-sm"
+          style={{ backgroundImage: 'url(/hero-pianos.png)' }}
+        />
+        {/* Gradient overlay for better text readability */}
+        <div className="hero-overlay bg-gradient-to-b from-black/60 via-black/50 to-black/70" />
+        
+        <div className="hero-content text-center relative z-10">
+          <div className="max-w-4xl backdrop-blur-sm bg-black/20 rounded-2xl p-8 border border-white/10">
+            <h1 className="text-5xl font-bold mb-6 text-white drop-shadow-2xl">
               Discover Public Pianos <br />
-              <span className="text-primary">Around the World</span>
+              <span className="text-primary drop-shadow-2xl">Around the World</span>
             </h1>
-            <p className="text-xl mb-8 max-w-2xl mx-auto">
+            <p className="text-xl mb-8 max-w-2xl mx-auto text-white/95 drop-shadow-xl">
               From airport lounges to city squares, find playable pianos near you. 
               Connect with fellow piano enthusiasts and share your musical journey.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/pianos" className="btn btn-primary btn-lg">
+              <Link to="/pianos" className="btn btn-primary btn-lg shadow-xl">
                 <Map className="w-5 h-5 mr-2" />
                 Explore Piano Map
               </Link>
-              <Link to="/events" className="btn btn-outline btn-lg">
+              <Link to="/events" className="btn btn-outline btn-lg text-white border-white hover:bg-white hover:text-black shadow-xl backdrop-blur-sm">
                 <Calendar className="w-5 h-5 mr-2" />
                 Find Events
               </Link>

@@ -17,7 +17,8 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../components/auth/AuthProvider'
 import { usePermissions } from '../../hooks/usePermissions'
-import { mockPianos, mockEvents, mockBlogPosts } from '../../data/mockData'
+import { DataService } from '../../services/dataService'
+import type { Piano, Event, BlogPost } from '../../types'
 
 interface ModerationItem {
   id: string
@@ -55,66 +56,71 @@ export function ModerationQueuePage() {
 
   const loadModerationItems = async () => {
     try {
-      // Mock moderation items from existing data
-      const mockItems: ModerationItem[] = [
+      // Fetch real pending moderation items
+      const { pianos, events, blogPosts } = await DataService.getPendingModerationItems()
+      
+      const items: ModerationItem[] = [
         // Piano items
-        ...mockPianos.slice(0, 3).map((piano, index) => ({
+        ...pianos.map((piano) => ({
           id: `piano-${piano.id}`,
           type: 'piano' as const,
           title: piano.name,
           content: piano,
           author: {
-            id: piano.created_by,
-            name: piano.author?.full_name || 'Unknown User',
-            email: piano.author?.email || 'unknown@example.com'
+            id: piano.submitted_by || piano.created_by || 'unknown',
+            name: 'Piano Enthusiast', // We'll need to join with users table to get real names
+            email: 'user@example.com' // Placeholder - would need user data
           },
-          status: index === 0 ? 'pending' as const : (index === 1 ? 'approved' as const : 'rejected' as const),
-          priority: index === 0 ? 'high' as const : 'medium' as const,
-          submitted_at: new Date(Date.now() - (index * 2) * 24 * 60 * 60 * 1000).toISOString(),
-          reviewed_at: index > 0 ? new Date(Date.now() - index * 12 * 60 * 60 * 1000).toISOString() : undefined,
-          reviewed_by: index > 0 ? user?.id : undefined,
-          rejection_reason: index === 2 ? 'Insufficient location details provided' : undefined,
-          flags: Math.floor(Math.random() * 3)
+          status: piano.moderation_status as 'pending' | 'approved' | 'rejected',
+          priority: 'medium' as const, // Default priority
+          submitted_at: piano.created_at,
+          reviewed_at: piano.updated_at !== piano.created_at ? piano.updated_at : undefined,
+          reviewed_by: undefined, // Would need to track who reviewed
+          rejection_reason: (piano as any).rejection_reason || undefined,
+          flags: 0 // Default to no flags
         })),
         // Event items
-        ...mockEvents.slice(0, 2).map((event, index) => ({
+        ...events.map((event) => ({
           id: `event-${event.id}`,
           type: 'event' as const,
           title: event.title,
           content: event,
           author: {
-            id: event.created_by,
-            name: event.author?.full_name || 'Unknown User',
-            email: event.author?.email || 'unknown@example.com'
+            id: event.organizer_id || 'unknown',
+            name: 'Event Organizer',
+            email: 'organizer@example.com'
           },
-          status: index === 0 ? 'pending' as const : 'approved' as const,
+          status: event.moderation_status as 'pending' | 'approved' | 'rejected',
           priority: 'medium' as const,
-          submitted_at: new Date(Date.now() - (index + 3) * 24 * 60 * 60 * 1000).toISOString(),
-          reviewed_at: index > 0 ? new Date(Date.now() - (index + 1) * 12 * 60 * 60 * 1000).toISOString() : undefined,
-          reviewed_by: index > 0 ? user?.id : undefined,
-          flags: Math.floor(Math.random() * 2)
+          submitted_at: event.created_at,
+          reviewed_at: event.updated_at !== event.created_at ? event.updated_at : undefined,
+          reviewed_by: undefined,
+          rejection_reason: undefined,
+          flags: 0
         })),
         // Blog post items
-        ...mockBlogPosts.slice(0, 2).map((post, index) => ({
+        ...blogPosts.map((post) => ({
           id: `blog-${post.id}`,
           type: 'blog_post' as const,
           title: post.title,
           content: post,
           author: {
-            id: post.author_id,
-            name: post.author?.full_name || 'Unknown User',
-            email: post.author?.email || 'unknown@example.com'
+            id: post.author_id || 'unknown',
+            name: 'Blog Author',
+            email: 'author@example.com'
           },
-          status: index === 0 ? 'pending' as const : 'approved' as const,
+          status: post.moderation_status as 'pending' | 'approved' | 'rejected',
           priority: 'low' as const,
-          submitted_at: new Date(Date.now() - (index + 5) * 24 * 60 * 60 * 1000).toISOString(),
-          reviewed_at: index > 0 ? new Date(Date.now() - (index + 2) * 12 * 60 * 60 * 1000).toISOString() : undefined,
-          reviewed_by: index > 0 ? user?.id : undefined,
+          submitted_at: post.created_at,
+          reviewed_at: post.updated_at !== post.created_at ? post.updated_at : undefined,
+          reviewed_by: undefined,
+          rejection_reason: undefined,
           flags: 0
         }))
       ]
 
-      setItems(mockItems)
+      setItems(items)
+      console.log(`[MODERATION] Loaded ${items.length} moderation items (${pianos.length} pianos, ${events.length} events, ${blogPosts.length} blog posts)`)
     } catch (error) {
       console.error('Error loading moderation items:', error)
     } finally {
@@ -123,32 +129,87 @@ export function ModerationQueuePage() {
   }
 
   const handleApprove = async (itemId: string) => {
-    setItems(prev => prev.map(item => 
-      item.id === itemId 
-        ? { 
-            ...item, 
-            status: 'approved', 
-            reviewed_at: new Date().toISOString(),
-            reviewed_by: user?.id 
-          }
-        : item
-    ))
-    // In a real app, this would update Supabase and publish the content
+    try {
+      const [type, id] = itemId.split('-')
+      
+      if (type === 'piano' && user?.id) {
+        const success = await DataService.updatePianoModerationStatus(id, 'approved', user.id)
+        if (success) {
+          setItems(prev => prev.map(item => 
+            item.id === itemId 
+              ? { 
+                  ...item, 
+                  status: 'approved', 
+                  reviewed_at: new Date().toISOString(),
+                  reviewed_by: user?.id 
+                }
+              : item
+          ))
+          console.log(`[MODERATION] Approved ${type} ${id}`)
+        } else {
+          console.error(`[MODERATION] Failed to approve ${type} ${id}`)
+        }
+      } else {
+        // For now, just update UI for events and blog posts
+        // TODO: Add similar methods for events and blog posts
+        setItems(prev => prev.map(item => 
+          item.id === itemId 
+            ? { 
+                ...item, 
+                status: 'approved', 
+                reviewed_at: new Date().toISOString(),
+                reviewed_by: user?.id 
+              }
+            : item
+        ))
+        console.log(`[MODERATION] UI-only approval for ${type} ${id}`)
+      }
+    } catch (error) {
+      console.error('Error approving item:', error)
+    }
   }
 
   const handleReject = async (itemId: string, reason: string) => {
-    setItems(prev => prev.map(item => 
-      item.id === itemId 
-        ? { 
-            ...item, 
-            status: 'rejected', 
-            reviewed_at: new Date().toISOString(),
-            reviewed_by: user?.id,
-            rejection_reason: reason
-          }
-        : item
-    ))
-    // In a real app, this would update Supabase and notify the author
+    try {
+      const [type, id] = itemId.split('-')
+      
+      if (type === 'piano' && user?.id) {
+        const success = await DataService.updatePianoModerationStatus(id, 'rejected', user.id, reason)
+        if (success) {
+          setItems(prev => prev.map(item => 
+            item.id === itemId 
+              ? { 
+                  ...item, 
+                  status: 'rejected', 
+                  reviewed_at: new Date().toISOString(),
+                  reviewed_by: user?.id,
+                  rejection_reason: reason
+                }
+              : item
+          ))
+          console.log(`[MODERATION] Rejected ${type} ${id} with reason: ${reason}`)
+        } else {
+          console.error(`[MODERATION] Failed to reject ${type} ${id}`)
+        }
+      } else {
+        // For now, just update UI for events and blog posts  
+        // TODO: Add similar methods for events and blog posts
+        setItems(prev => prev.map(item => 
+          item.id === itemId 
+            ? { 
+                ...item, 
+                status: 'rejected', 
+                reviewed_at: new Date().toISOString(),
+                reviewed_by: user?.id,
+                rejection_reason: reason
+              }
+            : item
+        ))
+        console.log(`[MODERATION] UI-only rejection for ${type} ${id}`)
+      }
+    } catch (error) {
+      console.error('Error rejecting item:', error)
+    }
   }
 
   const filteredItems = items.filter(item => {

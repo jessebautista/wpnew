@@ -1,4 +1,5 @@
 import type { User, Piano, Event, BlogPost } from '../types'
+import { shouldUseMockData } from '../lib/supabase'
 
 export type ContentType = 'piano' | 'event' | 'blog_post'
 export type ModerationStatus = 'pending' | 'approved' | 'rejected' | 'auto_approved'
@@ -191,8 +192,15 @@ export class ModerationService {
     moderatorId: string,
     reason?: string
   ): Promise<void> {
-    // In a real app, this would update the database
-    console.log(`Approving ${contentType} ${contentId}`)
+    if (shouldUseMockData('supabase')) {
+      // Mock implementation
+      console.log(`[MOCK] Approving ${contentType} ${contentId}`)
+    } else {
+      // Real Supabase implementation
+      // In a real app, this would update the database
+      console.log(`Approving ${contentType} ${contentId}`)
+      // TODO: Add actual Supabase update logic here
+    }
     
     this.logAction(
       contentId,

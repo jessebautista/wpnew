@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../components/auth/AuthProvider'
+import { DataService } from '../../services/dataService'
 import { 
   User, 
   Mail, 
@@ -14,7 +15,8 @@ import {
   Piano,
   Star,
   Award,
-  BookOpen
+  BookOpen,
+  Clock
 } from 'lucide-react'
 
 interface ProfileFormData {
@@ -29,6 +31,8 @@ export function ProfilePage() {
   const { user } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [pendingPianos, setPendingPianos] = useState<any[]>([])
+  const [loadingPending, setLoadingPending] = useState(false)
   const [formData, setFormData] = useState<ProfileFormData>({
     full_name: '',
     username: '',
@@ -46,6 +50,21 @@ export function ProfilePage() {
         location: user.location || '',
         website: user.website || ''
       })
+      
+      // Load pending pianos
+      const loadPendingPianos = async () => {
+        setLoadingPending(true)
+        try {
+          const pending = await DataService.getUserPendingPianos(user.id)
+          setPendingPianos(pending)
+        } catch (error) {
+          console.error('Error loading pending pianos:', error)
+        } finally {
+          setLoadingPending(false)
+        }
+      }
+      
+      loadPendingPianos()
     }
   }, [user])
 
@@ -127,8 +146,8 @@ export function ProfilePage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Profile Card */}
-            <div className="lg:col-span-2">
+            {/* Main Content */}
+            <div className="lg:col-span-2 space-y-6">
               <div className="card bg-base-100 shadow-xl">
                 <div className="card-body">
                   <div className="flex items-center justify-between mb-6">
@@ -330,6 +349,64 @@ export function ProfilePage() {
                       </div>
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* Pending Submissions */}
+              <div className="card bg-base-100 shadow-xl">
+                <div className="card-body">
+                  <h2 className="card-title">
+                    <Clock className="w-6 h-6" />
+                    Pending Submissions
+                  </h2>
+                  {loadingPending ? (
+                    <div className="flex items-center justify-center py-8">
+                      <span className="loading loading-spinner loading-lg"></span>
+                    </div>
+                  ) : pendingPianos.length > 0 ? (
+                    <div className="space-y-4">
+                      <p className="text-base-content/70">
+                        Your submissions are being reviewed and will appear in the directory once approved.
+                      </p>
+                      <div className="space-y-3">
+                        {pendingPianos.map((piano) => (
+                          <div key={piano.id} className="border border-base-300 rounded-lg p-4">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <h4 className="font-semibold text-lg">{piano.name}</h4>
+                                <p className="text-base-content/70 text-sm flex items-center gap-1 mt-1">
+                                  <MapPin className="w-3 h-3" />
+                                  {piano.location_name}
+                                </p>
+                                {piano.description && (
+                                  <p className="text-sm mt-2 text-base-content/80">
+                                    {piano.description}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="badge badge-warning gap-1">
+                                <Clock className="w-3 h-3" />
+                                Pending
+                              </div>
+                            </div>
+                            <div className="text-xs text-base-content/50 mt-3">
+                              Submitted {new Date(piano.created_at).toLocaleDateString()}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Clock className="w-12 h-12 text-base-content/30 mx-auto mb-4" />
+                      <p className="text-base-content/70 mb-4">
+                        No pending submissions
+                      </p>
+                      <Link to="/pianos/add" className="btn btn-primary btn-sm">
+                        Add Your First Piano
+                      </Link>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

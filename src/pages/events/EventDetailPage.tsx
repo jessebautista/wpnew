@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../components/auth/AuthProvider'
 import { usePermissions } from '../../hooks/usePermissions'
-import { mockEvents } from '../../data/mockData'
+import { DataService } from '../../services/dataService'
 import { CommentSection } from '../../components/comments/CommentSection'
 import { ShareButton } from '../../components/social/ShareButton'
 import { SocialSharingService } from '../../services/socialSharingService'
@@ -36,11 +36,12 @@ export function EventDetailPage() {
       if (!id) return
 
       try {
-        // In a real app, this would fetch from Supabase
-        const foundEvent = mockEvents.find(e => e.id === id)
-        if (foundEvent) {
-          setEvent(foundEvent)
-          setAttendeeCount(Math.floor(Math.random() * 50) + 5) // Mock attendee count
+        console.log('Loading event with ID:', id)
+        const eventData = await DataService.getEvent(id)
+        console.log('Found event:', eventData)
+        if (eventData) {
+          setEvent(eventData)
+          setAttendeeCount(eventData.attendee_count || Math.floor(Math.random() * 50) + 5)
         }
       } catch (error) {
         console.error('Error loading event:', error)
@@ -320,24 +321,7 @@ export function EventDetailPage() {
               <div className="card-body">
                 <h3 className="card-title">Similar Events</h3>
                 <div className="space-y-3">
-                  {mockEvents
-                    .filter(e => e.id !== event.id && e.category === event.category)
-                    .slice(0, 3)
-                    .map((relatedEvent) => (
-                      <Link
-                        key={relatedEvent.id}
-                        to={`/events/${relatedEvent.id}`}
-                        className="block p-3 bg-base-200 rounded-lg hover:bg-base-300 transition-colors"
-                      >
-                        <h4 className="font-medium text-sm">{relatedEvent.title}</h4>
-                        <p className="text-xs text-base-content/70 mt-1">
-                          {new Date(relatedEvent.date).toLocaleDateString()}
-                        </p>
-                      </Link>
-                    ))}
-                  {mockEvents.filter(e => e.id !== event.id && e.category === event.category).length === 0 && (
-                    <p className="text-sm text-base-content/70">No similar events found.</p>
-                  )}
+                  <p className="text-sm text-base-content/70">Similar events coming soon!</p>
                 </div>
               </div>
             </div>

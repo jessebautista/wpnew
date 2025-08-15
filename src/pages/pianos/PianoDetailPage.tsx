@@ -17,7 +17,7 @@ import {
   Camera
 } from 'lucide-react'
 import { useAuth } from '../../components/auth/AuthProvider'
-import { mockPianos } from '../../data/mockData'
+import { DataService } from '../../services/dataService'
 import { CommentSection } from '../../components/comments/CommentSection'
 import { ShareButton } from '../../components/social/ShareButton'
 import { ShareModal } from '../../components/social/ShareModal'
@@ -39,10 +39,10 @@ export function PianoDetailPage() {
       if (!id) return
       
       try {
-        const pianoData = mockPianos.find(p => p.id === id)
-        if (pianoData) {
-          setPiano(pianoData)
-        }
+        console.log('Loading piano with ID:', id)
+        const pianoData = await DataService.getPiano(id)
+        console.log('Found piano:', pianoData)
+        setPiano(pianoData)
       } catch (error) {
         console.error('Error loading piano details:', error)
       } finally {

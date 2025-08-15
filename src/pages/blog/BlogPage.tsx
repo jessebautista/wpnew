@@ -186,12 +186,6 @@ export function BlogPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            {canCreate() && (
-              <Link to="/blog/new" className="btn btn-primary">
-                <Plus className="w-4 h-4 mr-2" />
-                Write Post
-              </Link>
-            )}
           </div>
 
           {/* Filters */}
@@ -534,56 +528,6 @@ export function BlogPage() {
                   </div>
                 </div>
 
-                {/* Featured Authors */}
-                <div className="card bg-base-100 shadow-xl">
-                  <div className="card-body">
-                    <h3 className="card-title mb-4">Featured Authors</h3>
-                    <div className="space-y-3">
-                      {Array.from(new Set(posts.map(p => p.author).filter(Boolean)))
-                        .slice(0, 3)
-                        .map((author) => (
-                          <div key={author!.id} className="flex items-center gap-3">
-                            <div className="avatar placeholder">
-                              <div className="bg-neutral text-neutral-content rounded-full w-10">
-                                {author!.avatar_url ? (
-                                  <img src={author!.avatar_url} alt="Avatar" />
-                                ) : (
-                                  <span className="text-xs">{author!.full_name?.[0]}</span>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium text-sm">{author!.full_name}</div>
-                              <div className="text-xs text-base-content/50">
-                                {posts.filter(p => p.author_id === author!.id).length} posts
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Newsletter Signup */}
-                <div className="card bg-gradient-to-r from-primary to-secondary text-primary-content shadow-xl">
-                  <div className="card-body">
-                    <h3 className="card-title">📧 Stay Updated</h3>
-                    <p className="text-sm opacity-90">Get the latest piano stories delivered to your inbox.</p>
-                    <div className="form-control mt-4">
-                      <input 
-                        type="email" 
-                        placeholder="Your email address" 
-                        className="input input-bordered text-base-content" 
-                      />
-                      <button className="btn btn-accent mt-2 text-accent-content">
-                        Subscribe Now
-                      </button>
-                    </div>
-                    <p className="text-xs opacity-75 mt-2">
-                      Join 500+ piano enthusiasts worldwide
-                    </p>
-                  </div>
-                </div>
               </div>
             </div>
           </div>

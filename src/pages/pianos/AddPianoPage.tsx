@@ -14,6 +14,9 @@ import {
 import { useAuth } from '../../components/auth/AuthProvider'
 import { usePermissions } from '../../hooks/usePermissions'
 import { PIANO_CATEGORIES, PIANO_CONDITIONS } from '../../types'
+import { DataService } from '../../services/dataService'
+import { GeocodingService, type LocationSuggestion } from '../../services/geocodingService'
+import { ImageUploadService } from '../../services/imageUploadService'
 
 interface PianoFormData {
   name: string
@@ -47,6 +50,10 @@ export function AddPianoPage() {
     hours: '',
     images: []
   })
+  const [hoursType, setHoursType] = useState<'custom' | 'preset'>('preset')
+  const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null)
 
   if (!user || !canCreate()) {
     return (
@@ -68,18 +75,92 @@ export function AddPianoPage() {
     }
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
-    const validFiles = files.filter(file => {
-      const isValidType = file.type.startsWith('image/')
-      const isValidSize = file.size <= 10 * 1024 * 1024 // 10MB limit
-      return isValidType && isValidSize
-    })
+  const handleLocationSearch = async (query: string) => {
+    // Clear any existing timeout
+    if (searchTimeout) {
+      clearTimeout(searchTimeout)
+    }
 
+    setFormData(prev => ({ ...prev, location_name: query }))
+
+    // If query is empty, hide suggestions
+    if (!query.trim()) {
+      setLocationSuggestions([])
+      setShowSuggestions(false)
+      return
+    }
+
+    // Debounce the search
+    const timeout = setTimeout(async () => {
+      try {
+        const suggestions = await GeocodingService.searchLocations(query)
+        setLocationSuggestions(suggestions)
+        setShowSuggestions(suggestions.length > 0)
+      } catch (error) {
+        console.error('Location search error:', error)
+        setLocationSuggestions([])
+        setShowSuggestions(false)
+      }
+    }, 300)
+
+    setSearchTimeout(timeout)
+  }
+
+  const handleLocationSelect = (suggestion: LocationSuggestion) => {
     setFormData(prev => ({
       ...prev,
-      images: [...prev.images, ...validFiles].slice(0, 5) // Max 5 images
+      location_name: suggestion.address,
+      latitude: suggestion.latitude,
+      longitude: suggestion.longitude
     }))
+    setLocationSuggestions([])
+    setShowSuggestions(false)
+    
+    // Clear coordinate error if it existed
+    if (errors.coordinates) {
+      setErrors(prev => ({ ...prev, coordinates: '' }))
+    }
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    
+    for (const file of files) {
+      // Validate file
+      if (!file.type.startsWith('image/')) {
+        console.warn(`Skipping ${file.name}: Not an image file`)
+        continue
+      }
+      
+      if (file.size > 10 * 1024 * 1024) {
+        console.warn(`Skipping ${file.name}: File too large (>10MB)`)
+        continue
+      }
+      
+      if (formData.images.length >= 5) {
+        console.warn('Maximum 5 images allowed')
+        break
+      }
+
+      try {
+        // Compress image if it's large
+        let processedFile = file
+        if (file.size > 2 * 1024 * 1024) { // If larger than 2MB
+          console.log(`Compressing ${file.name}...`)
+          processedFile = await ImageUploadService.compressImage(file)
+        }
+
+        setFormData(prev => ({
+          ...prev,
+          images: [...prev.images, processedFile]
+        }))
+      } catch (error) {
+        console.error(`Error processing ${file.name}:`, error)
+      }
+    }
+
+    // Clear the input so the same file can be selected again
+    e.target.value = ''
   }
 
   const removeImage = (index: number) => {
@@ -101,16 +182,38 @@ export function AddPianoPage() {
             longitude
           }))
           
-          // Try to get address from coordinates (mock implementation)
+          // Try to get address from coordinates using reverse geocoding
           try {
-            // In a real app, this would use Google Geocoding API
-            const mockAddress = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
-            setFormData(prev => ({
-              ...prev,
-              location_name: prev.location_name || mockAddress
-            }))
+            const reverseGeocodingUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`
+            const response = await fetch(reverseGeocodingUrl, {
+              headers: {
+                'User-Agent': 'WorldPianos/1.0 (https://worldpianos.org)'
+              }
+            })
+            
+            if (response.ok) {
+              const data = await response.json()
+              const address = data.display_name || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+              setFormData(prev => ({
+                ...prev,
+                location_name: prev.location_name || address
+              }))
+            } else {
+              throw new Error('Reverse geocoding failed')
+            }
           } catch (error) {
             console.error('Error getting address:', error)
+            // Fall back to coordinates
+            const coordsAddress = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+            setFormData(prev => ({
+              ...prev,
+              location_name: prev.location_name || coordsAddress
+            }))
+          }
+          
+          // Clear coordinate error if it existed
+          if (errors.coordinates) {
+            setErrors(prev => ({ ...prev, coordinates: '' }))
           }
           
           setLocationLoading(false)
@@ -144,6 +247,10 @@ export function AddPianoPage() {
       newErrors.location_name = 'Location is required'
     }
 
+    if (!formData.latitude || !formData.longitude) {
+      newErrors.coordinates = 'Please use "Use My Location" button or enter a valid address to get coordinates'
+    }
+
     if (!formData.category) {
       newErrors.category = 'Category is required'
     }
@@ -167,14 +274,49 @@ export function AddPianoPage() {
       return
     }
 
+    if (!formData.latitude || !formData.longitude) {
+      setErrors({ location: 'Please provide coordinates for the piano location.' })
+      return
+    }
+
     setLoading(true)
     
     try {
-      // In a real app, this would submit to Supabase
       console.log('Submitting piano:', formData)
       
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Prepare piano data for submission
+      const pianoData = {
+        name: formData.name.trim(),
+        description: formData.description.trim() || null,
+        location_name: formData.location_name.trim(),
+        latitude: formData.latitude,
+        longitude: formData.longitude,
+        category: formData.category,
+        condition: formData.condition.toLowerCase() as any,
+        accessibility: formData.accessibility.trim() || null,
+        hours_available: formData.hours.trim() || null,
+        verified: false,
+        submitted_by: user?.id,
+        moderation_status: 'pending' as any,
+        updated_at: new Date().toISOString()
+      }
+      
+      // Create piano in database
+      const newPiano = await DataService.createPiano(pianoData)
+      console.log('Piano created successfully:', newPiano)
+      
+      // Upload images if any were selected
+      if (formData.images.length > 0) {
+        try {
+          console.log('Uploading images to Supabase storage...')
+          await ImageUploadService.uploadAndCreateRecords(formData.images, newPiano.id)
+          console.log('Images uploaded successfully')
+        } catch (imageError) {
+          console.error('Image upload failed:', imageError)
+          // Don't fail the whole submission for image upload errors
+          // Piano was already created successfully
+        }
+      }
       
       // Navigate to success page or piano list
       navigate('/pianos', { 
@@ -211,9 +353,9 @@ export function AddPianoPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-4 md:py-8">
         <div className="max-w-2xl mx-auto">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
             {/* Basic Information */}
             <div className="card bg-base-100 shadow-xl">
               <div className="card-body">
@@ -326,22 +468,59 @@ export function AddPianoPage() {
                   <label className="label">
                     <span className="label-text font-medium">Address/Location *</span>
                   </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Enter the full address or location description"
-                      className={`input input-bordered flex-1 ${errors.location_name ? 'input-error' : ''}`}
-                      value={formData.location_name}
-                      onChange={(e) => handleInputChange('location_name', e.target.value)}
-                    />
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        type="text"
+                        placeholder="Enter the full address or location description"
+                        className={`input input-bordered w-full ${errors.location_name ? 'input-error' : ''}`}
+                        value={formData.location_name}
+                        onChange={(e) => handleLocationSearch(e.target.value)}
+                        onFocus={() => {
+                          if (locationSuggestions.length > 0) {
+                            setShowSuggestions(true)
+                          }
+                        }}
+                        onBlur={() => {
+                          // Delay hiding suggestions to allow clicking on them
+                          setTimeout(() => setShowSuggestions(false), 200)
+                        }}
+                      />
+                      
+                      {/* Location Suggestions Dropdown */}
+                      {showSuggestions && locationSuggestions.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 bg-base-100 border border-base-300 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+                          {locationSuggestions.map((suggestion) => (
+                            <button
+                              key={suggestion.id}
+                              type="button"
+                              className="w-full text-left px-4 py-3 hover:bg-base-200 focus:bg-base-200 border-b border-base-200 last:border-b-0"
+                              onClick={() => handleLocationSelect(suggestion)}
+                            >
+                              <div className="flex items-start gap-2">
+                                <MapPin className="w-4 h-4 mt-0.5 text-base-content/50 flex-shrink-0" />
+                                <div>
+                                  <div className="font-medium text-sm">{suggestion.place_name}</div>
+                                  <div className="text-xs text-base-content/60 mt-1">
+                                    {suggestion.latitude.toFixed(4)}, {suggestion.longitude.toFixed(4)}
+                                  </div>
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    
                     <button
                       type="button"
                       onClick={getCurrentLocation}
-                      className={`btn btn-outline ${locationLoading ? 'loading' : ''}`}
+                      className={`btn btn-outline ${locationLoading ? 'loading' : ''} sm:btn-md btn-sm`}
                       disabled={locationLoading}
                     >
                       {!locationLoading && <MapPin className="w-4 h-4" />}
-                      Use My Location
+                      <span className="hidden sm:inline">Use My Location</span>
+                      <span className="sm:hidden">Location</span>
                     </button>
                   </div>
                   {errors.location_name && (
@@ -367,6 +546,15 @@ export function AddPianoPage() {
                     <Check className="w-4 h-4" />
                     <span>Location coordinates captured: {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}</span>
                   </div>
+                )}
+
+                {errors.coordinates && (
+                  <label className="label">
+                    <span className="label-text-alt text-error flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      {errors.coordinates}
+                    </span>
+                  </label>
                 )}
               </div>
             </div>
@@ -394,13 +582,59 @@ export function AddPianoPage() {
                     <label className="label">
                       <span className="label-text font-medium">Operating Hours</span>
                     </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 9:00 AM - 6:00 PM, 24/7"
-                      className="input input-bordered"
-                      value={formData.hours}
-                      onChange={(e) => handleInputChange('hours', e.target.value)}
-                    />
+                    
+                    <div className="flex flex-col gap-3">
+                      <div className="flex gap-2">
+                        <label className="cursor-pointer label flex-1">
+                          <span className="label-text">Preset Hours</span>
+                          <input
+                            type="radio"
+                            name="hoursType"
+                            value="preset"
+                            checked={hoursType === 'preset'}
+                            onChange={(e) => setHoursType(e.target.value as 'preset')}
+                            className="radio radio-primary"
+                          />
+                        </label>
+                        <label className="cursor-pointer label flex-1">
+                          <span className="label-text">Custom Hours</span>
+                          <input
+                            type="radio"
+                            name="hoursType"
+                            value="custom"
+                            checked={hoursType === 'custom'}
+                            onChange={(e) => setHoursType(e.target.value as 'custom')}
+                            className="radio radio-primary"
+                          />
+                        </label>
+                      </div>
+
+                      {hoursType === 'preset' ? (
+                        <select
+                          className="select select-bordered"
+                          value={formData.hours}
+                          onChange={(e) => handleInputChange('hours', e.target.value)}
+                        >
+                          <option value="">Select operating hours</option>
+                          <option value="24/7">24/7 (Always Available)</option>
+                          <option value="6:00 AM - 10:00 PM">6:00 AM - 10:00 PM</option>
+                          <option value="7:00 AM - 11:00 PM">7:00 AM - 11:00 PM</option>
+                          <option value="8:00 AM - 8:00 PM">8:00 AM - 8:00 PM</option>
+                          <option value="9:00 AM - 5:00 PM">9:00 AM - 5:00 PM (Business Hours)</option>
+                          <option value="10:00 AM - 6:00 PM">10:00 AM - 6:00 PM</option>
+                          <option value="Varies">Varies by Day</option>
+                          <option value="Unknown">Unknown</option>
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          placeholder="e.g. Mon-Fri 9AM-5PM, Sat 10AM-4PM, Sun Closed"
+                          className="input input-bordered"
+                          value={formData.hours}
+                          onChange={(e) => handleInputChange('hours', e.target.value)}
+                        />
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -437,20 +671,20 @@ export function AddPianoPage() {
                   </div>
 
                   {formData.images.length > 0 && (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 mt-4">
                       {formData.images.map((file, index) => (
                         <div key={index} className="relative">
                           <img
                             src={URL.createObjectURL(file)}
                             alt={`Preview ${index + 1}`}
-                            className="w-full h-24 object-cover rounded-lg"
+                            className="w-full h-20 sm:h-24 object-cover rounded-lg"
                           />
                           <button
                             type="button"
                             onClick={() => removeImage(index)}
-                            className="absolute -top-2 -right-2 btn btn-circle btn-sm btn-error"
+                            className="absolute -top-1 -right-1 btn btn-circle btn-xs sm:btn-sm btn-error"
                           >
-                            <X className="w-3 h-3" />
+                            <X className="w-2 h-2 sm:w-3 sm:h-3" />
                           </button>
                         </div>
                       ))}
@@ -483,13 +717,13 @@ export function AddPianoPage() {
                   </div>
                 </div>
 
-                <div className="flex gap-4 justify-end">
-                  <Link to="/pianos" className="btn btn-ghost">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 justify-end">
+                  <Link to="/pianos" className="btn btn-ghost order-2 sm:order-1">
                     Cancel
                   </Link>
                   <button
                     type="submit"
-                    className={`btn btn-primary ${loading ? 'loading' : ''}`}
+                    className={`btn btn-primary order-1 sm:order-2 ${loading ? 'loading' : ''}`}
                     disabled={loading}
                   >
                     {!loading && <Save className="w-4 h-4 mr-2" />}

@@ -1,8 +1,15 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
-import { supabase } from '../../lib/supabase'
+import { shouldUseMockData, supabase } from '../../lib/supabase'
 import type { User } from '../../types'
 import { MockDataService } from '../../data/mockData'
+import { 
+  directSignIn, 
+  directSignUp, 
+  directSignOut, 
+  getStoredSession, 
+  getOrCreateUserProfile 
+} from '../../utils/directAuth'
 
 interface AuthContextType {
   user: User | null
@@ -10,6 +17,7 @@ interface AuthContextType {
   loading: boolean
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string, userData: any) => Promise<void>
+  signInWithOAuth: (provider: 'google' | 'facebook') => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -22,7 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Check if we're using mock data
-    if (MockDataService.isUsingMockData()) {
+    if (shouldUseMockData('supabase')) {
       // For demo purposes, set a mock user
       MockDataService.getCurrentUser().then(mockUser => {
         setUser(mockUser)
@@ -31,25 +39,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSupabaseUser(session?.user ?? null)
-      if (session?.user) {
-        fetchUserProfile(session.user.id)
-      } else {
+    // Check for existing session using both direct auth and Supabase
+    const initializeAuth = async () => {
+      try {
+        console.log('[AUTH] Initializing authentication...')
+        
+        // First try to get current session from Supabase (for OAuth)
+        const { data: { session } } = await supabase.auth.getSession()
+        
+        if (session?.user) {
+          console.log('[AUTH] Found existing Supabase session for:', session.user.email)
+          setSupabaseUser(session.user)
+          const profile = await getOrCreateUserProfile(session.user)
+          setUser(profile)
+        } else {
+          // Fallback to stored session (for email/password auth)
+          const storedSession = getStoredSession()
+          
+          if (storedSession?.user) {
+            console.log('[AUTH] Found existing stored session for:', storedSession.user.email)
+            setSupabaseUser(storedSession.user)
+            const profile = await getOrCreateUserProfile(storedSession.user)
+            setUser(profile)
+          } else {
+            console.log('[AUTH] No existing session found')
+          }
+        }
+      } catch (error) {
+        console.error('[AUTH] Error initializing auth:', error)
+      } finally {
         setLoading(false)
       }
-    })
+    }
 
-    // Listen for auth changes
+    initializeAuth()
+
+    // Listen for auth changes (important for OAuth)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSupabaseUser(session?.user ?? null)
+      async (event, session) => {
+        console.log('[AUTH] Auth state changed:', event)
+        
         if (session?.user) {
-          await fetchUserProfile(session.user.id)
+          setSupabaseUser(session.user)
+          const profile = await getOrCreateUserProfile(session.user)
+          setUser(profile)
         } else {
+          setSupabaseUser(null)
           setUser(null)
-          setLoading(false)
         }
       }
     )
@@ -57,40 +93,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  const fetchUserProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single()
-
-      if (error) throw error
-      setUser(data)
-    } catch (error) {
-      console.error('Error fetching user profile:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const signIn = async (email: string, password: string) => {
-    if (MockDataService.isUsingMockData()) {
+    if (shouldUseMockData('supabase')) {
       // Mock sign in - just set the admin user
       const mockUser = await MockDataService.getCurrentUser()
       setUser(mockUser)
       return
     }
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-    if (error) throw error
+    console.log('[AUTH] Signing in with:', email)
+    const { session, error } = await directSignIn(email, password)
+    
+    if (error) {
+      console.error('[AUTH] Sign in failed:', error)
+      throw new Error(error.message)
+    }
+
+    if (session?.user) {
+      console.log('[AUTH] Sign in successful')
+      setSupabaseUser(session.user)
+      const profile = await getOrCreateUserProfile(session.user)
+      setUser(profile)
+    }
   }
 
   const signUp = async (email: string, password: string, userData: any) => {
-    if (MockDataService.isUsingMockData()) {
+    if (shouldUseMockData('supabase')) {
       // Mock sign up
       const newUser: User = {
         id: Date.now().toString(),
@@ -100,7 +129,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         avatar_url: null,
         bio: null,
         location: null,
+        website: null,
         role: 'user',
+        email_verified: false,
+        last_login: new Date().toISOString(),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }
@@ -108,24 +140,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
+    console.log('[AUTH] Signing up with:', email)
+    const { session, error } = await directSignUp(email, password, userData)
+    
+    if (error) {
+      console.error('[AUTH] Sign up failed:', error)
+      throw new Error(error.message)
+    }
+
+    if (session?.user) {
+      console.log('[AUTH] Sign up successful')
+      setSupabaseUser(session.user)
+      const profile = await getOrCreateUserProfile(session.user)
+      setUser(profile)
+    }
+  }
+
+  const signInWithOAuth = async (provider: 'google' | 'facebook') => {
+    if (shouldUseMockData('supabase')) {
+      // Mock OAuth sign in - just set a demo user
+      const mockUser = await MockDataService.getCurrentUser()
+      setUser(mockUser)
+      return
+    }
+
+    console.log(`[AUTH] Starting OAuth sign in with ${provider}`)
+    
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: provider,
       options: {
-        data: userData
+        redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        }
       }
     })
-    if (error) throw error
+
+    if (error) {
+      console.error(`[AUTH] ${provider} OAuth error:`, error)
+      throw new Error(error.message)
+    }
+
+    console.log(`[AUTH] ${provider} OAuth redirect initiated`)
   }
 
   const signOut = async () => {
-    if (MockDataService.isUsingMockData()) {
+    if (shouldUseMockData('supabase')) {
       setUser(null)
       return
     }
 
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
+    console.log('[AUTH] Signing out')
+    const { error } = await directSignOut()
+    
+    if (error) {
+      console.error('[AUTH] Sign out error:', error)
+      // Don't throw error for signout - just clear local state
+    }
+
+    // Clear local state
+    setUser(null)
+    setSupabaseUser(null)
+    console.log('[AUTH] Sign out completed')
   }
 
   const value = {
@@ -134,6 +211,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     signIn,
     signUp,
+    signInWithOAuth,
     signOut,
   }
 

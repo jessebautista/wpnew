@@ -1,3 +1,5 @@
+import { shouldUseMockData, supabase } from '../lib/supabase'
+
 export interface NewsletterSubscriber {
   id: string
   email: string
@@ -78,51 +80,152 @@ export class NewsletterService {
     source: string = 'website',
     preferences?: Partial<NewsletterSubscriber['preferences']>
   ): Promise<NewsletterSubscriber> {
-    // Check if already subscribed
-    const existing = this.subscribers.find(sub => sub.email === email)
-    if (existing) {
-      if (existing.status === 'unsubscribed') {
-        // Resubscribe
-        existing.status = 'active'
-        existing.subscribed_at = new Date().toISOString()
-        existing.unsubscribed_at = undefined
-        if (preferences) {
-          existing.preferences = { ...existing.preferences, ...preferences }
+    if (shouldUseMockData('supabase')) {
+      console.log('[MOCK] Newsletter subscription')
+      // Check if already subscribed
+      const existing = this.subscribers.find(sub => sub.email === email)
+      if (existing) {
+        if (existing.status === 'unsubscribed') {
+          // Resubscribe
+          existing.status = 'active'
+          existing.subscribed_at = new Date().toISOString()
+          existing.unsubscribed_at = undefined
+          if (preferences) {
+            existing.preferences = { ...existing.preferences, ...preferences }
+          }
+          return existing
         }
-        return existing
+        throw new Error('Email already subscribed')
       }
-      throw new Error('Email already subscribed')
+
+      const subscriber: NewsletterSubscriber = {
+        id: `sub-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        email,
+        first_name: firstName,
+        last_name: lastName,
+        status: 'active',
+        source,
+        subscribed_at: new Date().toISOString(),
+        preferences: {
+          weekly_digest: true,
+          event_notifications: true,
+          new_piano_alerts: true,
+          blog_updates: true,
+          ...preferences
+        },
+        tags: [source]
+      }
+
+      this.subscribers.push(subscriber)
+      return subscriber
     }
 
-    const subscriber: NewsletterSubscriber = {
-      id: `sub-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      email,
-      first_name: firstName,
-      last_name: lastName,
-      status: 'active',
-      source,
-      subscribed_at: new Date().toISOString(),
-      preferences: {
-        weekly_digest: true,
-        event_notifications: true,
-        new_piano_alerts: true,
-        blog_updates: true,
-        ...preferences
-      },
-      tags: [source]
-    }
+    try {
+      console.log('[SUPABASE] Newsletter subscription')
+      
+      // Check if already subscribed
+      const { data: existing, error: checkError } = await supabase
+        .from('newsletter_subscriptions')
+        .select('*')
+        .eq('email', email)
+        .single()
 
-    this.subscribers.push(subscriber)
-    return subscriber
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('Error checking existing subscription:', checkError)
+        throw checkError
+      }
+
+      if (existing) {
+        if (existing.status === 'unsubscribed') {
+          // Resubscribe
+          const { data: updated, error: updateError } = await supabase
+            .from('newsletter_subscriptions')
+            .update({
+              status: 'active',
+              subscribed_at: new Date().toISOString(),
+              unsubscribed_at: null,
+              preferences: preferences ? { ...existing.preferences, ...preferences } : existing.preferences
+            })
+            .eq('id', existing.id)
+            .select()
+            .single()
+
+          if (updateError) throw updateError
+          return updated
+        }
+        throw new Error('Email already subscribed')
+      }
+
+      // Create new subscription
+      const newSubscription = {
+        email,
+        first_name: firstName || null,
+        last_name: lastName || null,
+        status: 'active' as const,
+        source,
+        subscribed_at: new Date().toISOString(),
+        preferences: {
+          weekly_digest: true,
+          event_notifications: true,
+          new_piano_alerts: true,
+          blog_updates: true,
+          ...preferences
+        },
+        tags: [source]
+      }
+
+      const { data, error } = await supabase
+        .from('newsletter_subscriptions')
+        .insert([newSubscription])
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error creating newsletter subscription:', error)
+        throw error
+      }
+
+      console.log('[SUPABASE] Newsletter subscription created successfully:', data.id)
+      return data
+    } catch (error) {
+      console.error('Newsletter subscription error:', error)
+      // Fallback to mock data
+      return this.subscribe(email, firstName, lastName, source, preferences)
+    }
   }
 
   static async unsubscribe(email: string): Promise<boolean> {
-    const subscriber = this.subscribers.find(sub => sub.email === email)
-    if (!subscriber) return false
+    if (shouldUseMockData('supabase')) {
+      console.log('[MOCK] Newsletter unsubscribe')
+      const subscriber = this.subscribers.find(sub => sub.email === email)
+      if (!subscriber) return false
 
-    subscriber.status = 'unsubscribed'
-    subscriber.unsubscribed_at = new Date().toISOString()
-    return true
+      subscriber.status = 'unsubscribed'
+      subscriber.unsubscribed_at = new Date().toISOString()
+      return true
+    }
+
+    try {
+      console.log('[SUPABASE] Newsletter unsubscribe')
+      const { error } = await supabase
+        .from('newsletter_subscriptions')
+        .update({
+          status: 'unsubscribed',
+          unsubscribed_at: new Date().toISOString()
+        })
+        .eq('email', email)
+
+      if (error) {
+        console.error('Error unsubscribing:', error)
+        return false
+      }
+
+      console.log('[SUPABASE] Successfully unsubscribed:', email)
+      return true
+    } catch (error) {
+      console.error('Newsletter unsubscribe error:', error)
+      return false
+    }
   }
 
   static async updateSubscriber(

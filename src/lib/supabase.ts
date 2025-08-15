@@ -1,7 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
+import { getEnvironmentConfig, logConfigurationStatus } from '../config/environment'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key'
+const config = getEnvironmentConfig()
+
+// Log configuration status in development
+logConfigurationStatus()
+
+const supabaseUrl = config.supabase.url || 'https://placeholder.supabase.co'
+const supabaseAnonKey = config.supabase.anonKey || 'placeholder-key'
 
 // Create client - we'll add typing later when needed
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -11,3 +17,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: true
   }
 })
+
+// Export configuration helpers
+export { shouldUseMockData } from '../config/environment'

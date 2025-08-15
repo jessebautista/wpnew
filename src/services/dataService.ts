@@ -5,7 +5,7 @@
 
 import { shouldUseMockData } from '../lib/supabase'
 import { supabase } from '../lib/supabase'
-import type { Piano, Event, BlogPost, User } from '../types'
+import type { Piano, Event, BlogPost, User, EventAttendee } from '../types'
 
 // Mock data
 const mockPianos: Piano[] = [
@@ -700,6 +700,292 @@ export class DataService {
         totalBlogPosts: mockBlogPosts.length,
         totalUsers: 150
       }
+    }
+  }
+
+  /**
+   * Toggle user interest in an event (email-based)
+   */
+  static async toggleEventInterest(eventId: string, userIdOrEmail: string, isEmail: boolean = false): Promise<{ isInterested: boolean; attendeeCount: number }> {
+    if (shouldUseMockData('supabase')) {
+      console.log(`[MOCK] Toggling interest for event ${eventId} and ${isEmail ? 'email' : 'user'} ${userIdOrEmail}`)
+      // Mock implementation - just return random state
+      return Promise.resolve({ 
+        isInterested: Math.random() > 0.5, 
+        attendeeCount: Math.floor(Math.random() * 50) + 1 
+      })
+    }
+
+    try {
+      console.log(`[SUPABASE] Toggling interest for event ${eventId} and ${isEmail ? 'email' : 'user'} ${userIdOrEmail}`)
+      
+      let queryBuilder = supabase
+        .from('event_attendees')
+        .select('*')
+        .eq('event_id', eventId)
+
+      // Check if user is already interested based on user_id or email
+      if (isEmail) {
+        queryBuilder = queryBuilder.eq('email', userIdOrEmail).is('user_id', null)
+      } else {
+        queryBuilder = queryBuilder.eq('user_id', userIdOrEmail)
+      }
+
+      const { data: existing, error: checkError } = await queryBuilder.maybeSingle()
+
+      if (checkError) {
+        console.error('Error checking existing attendance:', checkError)
+        throw checkError
+      }
+
+      if (existing) {
+        // User is already interested, remove interest
+        console.log(`[SUPABASE] Removing interest for existing record:`, existing.id)
+        const { error: deleteError } = await supabase
+          .from('event_attendees')
+          .delete()
+          .eq('id', existing.id)
+
+        if (deleteError) {
+          console.error('Error removing interest:', deleteError)
+          throw deleteError
+        }
+
+        // Get updated attendee count from event
+        const updatedEvent = await this.getEvent(eventId)
+        console.log(`[SUPABASE] Successfully removed interest for event ${eventId}`)
+        return { isInterested: false, attendeeCount: updatedEvent?.attendee_count || 0 }
+      } else {
+        // User is not interested, add interest
+        console.log(`[SUPABASE] Adding interest for event ${eventId}`)
+        
+        const insertData = isEmail ? {
+          event_id: eventId,
+          email: userIdOrEmail,
+          user_id: null,
+          status: 'interested'
+        } : {
+          event_id: eventId,
+          user_id: userIdOrEmail,
+          email: null,
+          status: 'interested'
+        }
+
+        const { error: insertError } = await supabase
+          .from('event_attendees')
+          .insert([insertData])
+
+        if (insertError) {
+          console.error('Error adding interest:', insertError)
+          throw insertError
+        }
+
+        // Get updated attendee count from event
+        const updatedEvent = await this.getEvent(eventId)
+        console.log(`[SUPABASE] Successfully added interest for event ${eventId}`)
+        return { isInterested: true, attendeeCount: updatedEvent?.attendee_count || 0 }
+      }
+    } catch (error) {
+      console.error('Error toggling event interest:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Check if user/email is interested in an event
+   */
+  static async checkEventInterest(eventId: string, userIdOrEmail: string, isEmail: boolean = false): Promise<boolean> {
+    if (shouldUseMockData('supabase')) {
+      return Promise.resolve(false)
+    }
+
+    try {
+      let queryBuilder = supabase
+        .from('event_attendees')
+        .select('id')
+        .eq('event_id', eventId)
+
+      if (isEmail) {
+        queryBuilder = queryBuilder.eq('email', userIdOrEmail).is('user_id', null)
+      } else {
+        queryBuilder = queryBuilder.eq('user_id', userIdOrEmail)
+      }
+
+      const { data, error } = await queryBuilder.maybeSingle()
+
+      if (error) {
+        console.error('Error checking event interest:', error)
+        return false
+      }
+
+      return !!data
+    } catch (error) {
+      console.error('Error checking event interest:', error)
+      return false
+    }
+  }
+
+  /**
+   * Get user's attendance status for an event
+   */
+  static async getEventAttendance(eventId: string, userId: string): Promise<EventAttendee | null> {
+    if (shouldUseMockData('supabase')) {
+      console.log(`[MOCK] Getting attendance for event ${eventId} and user ${userId}`)
+      return Promise.resolve(null)
+    }
+
+    try {
+      console.log(`[SUPABASE] Getting attendance for event ${eventId} and user ${userId}`)
+      
+      // Verify authentication
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError || !session) {
+        console.log('[SUPABASE] User not authenticated for attendance check')
+        return null
+      }
+
+      const { data, error } = await supabase
+        .from('event_attendees')
+        .select('*')
+        .eq('event_id', eventId)
+        .eq('user_id', userId)
+        .maybeSingle()
+
+      if (error) {
+        console.error('Error getting event attendance:', error)
+        return null
+      }
+
+      return data || null
+    } catch (error) {
+      console.error('Error getting event attendance:', error)
+      return null
+    }
+  }
+
+  /**
+   * Get all attendees for an event
+   */
+  static async getEventAttendees(eventId: string): Promise<EventAttendee[]> {
+    if (shouldUseMockData('supabase')) {
+      console.log(`[MOCK] Getting attendees for event ${eventId}`)
+      return Promise.resolve([])
+    }
+
+    try {
+      console.log(`[SUPABASE] Getting attendees for event ${eventId}`)
+      
+      const { data, error } = await supabase
+        .from('event_attendees')
+        .select(`
+          *,
+          user:users(id, full_name, username, avatar_url)
+        `)
+        .eq('event_id', eventId)
+        .order('registered_at', { ascending: false })
+
+      if (error) throw error
+
+      console.log(`[SUPABASE] Successfully fetched ${data?.length || 0} attendees for event`)
+      return data || []
+    } catch (error) {
+      console.error('Error fetching event attendees:', error)
+      return []
+    }
+  }
+
+  /**
+   * Update user's attendance status for an event
+   */
+  static async updateEventAttendance(eventId: string, userId: string, status: EventAttendee['status']): Promise<EventAttendee> {
+    if (shouldUseMockData('supabase')) {
+      console.log(`[MOCK] Updating attendance status to ${status} for event ${eventId} and user ${userId}`)
+      const mockAttendee: EventAttendee = {
+        id: `mock-${Date.now()}`,
+        event_id: eventId,
+        user_id: userId,
+        status,
+        registered_at: new Date().toISOString(),
+        checked_in: false,
+        checked_in_at: null,
+        notes: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+      return Promise.resolve(mockAttendee)
+    }
+
+    try {
+      console.log(`[SUPABASE] Updating attendance status to ${status} for event ${eventId} and user ${userId}`)
+      
+      // Try to update existing record first
+      const { data: updateData, error: updateError } = await supabase
+        .from('event_attendees')
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq('event_id', eventId)
+        .eq('user_id', userId)
+        .select()
+        .single()
+
+      if (updateError && updateError.code === 'PGRST116') {
+        // No existing record, create new one
+        const { data: insertData, error: insertError } = await supabase
+          .from('event_attendees')
+          .insert([{
+            event_id: eventId,
+            user_id: userId,
+            status
+          }])
+          .select()
+          .single()
+
+        if (insertError) throw insertError
+        console.log(`[SUPABASE] Created new attendance record with status ${status}`)
+        return insertData
+      } else if (updateError) {
+        throw updateError
+      }
+
+      console.log(`[SUPABASE] Updated attendance status to ${status}`)
+      return updateData
+    } catch (error) {
+      console.error('Error updating event attendance:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Get events with user's attendance status
+   */
+  static async getEventsWithAttendance(userId?: string): Promise<Event[]> {
+    const events = await this.getEvents()
+    
+    if (!userId || shouldUseMockData('supabase')) {
+      return events
+    }
+
+    try {
+      // Get user's attendance for all events
+      const { data: attendances, error } = await supabase
+        .from('event_attendees')
+        .select('*')
+        .eq('user_id', userId)
+
+      if (error) {
+        console.error('Error fetching user attendances:', error)
+        return events
+      }
+
+      // Map attendance data to events
+      const attendanceMap = new Map(attendances?.map(a => [a.event_id, a]) || [])
+      
+      return events.map(event => ({
+        ...event,
+        userAttendance: attendanceMap.get(event.id) || undefined
+      }))
+    } catch (error) {
+      console.error('Error getting events with attendance:', error)
+      return events
     }
   }
 }

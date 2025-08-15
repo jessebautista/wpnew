@@ -46,17 +46,45 @@ export interface Event {
   title: string
   description: string | null
   date: string
+  end_date?: string | null
   location_name: string
+  address?: string | null
   latitude: number | null
   longitude: number | null
+  piano_id?: string | null
   category: string
+  max_attendees?: number | null
+  is_virtual?: boolean
+  meeting_url?: string | null
+  organizer_id?: string | null
   organizer: string | null
+  contact_email?: string | null
+  contact_phone?: string | null
+  moderation_status: 'pending' | 'approved' | 'rejected'
+  status: 'upcoming' | 'completed' | 'cancelled'
   verified: boolean
+  attendee_count: number
   created_by: string
   verified_by: string | null
   created_at: string
   updated_at: string
   author?: User
+  userAttendance?: EventAttendee
+}
+
+export interface EventAttendee {
+  id: string
+  event_id: string
+  user_id: string
+  status: 'interested' | 'attending' | 'not_attending' | 'cancelled'
+  registered_at: string
+  checked_in: boolean
+  checked_in_at: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+  user?: User
+  event?: Event
 }
 
 export interface BlogPost {

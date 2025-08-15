@@ -161,13 +161,17 @@ export function BlogPage() {
   return (
     <div className="min-h-screen bg-base-100">
       {/* Header */}
-      <div className="bg-accent text-accent-content py-12">
-        <div className="container mx-auto px-4">
-          <h1 className="text-4xl font-bold mb-4">
+      <div 
+        className="bg-accent text-accent-content py-12 bg-cover bg-center bg-no-repeat relative"
+        style={{ backgroundImage: `url('/hero.png')` }}
+      >
+        <div className="absolute inset-0 bg-black bg-opacity-50"></div>
+        <div className="container mx-auto px-4 relative z-10">
+          <h1 className="text-4xl font-bold mb-4 text-white">
             <BookOpen className="inline w-8 h-8 mr-3" />
             Piano Blog
           </h1>
-          <p className="text-xl">Stories, news, and insights from the world of public pianos</p>
+          <p className="text-xl text-white">Stories, news, and insights from the world of public pianos</p>
         </div>
       </div>
 

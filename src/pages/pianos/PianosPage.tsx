@@ -95,13 +95,17 @@ export function PianosPage() {
   return (
     <div className="min-h-screen bg-base-100">
       {/* Header */}
-      <div className="bg-primary text-primary-content py-12">
-        <div className="container mx-auto px-4">
-          <h1 className="text-4xl font-bold mb-4">
+      <div 
+        className="bg-primary text-primary-content py-12 bg-cover bg-center bg-no-repeat relative"
+        style={{ backgroundImage: `url('/hero-pianos.png')` }}
+      >
+        <div className="absolute inset-0 bg-black bg-opacity-50"></div>
+        <div className="container mx-auto px-4 relative z-10">
+          <h1 className="text-4xl font-bold mb-4 text-white">
             <Piano className="inline w-8 h-8 mr-3" />
             Public Pianos Directory
           </h1>
-          <p className="text-xl">Discover playable pianos around the world</p>
+          <p className="text-xl text-white">Discover playable pianos around the world</p>
         </div>
       </div>
 

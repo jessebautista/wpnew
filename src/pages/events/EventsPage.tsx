@@ -118,13 +118,17 @@ export function EventsPage() {
   return (
     <div className="min-h-screen bg-base-100">
       {/* Header */}
-      <div className="bg-secondary text-secondary-content py-12">
-        <div className="container mx-auto px-4">
-          <h1 className="text-4xl font-bold mb-4">
+      <div 
+        className="bg-secondary text-secondary-content py-12 bg-cover bg-center bg-no-repeat relative"
+        style={{ backgroundImage: `url('/hero-events.png')` }}
+      >
+        <div className="absolute inset-0 bg-black bg-opacity-50"></div>
+        <div className="container mx-auto px-4 relative z-10">
+          <h1 className="text-4xl font-bold mb-4 text-white">
             <Calendar className="inline w-8 h-8 mr-3" />
             Piano Events
           </h1>
-          <p className="text-xl">Discover piano-related events in your area</p>
+          <p className="text-xl text-white">Discover piano-related events in your area</p>
         </div>
       </div>
 

@@ -336,18 +336,22 @@ export function AddPianoPage() {
   return (
     <div className="min-h-screen bg-base-100">
       {/* Header */}
-      <div className="bg-primary text-primary-content py-8">
-        <div className="container mx-auto px-4">
-          <Link to="/pianos" className="btn btn-ghost btn-sm mb-4">
+      <div 
+        className="bg-primary text-primary-content py-8 bg-cover bg-center bg-no-repeat relative"
+        style={{ backgroundImage: `url('/hero-pianos.png')` }}
+      >
+        <div className="absolute inset-0 bg-black bg-opacity-50"></div>
+        <div className="container mx-auto px-4 relative z-10">
+          <Link to="/pianos" className="btn btn-ghost btn-sm mb-4 text-white hover:bg-white hover:bg-opacity-20">
             <ChevronLeft className="w-4 h-4 mr-1" />
             Back to Pianos
           </Link>
           
           <div className="flex items-center gap-3">
-            <Piano className="w-8 h-8" />
+            <Piano className="w-8 h-8 text-white" />
             <div>
-              <h1 className="text-3xl font-bold">Add a Piano</h1>
-              <p className="opacity-90">Share a public piano location with the community</p>
+              <h1 className="text-3xl font-bold text-white">Add a Piano</h1>
+              <p className="opacity-90 text-white">Share a public piano location with the community</p>
             </div>
           </div>
         </div>
@@ -355,6 +359,21 @@ export function AddPianoPage() {
 
       <div className="container mx-auto px-4 py-4 md:py-8">
         <div className="max-w-2xl mx-auto">
+          {/* Progress Steps */}
+          <div className="mb-8">
+            <div className="flex justify-center">
+              <ul className="steps steps-horizontal w-full max-w-lg">
+                <li className="step step-primary">Basic Info</li>
+                <li className="step step-primary">Location</li>
+                <li className="step step-primary">Details</li>
+                <li className="step step-primary">Review</li>
+              </ul>
+            </div>
+            <p className="text-center text-sm text-base-content/60 mt-2">
+              Fill out all sections to submit your piano listing
+            </p>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
             {/* Basic Information */}
             <div className="card bg-base-100 shadow-xl">
@@ -702,9 +721,15 @@ export function AddPianoPage() {
               </div>
             )}
 
-            <div className="card bg-base-100 shadow-xl">
+            {/* Submit Section */}
+            <div className="card bg-gradient-to-r from-primary/5 to-secondary/5 border-primary/20 shadow-xl">
               <div className="card-body">
-                <div className="alert alert-info">
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-bold text-primary mb-2">Ready to Submit?</h2>
+                  <p className="text-base-content/70">Your piano listing will be reviewed and published within 24-48 hours</p>
+                </div>
+
+                <div className="alert alert-info mb-6">
                   <AlertCircle className="w-4 h-4" />
                   <div>
                     <h3 className="font-bold">Before you submit:</h3>
@@ -717,17 +742,18 @@ export function AddPianoPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 justify-end">
-                  <Link to="/pianos" className="btn btn-ghost order-2 sm:order-1">
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Link to="/pianos" className="btn btn-ghost btn-lg order-2 sm:order-1">
+                    <X className="w-4 h-4 mr-2" />
                     Cancel
                   </Link>
                   <button
                     type="submit"
-                    className={`btn btn-primary order-1 sm:order-2 ${loading ? 'loading' : ''}`}
+                    className={`btn btn-primary btn-lg order-1 sm:order-2 ${loading ? 'loading' : ''}`}
                     disabled={loading}
                   >
-                    {!loading && <Save className="w-4 h-4 mr-2" />}
-                    {loading ? 'Submitting...' : 'Submit Piano'}
+                    {!loading && <Save className="w-5 h-5 mr-2" />}
+                    {loading ? 'Submitting...' : 'Submit Piano for Review'}
                   </button>
                 </div>
               </div>

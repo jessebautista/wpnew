@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { 
   Piano, 
@@ -7,43 +8,97 @@ import {
   Music, 
   MapPin,
   Calendar,
-  Share2
+  Target,
+  Lightbulb,
+  ExternalLink
 } from 'lucide-react'
-import { useLanguage } from '../../contexts/LanguageContext'
+
+interface AboutContent {
+  title: string
+  subtitle: string
+  mission: string
+  vision: string
+  story: Array<{
+    title: string
+    text: string
+  }>
+  three_pillars: Array<{
+    name: string
+    description: string
+  }>
+  global_impact: {
+    pianos_mapped: string
+    community_members: string
+    monthly_events: string
+    countries: string
+  }
+  partner: {
+    name: string
+    description: string
+    url: string
+  }
+}
 
 export function AboutPage() {
-  const { } = useLanguage()
-
-  const teamMembers = [
-    {
-      name: 'Sarah Chen',
-      role: 'Founder & CEO',
-      bio: 'Classical pianist turned tech entrepreneur with a passion for making music accessible to everyone.',
-      image: '/images/team/sarah.jpg',
-      location: 'San Francisco, CA'
+  const aboutContent: AboutContent = {
+    title: "About World Pianos",
+    subtitle: "Connecting communities through the universal language of music",
+    mission: "To create a comprehensive global platform that connects piano enthusiasts, maps public pianos worldwide, and fosters musical communities.",
+    vision: "A world where public pianos are accessible in every community, where musicians of all skill levels feel empowered to share their gift, and where spontaneous musical moments create lasting connections between strangers.",
+    story: [
+      {
+        title: "The Beginning",
+        text: "It started with a simple observation: public pianos were appearing in cities worldwide, but there was no central way to find them. Musicians were discovering these musical gems by chance, missing countless opportunities to connect and create."
+      },
+      {
+        title: "Building Community",
+        text: "We reached out to piano enthusiasts, street performers, and public art organizations. The response was overwhelming - people were eager to share their piano discoveries and connect with like-minded musicians around the world."
+      },
+      {
+        title: "Global Expansion",
+        text: "Today, World Pianos connects thousands of musicians across continents. From airport lounges in Tokyo to city squares in Paris, our platform helps people discover musical opportunities wherever they travel."
+      }
+    ],
+    three_pillars: [
+      {
+        name: "Invite",
+        description: "We invite everyone to join our global musical community. Join any of the public pianos and events we've listed. All are free and open to everyone."
+      },
+      {
+        name: "Inspire",
+        description: "Sharing stories and experiences that spark musical creativity. Share reflections on public piano events, curate songs, and celebrate spontaneous music."
+      },
+      {
+        name: "Connect",
+        description: "We share real manifestations of connection - moments when strangers become friends, when communities come together, when music bridges every divide."
+      }
+    ],
+    global_impact: {
+      pianos_mapped: "1,000+",
+      community_members: "5,000+",
+      monthly_events: "100+",
+      countries: "50+"
     },
-    {
-      name: 'Marcus Johnson',
-      role: 'Head of Community',
-      bio: 'Jazz musician and community organizer dedicated to connecting piano enthusiasts worldwide.',
-      image: '/images/team/marcus.jpg',
-      location: 'New York, NY'
-    },
-    {
-      name: 'Elena Rodriguez',
-      role: 'Lead Developer',
-      bio: 'Full-stack developer and amateur pianist who loves building tools for creative communities.',
-      image: '/images/team/elena.jpg',
-      location: 'Barcelona, Spain'
+    partner: {
+      name: "Sing for Hope",
+      description: "World Pianos is proudly created and supported by Sing for Hope, a nonprofit organization dedicated to bringing music and art to communities worldwide. Their Piano Project, which places artist-designed pianos in public spaces, directly inspired the creation of World Pianos.",
+      url: "https://singforhope.org"
     }
-  ]
+  }
 
-  const stats = [
-    { icon: Piano, label: 'Public Pianos', value: '2,847', description: 'Discovered worldwide' },
-    { icon: Users, label: 'Community Members', value: '15,234', description: 'Piano enthusiasts' },
-    { icon: Globe, label: 'Countries', value: '67', description: 'With pianos mapped' },
-    { icon: Calendar, label: 'Events', value: '1,426', description: 'Piano events hosted' }
-  ]
+
+  const getPillarIcon = (name: string) => {
+    switch (name.toLowerCase()) {
+      case 'invite':
+        return <Users className="w-8 h-8" />
+      case 'inspire':
+        return <Lightbulb className="w-8 h-8" />
+      case 'connect':
+        return <Heart className="w-8 h-8" />
+      default:
+        return <Target className="w-8 h-8" />
+    }
+  }
 
   return (
     <div className="min-h-screen bg-base-100">
@@ -51,219 +106,185 @@ export function AboutPage() {
       <div className="bg-gradient-to-r from-primary to-secondary text-primary-content py-16">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-5xl font-bold mb-6">
-              About WorldPianos
-            </h1>
+            <h1 className="text-5xl font-bold mb-6">{aboutContent.title}</h1>
+            <p className="text-xl mb-8 opacity-90">{aboutContent.subtitle}</p>
+            <div className="flex justify-center">
+              <Music className="w-16 h-16 opacity-80" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mission & Vision */}
+      <div className="py-16">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
+            <div className="card bg-base-200 shadow-xl">
+              <div className="card-body">
+                <div className="flex items-center gap-3 mb-4">
+                  <Target className="w-8 h-8 text-primary" />
+                  <h2 className="card-title text-2xl">Our Mission</h2>
+                </div>
+                <p className="text-lg leading-relaxed">{aboutContent.mission}</p>
+              </div>
+            </div>
+
+            <div className="card bg-base-200 shadow-xl">
+              <div className="card-body">
+                <div className="flex items-center gap-3 mb-4">
+                  <Globe className="w-8 h-8 text-secondary" />
+                  <h2 className="card-title text-2xl">Our Vision</h2>
+                </div>
+                <p className="text-lg leading-relaxed">{aboutContent.vision}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Our Story */}
+      <div className="py-16 bg-base-200">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-4">Our Story</h2>
+              <p className="text-base-content/70">The journey of connecting piano enthusiasts worldwide</p>
+            </div>
+
+            <div className="space-y-8">
+              {aboutContent.story.map((chapter, index) => (
+                <div key={index} className="card bg-base-100 shadow-xl">
+                  <div className="card-body">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 bg-primary text-primary-content rounded-full flex items-center justify-center text-xl font-bold flex-shrink-0">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold mb-3">{chapter.title}</h3>
+                        <p className="text-base-content/80 leading-relaxed">{chapter.text}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Three Pillars */}
+      <div className="py-16">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-4">Our Approach</h2>
+              <p className="text-base-content/70">Three pillars that guide everything we do</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {aboutContent.three_pillars.map((pillar, index) => (
+                <div key={index} className="card bg-gradient-to-br from-primary/10 to-secondary/10 shadow-xl">
+                  <div className="card-body text-center">
+                    <div className="flex justify-center mb-4 text-primary">
+                      {getPillarIcon(pillar.name)}
+                    </div>
+                    <h3 className="card-title justify-center text-2xl mb-3">{pillar.name}</h3>
+                    <p className="text-base-content/80 leading-relaxed">{pillar.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Global Impact */}
+      <div className="py-16 bg-gradient-to-r from-primary/5 to-secondary/5">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-3xl font-bold mb-8">Global Impact</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="stat bg-base-100 rounded-box shadow">
+                <div className="stat-figure text-primary">
+                  <Music className="w-8 h-8" />
+                </div>
+                <div className="stat-title">Pianos Mapped</div>
+                <div className="stat-value text-primary">{aboutContent.global_impact.pianos_mapped}</div>
+              </div>
+
+              <div className="stat bg-base-100 rounded-box shadow">
+                <div className="stat-figure text-secondary">
+                  <Users className="w-8 h-8" />
+                </div>
+                <div className="stat-title">Community Members</div>
+                <div className="stat-value text-secondary">{aboutContent.global_impact.community_members}</div>
+              </div>
+
+              <div className="stat bg-base-100 rounded-box shadow">
+                <div className="stat-figure text-accent">
+                  <Calendar className="w-8 h-8" />
+                </div>
+                <div className="stat-title">Monthly Events</div>
+                <div className="stat-value text-accent">{aboutContent.global_impact.monthly_events}</div>
+              </div>
+
+              <div className="stat bg-base-100 rounded-box shadow">
+                <div className="stat-figure text-info">
+                  <Globe className="w-8 h-8" />
+                </div>
+                <div className="stat-title">Countries</div>
+                <div className="stat-value text-info">{aboutContent.global_impact.countries}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Partner Section */}
+      <div className="py-16">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="card bg-base-200 shadow-xl">
+              <div className="card-body text-center">
+                <h2 className="card-title justify-center text-3xl mb-6">Powered by {aboutContent.partner.name}</h2>
+                <p className="text-lg leading-relaxed mb-6">{aboutContent.partner.description}</p>
+                <div className="card-actions justify-center">
+                  <a 
+                    href={aboutContent.partner.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-primary"
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Visit {aboutContent.partner.name}
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Call to Action */}
+      <div className="py-16 bg-gradient-to-r from-primary to-secondary text-primary-content">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-3xl font-bold mb-6">Join Our Global Community</h2>
             <p className="text-xl mb-8 opacity-90">
-              Connecting piano enthusiasts worldwide through the magic of public pianos. 
-              Discover, share, and celebrate musical moments in your community.
+              Help us map every public piano in the world and connect musicians everywhere
             </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <Link to="/pianos" className="btn btn-accent btn-lg">
-                <Piano className="w-5 h-5 mr-2" />
-                Find Pianos
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link to="/pianos/add" className="btn btn-secondary btn-lg">
+                <MapPin className="w-5 h-5 mr-2" />
+                Add a Piano
               </Link>
-              <Link to="/signup" className="btn btn-outline btn-lg text-white border-white hover:bg-white hover:text-primary">
+              <Link to="/signup" className="btn btn-outline btn-lg">
                 <Users className="w-5 h-5 mr-2" />
                 Join Community
               </Link>
             </div>
           </div>
         </div>
-      </div>
-
-      <div className="container mx-auto px-4 py-12">
-        {/* Mission Section */}
-        <section className="mb-16">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-6">Our Mission</h2>
-            <p className="text-lg text-base-content/80 mb-8">
-              We believe that music has the power to bring people together, break down barriers, 
-              and create moments of joy in everyday life. Public pianos represent this belief in action – 
-              instruments placed in public spaces for anyone to play, regardless of skill level or background.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="text-center">
-                <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                  <Globe className="w-8 h-8 text-primary" />
-                </div>
-                <h3 className="font-semibold mb-2">Global Community</h3>
-                <p className="text-sm text-base-content/70">
-                  Connecting piano lovers across continents and cultures
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="bg-secondary/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                  <Heart className="w-8 h-8 text-secondary" />
-                </div>
-                <h3 className="font-semibold mb-2">Accessibility</h3>
-                <p className="text-sm text-base-content/70">
-                  Making music accessible to everyone, everywhere
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="bg-accent/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                  <Music className="w-8 h-8 text-accent" />
-                </div>
-                <h3 className="font-semibold mb-2">Creativity</h3>
-                <p className="text-sm text-base-content/70">
-                  Inspiring spontaneous musical moments and connections
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Stats Section */}
-        <section className="mb-16">
-          <div className="bg-base-200 rounded-2xl p-8">
-            <h2 className="text-3xl font-bold text-center mb-8">Our Impact</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {stats.map((stat, index) => (
-                <div key={index} className="text-center">
-                  <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                    <stat.icon className="w-8 h-8 text-primary" />
-                  </div>
-                  <div className="text-2xl font-bold text-primary mb-1">{stat.value}</div>
-                  <div className="font-semibold text-sm mb-1">{stat.label}</div>
-                  <div className="text-xs text-base-content/60">{stat.description}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Story Section */}
-        <section className="mb-16">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold mb-6">Our Story</h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-              <div>
-                <p className="text-base-content/80 mb-4">
-                  WorldPianos was born from a simple moment: founder Sarah Chen stumbled upon 
-                  a public piano in a London train station and watched strangers gather around 
-                  a young girl playing Chopin. In that moment, she realized the incredible power 
-                  of accessible music to create instant community.
-                </p>
-                <p className="text-base-content/80 mb-4">
-                  What started as a personal project to map public pianos in her city has grown 
-                  into a global movement. Today, thousands of piano enthusiasts use WorldPianos 
-                  to discover instruments in their travels, share their performances, and connect 
-                  with fellow musicians.
-                </p>
-                <p className="text-base-content/80">
-                  We're not just cataloging pianos – we're building a community that celebrates 
-                  the democratization of music, one public piano at a time.
-                </p>
-              </div>
-              <div className="bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl p-8 text-center">
-                <Piano className="w-24 h-24 mx-auto mb-4 text-primary" />
-                <h3 className="text-xl font-bold mb-2">Started in 2019</h3>
-                <p className="text-base-content/70">
-                  From one piano in London to thousands worldwide
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Team Section */}
-        <section className="mb-16">
-          <div className="max-w-6xl mx-auto">
-            <h2 className="text-3xl font-bold text-center mb-8">Meet Our Team</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {teamMembers.map((member, index) => (
-                <div key={index} className="card bg-base-100 shadow-xl">
-                  <figure className="px-10 pt-10">
-                    <div className="avatar placeholder">
-                      <div className="bg-neutral text-neutral-content rounded-full w-24">
-                        <span className="text-3xl">{member.name.split(' ').map(n => n[0]).join('')}</span>
-                      </div>
-                    </div>
-                  </figure>
-                  <div className="card-body items-center text-center">
-                    <h3 className="card-title">{member.name}</h3>
-                    <p className="text-primary font-medium">{member.role}</p>
-                    <p className="text-sm text-base-content/70 mb-2">{member.bio}</p>
-                    <div className="flex items-center text-xs text-base-content/60">
-                      <MapPin className="w-3 h-3 mr-1" />
-                      {member.location}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Values Section */}
-        <section className="mb-16">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold text-center mb-8">Our Values</h2>
-            <div className="space-y-6">
-              <div className="flex items-start gap-4">
-                <div className="bg-primary/10 rounded-lg p-3 flex-shrink-0">
-                  <Music className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold mb-2">Music for All</h3>
-                  <p className="text-base-content/70">
-                    We believe music should be accessible to everyone, regardless of background, 
-                    skill level, or economic status. Public pianos embody this principle.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4">
-                <div className="bg-secondary/10 rounded-lg p-3 flex-shrink-0">
-                  <Users className="w-6 h-6 text-secondary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold mb-2">Community First</h3>
-                  <p className="text-base-content/70">
-                    Our platform is built by and for the community. Every feature is designed 
-                    to strengthen connections between piano enthusiasts worldwide.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4">
-                <div className="bg-accent/10 rounded-lg p-3 flex-shrink-0">
-                  <Share2 className="w-6 h-6 text-accent" />
-                </div>
-                <div>
-                  <h3 className="font-semibold mb-2">Open & Transparent</h3>
-                  <p className="text-base-content/70">
-                    We're committed to being open about our practices, transparent in our 
-                    operations, and inclusive in our approach to building this community.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Call to Action */}
-        <section className="text-center">
-          <div className="bg-gradient-to-r from-primary to-secondary text-primary-content rounded-2xl p-8">
-            <h2 className="text-3xl font-bold mb-4">Join Our Mission</h2>
-            <p className="text-xl mb-6 opacity-90">
-              Help us map every public piano on Earth and build the world's largest 
-              community of piano enthusiasts.
-            </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <Link to="/pianos/add" className="btn btn-accent">
-                <Piano className="w-5 h-5 mr-2" />
-                Add a Piano
-              </Link>
-              <Link to="/events/add" className="btn btn-outline text-white border-white hover:bg-white hover:text-primary">
-                <Calendar className="w-5 h-5 mr-2" />
-                Host an Event
-              </Link>
-              <Link to="/contact" className="btn btn-ghost text-white hover:bg-white/10">
-                Get in Touch
-              </Link>
-            </div>
-          </div>
-        </section>
       </div>
     </div>
   )

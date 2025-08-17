@@ -319,11 +319,68 @@ export const userService = {
       }
     }
 
-    const { data, error } = await supabase
-      .rpc('get_user_piano_stats', { user_uuid: userId })
+    try {
+      // Try to use the stored procedure first
+      const { data, error } = await supabase
+        .rpc('get_user_piano_stats', { user_uuid: userId })
 
-    if (error) throw error
-    return data
+      if (error) throw error
+      return data
+    } catch (error) {
+      console.warn('get_user_piano_stats function not available, calculating manually:', error)
+      
+      // Fallback: Calculate stats manually using direct queries
+      try {
+        const [pianosData, eventsData, visitsData] = await Promise.all([
+          supabase
+            .from('pianos')
+            .select('id')
+            .eq('created_by', userId),
+          supabase
+            .from('events')
+            .select('id')
+            .eq('created_by', userId),
+          supabase
+            .from('piano_visits')
+            .select('piano_id, pianos!inner(location_name)')
+            .eq('user_id', userId)
+        ])
+
+        const pianosAdded = pianosData.data?.length || 0
+        const eventsCreated = eventsData.data?.length || 0
+        const pianosVisited = visitsData.data?.length || 0
+        
+        // Extract unique countries from piano visits
+        const countries = new Set(
+          visitsData.data?.map(v => {
+            const location = v.pianos?.location_name || ''
+            // Simple country extraction - get last part after comma
+            const parts = location.split(',')
+            return parts[parts.length - 1]?.trim()
+          }).filter(Boolean) || []
+        )
+
+        return {
+          pianos_added: pianosAdded,
+          pianos_visited: pianosVisited,
+          events_created: eventsCreated,
+          events_interested: 0, // TODO: Implement when events_interest table exists
+          achievements_earned: 0, // TODO: Implement when achievements system exists
+          countries_visited: countries.size
+        }
+      } catch (fallbackError) {
+        console.error('Failed to calculate stats manually:', fallbackError)
+        // Return zeros if everything fails
+        return {
+          pianos_added: 0,
+          pianos_visited: 0,
+          events_created: 0,
+          events_interested: 0,
+          achievements_earned: 0,
+          countries_visited: 0
+        }
+      }
+    }
   }
 }
 

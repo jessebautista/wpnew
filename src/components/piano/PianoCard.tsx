@@ -11,7 +11,7 @@ export function PianoCard({ piano }: PianoCardProps) {
   const primaryImage = piano.images?.find(img => img.alt_text?.includes('primary')) || piano.images?.[0]
   
   return (
-    <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+    <Link to={`/pianos/${piano.id}`} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-300 cursor-pointer">
       {/* Image Section */}
       <figure className="h-48 bg-base-200 relative overflow-hidden">
         {primaryImage ? (
@@ -89,16 +89,7 @@ export function PianoCard({ piano }: PianoCardProps) {
           )}
         </div>
 
-        {/* Actions */}
-        <div className="card-actions justify-end">
-          <Link 
-            to={`/pianos/${piano.id}`} 
-            className="btn btn-primary btn-sm"
-          >
-            View Details
-          </Link>
-        </div>
       </div>
-    </div>
+    </Link>
   )
 }

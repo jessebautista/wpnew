@@ -33,7 +33,6 @@ import { TermsPage } from './pages/static/TermsPage'
 import { AuthProvider } from './components/auth/AuthProvider'
 import { LanguageProvider } from './contexts/LanguageContext'
 import { AccessibilityProvider } from './contexts/AccessibilityContext'
-import { ConfigStatus } from './components/dev/ConfigStatus'
 // Import admin utils for development
 import './utils/adminUtils'
 import './utils/debugUtils'
@@ -84,7 +83,6 @@ function App() {
                 </Routes>
               </main>
               <Footer />
-              <ConfigStatus />
             </div>
           </Router>
         </AuthProvider>

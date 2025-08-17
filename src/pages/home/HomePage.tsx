@@ -112,7 +112,7 @@ export function HomePage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {featuredPianos.map((piano) => (
-                <div key={piano.id} className="card bg-base-100 shadow-xl">
+                <Link key={piano.id} to={`/pianos/${piano.id}`} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-300 cursor-pointer">
                   <div className="card-body">
                     <h3 className="card-title">
                       {piano.name}
@@ -131,13 +131,8 @@ export function HomePage() {
                       <div className="badge badge-outline">{piano.category}</div>
                       <div className="badge badge-outline">{piano.condition}</div>
                     </div>
-                    <div className="card-actions justify-end mt-4">
-                      <Link to={`/pianos/${piano.id}`} className="btn btn-primary btn-sm">
-                        View Details
-                      </Link>
-                    </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}
@@ -163,19 +158,18 @@ export function HomePage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {upcomingEvents.map((event) => (
-                <div key={event.id} className="card bg-base-100 shadow-xl">
+                <Link key={event.id} to={`/events/${event.id}`} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-300 cursor-pointer">
                   <div className="card-body">
                     <h3 className="card-title">{event.title}</h3>
                     <p className="text-sm text-base-content/70 mb-2">
                       {new Date(event.date).toLocaleDateString()} • {event.location_name}
                     </p>
                     <p>{event.description}</p>
-                    <div className="card-actions justify-between items-center mt-4">
+                    <div className="flex justify-between items-center mt-4">
                       <div className="badge badge-secondary">{event.category}</div>
-                      <button className="btn btn-sm btn-primary">Learn More</button>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}

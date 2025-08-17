@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { usePermissions } from '../../hooks/usePermissions'
-import { Piano, Calendar, BookOpen, User, LogOut, Plus, Book, Accessibility, Menu, X } from 'lucide-react'
+import { Piano, Calendar, BookOpen, User, LogOut, Plus, Book, Accessibility, Menu, X, LayoutDashboard } from 'lucide-react'
 import { LanguageSelector } from '../accessibility/LanguageSelector'
 import { AccessibilityPanel } from '../accessibility/AccessibilityPanel'
 import { useLanguage } from '../../contexts/LanguageContext'
@@ -18,111 +18,22 @@ export function Navbar() {
     <>
       <nav className="navbar bg-base-100/95 backdrop-blur-md shadow-lg sticky top-0 z-50 min-h-16 px-2" id="main-navigation" role="navigation" aria-label="Main navigation">
         <div className="navbar-start flex-1">
-          <div className="dropdown">
-            <button 
-              tabIndex={0} 
-              className="btn btn-ghost lg:hidden p-2 min-h-12 h-12 w-12 mr-2"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              aria-label={t('a11y.openMenu')}
-              aria-expanded={isMobileMenuOpen}
-              aria-controls="mobile-menu"
-              type="button"
-            >
-              {isMobileMenuOpen ? (
-                <X className="w-6 h-6 text-base-content" aria-hidden="true" />
-              ) : (
-                <Menu className="w-6 h-6 text-base-content" aria-hidden="true" />
-              )}
-            </button>
-            {isMobileMenuOpen && (
-              <ul 
-                id="mobile-menu"
-                tabIndex={0} 
-                className="menu menu-sm dropdown-content mt-3 z-[1000] p-2 shadow-2xl bg-base-100 rounded-2xl w-64 border border-base-300 fixed left-2"
-                role="menu"
-              >
-                <li role="none">
-                  <Link 
-                    to="/pianos" 
-                    role="menuitem"
-                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-base-200 transition-colors"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <Piano className="w-5 h-5 text-primary" aria-hidden="true" />
-                    <span className="font-medium">{t('nav.pianos')}</span>
-                  </Link>
-                </li>
-                <li role="none">
-                  <Link 
-                    to="/events" 
-                    role="menuitem"
-                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-base-200 transition-colors"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <Calendar className="w-5 h-5 text-secondary" aria-hidden="true" />
-                    <span className="font-medium">{t('nav.events')}</span>
-                  </Link>
-                </li>
-                <li role="none">
-                  <Link 
-                    to="/blog" 
-                    role="menuitem"
-                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-base-200 transition-colors"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <BookOpen className="w-5 h-5 text-accent" aria-hidden="true" />
-                    <span className="font-medium">{t('nav.blog')}</span>
-                  </Link>
-                </li>
-                {canCreate() && (
-                  <>
-                    <li className="divider my-2" role="presentation"></li>
-                    <li className="menu-title text-xs font-semibold text-base-content/60 px-3 py-2" role="presentation">Add Content</li>
-                    <li role="none">
-                      <Link 
-                        to="/pianos/add" 
-                        role="menuitem"
-                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-base-200 transition-colors"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        <Plus className="w-5 h-5 text-primary" aria-hidden="true" />
-                        <span className="font-medium">Add Piano</span>
-                      </Link>
-                    </li>
-                    <li role="none">
-                      <Link 
-                        to="/events/add" 
-                        role="menuitem"
-                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-base-200 transition-colors"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        <Plus className="w-5 h-5 text-secondary" aria-hidden="true" />
-                        <span className="font-medium">Add Event</span>
-                      </Link>
-                    </li>
-                  </>
-                )}
-                <li className="divider my-2 sm:hidden" role="presentation"></li>
-                <li role="none" className="sm:hidden">
-                  <button
-                    onClick={() => {
-                      setIsAccessibilityPanelOpen(true)
-                      setIsMobileMenuOpen(false)
-                    }}
-                    role="menuitem"
-                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-base-200 transition-colors"
-                  >
-                    <Accessibility className="w-5 h-5 text-info" aria-hidden="true" />
-                    <span className="font-medium">Accessibility</span>
-                  </button>
-                </li>
-              </ul>
+          {/* Mobile menu button */}
+          <button 
+            className="btn btn-ghost lg:hidden"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {isMobileMenuOpen ? (
+              <X className="w-5 h-5" />
+            ) : (
+              <Menu className="w-5 h-5" />
             )}
-          </div>
+          </button>
           <Link to="/" className="btn btn-ghost text-lg sm:text-xl px-2 sm:px-4 flex-shrink-0" aria-label="WorldPianos home">
             <Piano className="w-5 h-5 sm:w-6 sm:h-6 mr-1 sm:mr-2" aria-hidden="true" />
             <span className="hidden xs:inline sm:inline">WorldPianos</span>
-            <span className="xs:hidden sm:hidden">WP</span>
+            <span className="xs:hidden sm:hidden">World Pianos</span>
           </Link>
         </div>
       
@@ -145,7 +56,7 @@ export function Navbar() {
           </ul>
         </div>
       
-        <div className="navbar-end flex-shrink-0">
+        <div className="navbar-end flex-shrink-0" onClick={() => setIsMobileMenuOpen(false)}>
           <div className="flex items-center gap-1 sm:gap-2">
             {/* Language Selector - Hidden on very small screens */}
             <div className="hidden sm:block z-40">
@@ -171,6 +82,7 @@ export function Navbar() {
                   aria-label={t('a11y.userMenu')}
                   aria-haspopup="true"
                   aria-expanded="false"
+                  onClick={() => setIsMobileMenuOpen(false)}
                 >
                   <div className="w-10 rounded-full">
                     {user.avatar_url ? (
@@ -191,8 +103,7 @@ export function Navbar() {
                   <li className="menu-title" role="presentation">
                     <span>{user.full_name || user.email}</span>
                   </li>
-                  <li role="none"><Link to="/profile" role="menuitem">{t('nav.profile')}</Link></li>
-                  <li role="none"><Link to="/dashboard" role="menuitem">{t('nav.dashboard')}</Link></li>
+                  <li role="none"><Link to="/dashboard" role="menuitem"><LayoutDashboard className="w-4 h-4" aria-hidden="true" />{t('nav.dashboard')}</Link></li>
                   <li role="none"><Link to="/passport" role="menuitem"><Book className="w-4 h-4" aria-hidden="true" />Piano Passport</Link></li>
                   {canAccessAdminPanel() && (
                     <>
@@ -217,6 +128,64 @@ export function Navbar() {
           </div>
         </div>
       </nav>
+
+      {/* Mobile menu overlay */}
+      {isMobileMenuOpen && (
+        <div className="fixed top-16 left-0 right-0 bottom-0 bg-black/50 z-40 lg:hidden" onClick={() => setIsMobileMenuOpen(false)}>
+          <div 
+            className="bg-base-100 shadow-lg p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="space-y-2">
+              <Link 
+                to="/pianos" 
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-base-200 transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Piano className="w-5 h-5 text-primary" />
+                <span>{t('nav.pianos')}</span>
+              </Link>
+              <Link 
+                to="/events" 
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-base-200 transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Calendar className="w-5 h-5 text-secondary" />
+                <span>{t('nav.events')}</span>
+              </Link>
+              <Link 
+                to="/blog" 
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-base-200 transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <BookOpen className="w-5 h-5 text-accent" />
+                <span>{t('nav.blog')}</span>
+              </Link>
+              {canCreate() && (
+                <>
+                  <div className="divider my-2"></div>
+                  <Link 
+                    to="/pianos/add" 
+                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-base-200 transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Plus className="w-5 h-5 text-primary" />
+                    <span>Add Piano</span>
+                  </Link>
+                  <Link 
+                    to="/events/add" 
+                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-base-200 transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Plus className="w-5 h-5 text-secondary" />
+                    <span>Add Event</span>
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Accessibility Panel */}
       <AccessibilityPanel

@@ -50,9 +50,10 @@ export function ModerationQueuePage() {
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'priority'>('newest')
 
   useEffect(() => {
-    if (!canModerate()) return
+    const hasModeratePermission = canModerate()
+    if (!hasModeratePermission) return
     loadModerationItems()
-  }, [canModerate])
+  }, [canModerate()])
 
   const loadModerationItems = async () => {
     try {
@@ -62,7 +63,7 @@ export function ModerationQueuePage() {
       const items: ModerationItem[] = [
         // Piano items
         ...pianos.map((piano) => ({
-          id: `piano-${piano.id}`,
+          id: piano.id, // Use the piano's UUID directly
           type: 'piano' as const,
           title: piano.name,
           content: piano,
@@ -81,7 +82,7 @@ export function ModerationQueuePage() {
         })),
         // Event items
         ...events.map((event) => ({
-          id: `event-${event.id}`,
+          id: event.id, // Use the event's UUID directly
           type: 'event' as const,
           title: event.title,
           content: event,
@@ -100,7 +101,7 @@ export function ModerationQueuePage() {
         })),
         // Blog post items
         ...blogPosts.map((post) => ({
-          id: `blog-${post.id}`,
+          id: post.id, // Use the blog post's UUID directly
           type: 'blog_post' as const,
           title: post.title,
           content: post,
@@ -130,39 +131,44 @@ export function ModerationQueuePage() {
 
   const handleApprove = async (itemId: string) => {
     try {
-      const [type, id] = itemId.split('-')
+      // Find the item by ID to get its type
+      const item = items.find(i => i.id === itemId)
+      if (!item) {
+        console.error('Item not found for approval:', itemId)
+        return
+      }
       
-      if (type === 'piano' && user?.id) {
-        const success = await DataService.updatePianoModerationStatus(id, 'approved', user.id)
+      if (item.type === 'piano' && user?.id) {
+        const success = await DataService.updatePianoModerationStatus(itemId, 'approved', user.id)
         if (success) {
-          setItems(prev => prev.map(item => 
-            item.id === itemId 
+          setItems(prev => prev.map(prevItem => 
+            prevItem.id === itemId 
               ? { 
-                  ...item, 
+                  ...prevItem, 
                   status: 'approved', 
                   reviewed_at: new Date().toISOString(),
                   reviewed_by: user?.id 
                 }
-              : item
+              : prevItem
           ))
-          console.log(`[MODERATION] Approved ${type} ${id}`)
+          console.log(`[MODERATION] Approved ${item.type} ${itemId}`)
         } else {
-          console.error(`[MODERATION] Failed to approve ${type} ${id}`)
+          console.error(`[MODERATION] Failed to approve ${item.type} ${itemId}`)
         }
       } else {
         // For now, just update UI for events and blog posts
         // TODO: Add similar methods for events and blog posts
-        setItems(prev => prev.map(item => 
-          item.id === itemId 
+        setItems(prev => prev.map(prevItem => 
+          prevItem.id === itemId 
             ? { 
-                ...item, 
+                ...prevItem, 
                 status: 'approved', 
                 reviewed_at: new Date().toISOString(),
                 reviewed_by: user?.id 
               }
-            : item
+            : prevItem
         ))
-        console.log(`[MODERATION] UI-only approval for ${type} ${id}`)
+        console.log(`[MODERATION] UI-only approval for ${item.type} ${itemId}`)
       }
     } catch (error) {
       console.error('Error approving item:', error)
@@ -171,41 +177,46 @@ export function ModerationQueuePage() {
 
   const handleReject = async (itemId: string, reason: string) => {
     try {
-      const [type, id] = itemId.split('-')
+      // Find the item by ID to get its type
+      const item = items.find(i => i.id === itemId)
+      if (!item) {
+        console.error('Item not found for rejection:', itemId)
+        return
+      }
       
-      if (type === 'piano' && user?.id) {
-        const success = await DataService.updatePianoModerationStatus(id, 'rejected', user.id, reason)
+      if (item.type === 'piano' && user?.id) {
+        const success = await DataService.updatePianoModerationStatus(itemId, 'rejected', user.id, reason)
         if (success) {
-          setItems(prev => prev.map(item => 
-            item.id === itemId 
+          setItems(prev => prev.map(prevItem => 
+            prevItem.id === itemId 
               ? { 
-                  ...item, 
+                  ...prevItem, 
                   status: 'rejected', 
                   reviewed_at: new Date().toISOString(),
                   reviewed_by: user?.id,
                   rejection_reason: reason
                 }
-              : item
+              : prevItem
           ))
-          console.log(`[MODERATION] Rejected ${type} ${id} with reason: ${reason}`)
+          console.log(`[MODERATION] Rejected ${item.type} ${itemId} with reason: ${reason}`)
         } else {
-          console.error(`[MODERATION] Failed to reject ${type} ${id}`)
+          console.error(`[MODERATION] Failed to reject ${item.type} ${itemId}`)
         }
       } else {
         // For now, just update UI for events and blog posts  
         // TODO: Add similar methods for events and blog posts
-        setItems(prev => prev.map(item => 
-          item.id === itemId 
+        setItems(prev => prev.map(prevItem => 
+          prevItem.id === itemId 
             ? { 
-                ...item, 
+                ...prevItem, 
                 status: 'rejected', 
                 reviewed_at: new Date().toISOString(),
                 reviewed_by: user?.id,
                 rejection_reason: reason
               }
-            : item
+            : prevItem
         ))
-        console.log(`[MODERATION] UI-only rejection for ${type} ${id}`)
+        console.log(`[MODERATION] UI-only rejection for ${item.type} ${itemId}`)
       }
     } catch (error) {
       console.error('Error rejecting item:', error)
@@ -553,7 +564,7 @@ function ModerationCard({
               )}
 
               <Link
-                to={`/${item.type === 'blog_post' ? 'blog' : item.type === 'piano' ? 'pianos' : 'events'}/${item.content.id}`}
+                to={`/${item.type === 'blog_post' ? 'blog' : item.type === 'piano' ? 'pianos' : 'events'}/${item.id}`}
                 className="btn btn-ghost btn-sm"
               >
                 View Live

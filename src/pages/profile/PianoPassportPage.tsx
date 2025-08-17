@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../components/auth/AuthProvider'
 import type { Piano, PianoVisit, Achievement } from '../../types'
-import { mockPianos } from '../../data/mockData'
+import { userService, pianoService } from '../../utils/database'
 
 interface PianoStats {
   totalVisits: number
@@ -39,85 +39,103 @@ export function PianoPassportPage() {
   }, [user])
 
   const loadPassportData = async () => {
-    // Mock data for demonstration
-    const mockStats: PianoStats = {
-      totalVisits: 15,
-      uniquePianos: 12,
-      countriesVisited: 3,
-      categoriesExplored: ['Park', 'Airport', 'Train Station', 'Street'],
-      favoriteCategory: 'Park',
-      totalPhotos: 28,
-      averageRating: 4.2,
-      recentVisits: [
+    if (!user?.id) return
+
+    try {
+      // Load user piano stats
+      const userStats = await userService.getPianoStats(user.id)
+      
+      // Load all pianos to calculate additional stats
+      const allPianos = await pianoService.getAll()
+      const userPianos = allPianos.filter(p => p.created_by === user.id)
+      
+      // Calculate categories explored
+      const categoriesExplored = [...new Set(userPianos.map(p => p.category))]
+      const favoriteCategory = categoriesExplored.length > 0 ? categoriesExplored[0] : 'None'
+      
+      // TODO: Replace with real data when piano_visits table and photo tracking is implemented
+      const passportStats: PianoStats = {
+        totalVisits: userStats.pianos_visited || 0,
+        uniquePianos: userStats.pianos_visited || 0,
+        countriesVisited: userStats.countries_visited || 0,
+        categoriesExplored,
+        favoriteCategory,
+        totalPhotos: 0, // TODO: Count from piano_images table
+        averageRating: 0, // TODO: Calculate from piano_visits ratings
+        recentVisits: [] // TODO: Load from piano_visits table
+      }
+
+      // Generate achievements based on real stats
+      const dynamicAchievements: Achievement[] = [
         {
           id: '1',
-          piano_id: '1',
-          user_id: user?.id || '',
-          visited_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          rating: 5,
-          notes: 'Beautiful piano, great acoustics!'
+          title: 'First Steps',
+          description: 'Add your first piano',
+          icon: 'piano',
+          category: 'milestone',
+          earned: userStats.pianos_added > 0,
+          earned_at: userStats.pianos_added > 0 ? new Date().toISOString() : null,
+          progress: Math.min(userStats.pianos_added, 1),
+          target: 1
         },
         {
           id: '2',
-          piano_id: '4',
-          user_id: user?.id || '',
-          visited_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-          rating: 4,
-          notes: 'Nice location but could use tuning'
+          title: 'Piano Collector',
+          description: 'Add 5 different pianos',
+          icon: 'map',
+          category: 'exploration',
+          earned: userStats.pianos_added >= 5,
+          earned_at: userStats.pianos_added >= 5 ? new Date().toISOString() : null,
+          progress: userStats.pianos_added,
+          target: 5
+        },
+        {
+          id: '3',
+          title: 'Event Organizer',
+          description: 'Create your first event',
+          icon: 'globe',
+          category: 'community',
+          earned: userStats.events_created > 0,
+          earned_at: userStats.events_created > 0 ? new Date().toISOString() : null,
+          progress: Math.min(userStats.events_created, 1),
+          target: 1
+        },
+        {
+          id: '4',
+          title: 'Explorer',
+          description: 'Visit pianos in 3 different countries',
+          icon: 'camera',
+          category: 'exploration',
+          earned: userStats.countries_visited >= 3,
+          earned_at: userStats.countries_visited >= 3 ? new Date().toISOString() : null,
+          progress: userStats.countries_visited,
+          target: 3
         }
       ]
+
+      setStats(passportStats)
+      setAchievements(dynamicAchievements)
+      
+      // Set favorite pianos as the most recent user-created pianos
+      setFavoritePianos(userPianos.slice(0, 2))
+      
+    } catch (error) {
+      console.error('Error loading passport data:', error)
+      
+      // Fallback to empty stats
+      setStats({
+        totalVisits: 0,
+        uniquePianos: 0,
+        countriesVisited: 0,
+        categoriesExplored: [],
+        favoriteCategory: 'None',
+        totalPhotos: 0,
+        averageRating: 0,
+        recentVisits: []
+      })
+      setAchievements([])
+      setFavoritePianos([])
     }
-
-    const mockAchievements: Achievement[] = [
-      {
-        id: '1',
-        title: 'First Steps',
-        description: 'Visit your first piano',
-        icon: 'piano',
-        category: 'milestone',
-        earned: true,
-        earned_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-        progress: 1,
-        target: 1
-      },
-      {
-        id: '2',
-        title: 'Explorer',
-        description: 'Visit 10 different pianos',
-        icon: 'map',
-        category: 'exploration',
-        earned: true,
-        earned_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-        progress: 12,
-        target: 10
-      },
-      {
-        id: '3',
-        title: 'Globetrotter',
-        description: 'Visit pianos in 5 different countries',
-        icon: 'globe',
-        category: 'exploration',
-        earned: false,
-        earned_at: null,
-        progress: 3,
-        target: 5
-      },
-      {
-        id: '4',
-        title: 'Photographer',
-        description: 'Upload 50 piano photos',
-        icon: 'camera',
-        category: 'contribution',
-        earned: false,
-        earned_at: null,
-        progress: 28,
-        target: 50
-      }
-    ]
-
-    setStats(mockStats)
-    setAchievements(mockAchievements)
-    setFavoritePianos(mockPianos.slice(0, 2))
   }
 
   const getAchievementIcon = (iconName: string) => {
@@ -242,9 +260,8 @@ export function PianoPassportPage() {
                 Recent Visits
               </h2>
               <div className="space-y-3">
-                {stats?.recentVisits.map((visit) => {
-                  const piano = mockPianos.find(p => p.id === visit.piano_id)
-                  return (
+                {stats?.recentVisits && stats.recentVisits.length > 0 ? (
+                  stats.recentVisits.map((visit) => (
                     <div key={visit.id} className="flex items-center gap-3 p-3 bg-base-200 rounded-lg">
                       <div className="avatar placeholder">
                         <div className="bg-neutral text-neutral-content rounded-full w-10">
@@ -252,8 +269,8 @@ export function PianoPassportPage() {
                         </div>
                       </div>
                       <div className="flex-1">
-                        <Link to={`/pianos/${piano?.id}`} className="font-medium hover:link">
-                          {piano?.name}
+                        <Link to={`/pianos/${visit.piano_id}`} className="font-medium hover:link">
+                          Piano Visit #{visit.id}
                         </Link>
                         <div className="flex items-center gap-1 text-sm text-base-content/70">
                           <div className="rating rating-xs">
@@ -268,8 +285,14 @@ export function PianoPassportPage() {
                         </div>
                       </div>
                     </div>
-                  )
-                })}
+                  ))
+                ) : (
+                  <div className="text-center py-6 text-base-content/70">
+                    <MapPin className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p>No piano visits yet!</p>
+                    <p className="text-sm">Start exploring pianos to see your visits here.</p>
+                  </div>
+                )}
               </div>
               <Link to="/dashboard/visits" className="btn btn-outline btn-sm mt-4">
                 View All Visits

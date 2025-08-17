@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   Mail, 
   MessageCircle, 
@@ -10,23 +10,71 @@ import {
   Globe,
   Twitter,
   Github,
-  Instagram
+  Instagram,
+  HelpCircle
 } from 'lucide-react'
-import { useLanguage } from '../../contexts/LanguageContext'
-import { useAccessibility } from '../../contexts/AccessibilityContext'
+
+interface ContactContent {
+  title: string
+  description: string
+  contact_types: string[]
+  direct_contacts: Array<{
+    type: string
+    email: string
+    response: string
+  }>
+  quick_faq: Array<{
+    question: string
+    answer: string
+  }>
+  about_us: {
+    organization: string
+    mission: string
+  }
+}
 
 export function ContactPage() {
-  const { } = useLanguage()
-  const { announceToScreenReader } = useAccessibility()
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     subject: '',
     message: '',
-    category: 'general'
+    category: 'General Question'
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+
+  const contactContent: ContactContent = {
+    title: "Contact Us",
+    description: "Get in touch with the Worldpianos.org team for support, questions, or feedback.",
+    contact_types: [
+      "General Question",
+      "Technical Support",
+      "Piano Information",
+      "Event Support",
+      "Privacy Question",
+      "Legal Question",
+      "Safety Issue",
+      "Feedback",
+      "Partnership"
+    ],
+    direct_contacts: [
+      { type: "General Support", email: "hello@worldpianos.org", response: "24-48 hours" },
+      { type: "Technical Support", email: "support@worldpianos.org", response: "24-48 hours" },
+      { type: "Privacy & Legal", email: "privacy@worldpianos.org", response: "72 hours" },
+      { type: "Safety & Security", email: "safety@worldpianos.org", response: "4-8 hours" }
+    ],
+    quick_faq: [
+      { question: "How do I add a piano?", answer: "Click the 'Add Piano' button on the map page or create an account to get started." },
+      { question: "How do I report an issue with a piano?", answer: "Use the 'Report Issue' button on any piano listing, or contact us directly for safety concerns." },
+      { question: "Can I delete my account?", answer: "Yes, contact privacy@worldpianos.org to request account deletion and data removal." },
+      { question: "How do I update piano information?", answer: "Log in and visit the piano's page, or contact us if you need help making updates." }
+    ],
+    about_us: {
+      organization: "Sing For Hope",
+      mission: "To connect piano enthusiasts worldwide and make music accessible to everyone through public piano mapping and community building."
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -37,7 +85,6 @@ export function ContactPage() {
     
     setIsSubmitting(false)
     setIsSubmitted(true)
-    announceToScreenReader('Your message has been sent successfully', 'assertive')
 
     // Reset form after success
     setTimeout(() => {
@@ -47,7 +94,7 @@ export function ContactPage() {
         email: '',
         subject: '',
         message: '',
-        category: 'general'
+        category: 'General Question'
       })
     }, 3000)
   }
@@ -59,54 +106,6 @@ export function ContactPage() {
     }))
   }
 
-  const contactMethods = [
-    {
-      icon: Mail,
-      title: 'Email Us',
-      description: 'Send us a message and we\'ll respond within 24 hours',
-      contact: 'hello@worldpianos.org',
-      action: 'mailto:hello@worldpianos.org'
-    },
-    {
-      icon: MessageCircle,
-      title: 'Live Chat',
-      description: 'Chat with our community team Monday-Friday, 9AM-5PM PST',
-      contact: 'Start Chat',
-      action: '#'
-    },
-    {
-      icon: Phone,
-      title: 'Phone Support',
-      description: 'Call us for urgent matters or technical support',
-      contact: '+1 (555) 123-PIANO',
-      action: 'tel:+15551234876'
-    }
-  ]
-
-  const socialLinks = [
-    { icon: Twitter, name: 'Twitter', url: 'https://twitter.com/worldpianos', handle: '@worldpianos' },
-    { icon: Instagram, name: 'Instagram', url: 'https://instagram.com/worldpianos', handle: '@worldpianos' },
-    { icon: Github, name: 'GitHub', url: 'https://github.com/worldpianos', handle: 'worldpianos' }
-  ]
-
-  const faqItems = [
-    {
-      question: 'How do I add a new piano to the map?',
-      answer: 'Simply click the "Add Piano" button and fill out the form with the piano\'s location and details. Our community will help verify the information.'
-    },
-    {
-      question: 'Can I report a broken or missing piano?',
-      answer: 'Yes! Use the "Report Issue" button on any piano page to let us know about problems. We work with local communities to address these issues.'
-    },
-    {
-      question: 'How do I organize a piano event?',
-      answer: 'Create an account and use our event planning tools. You can invite the community, coordinate with piano owners, and share your event widely.'
-    },
-    {
-      question: 'Is WorldPianos free to use?',
-      answer: 'Yes! WorldPianos is completely free for all users. We\'re supported by donations and community contributions.'
-    }
-  ]
 
   return (
     <div className="min-h-screen bg-base-100">
@@ -114,11 +113,8 @@ export function ContactPage() {
       <div className="bg-gradient-to-r from-primary to-secondary text-primary-content py-16">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-5xl font-bold mb-6">Get in Touch</h1>
-            <p className="text-xl opacity-90">
-              Have questions, suggestions, or just want to say hello? 
-              We'd love to hear from you.
-            </p>
+            <h1 className="text-5xl font-bold mb-6">{contactContent.title}</h1>
+            <p className="text-xl opacity-90">{contactContent.description}</p>
           </div>
         </div>
       </div>
@@ -192,12 +188,9 @@ export function ContactPage() {
                         value={formData.category}
                         onChange={handleInputChange}
                       >
-                        <option value="general">General Inquiry</option>
-                        <option value="technical">Technical Support</option>
-                        <option value="piano-report">Piano Issue Report</option>
-                        <option value="event-help">Event Planning Help</option>
-                        <option value="partnership">Partnership/Collaboration</option>
-                        <option value="feedback">Feedback/Suggestion</option>
+                        {contactContent.contact_types.map((type) => (
+                          <option key={type} value={type}>{type}</option>
+                        ))}
                       </select>
                     </div>
 
@@ -264,21 +257,21 @@ export function ContactPage() {
             {/* Contact Methods */}
             <div className="card bg-base-100 shadow-xl">
               <div className="card-body">
-                <h3 className="card-title mb-4">Other Ways to Reach Us</h3>
+                <h3 className="card-title mb-4">Direct Contact</h3>
                 <div className="space-y-4">
-                  {contactMethods.map((method, index) => (
+                  {contactContent.direct_contacts.map((contact, index) => (
                     <div key={index} className="flex items-start gap-3">
                       <div className="bg-primary/10 rounded-lg p-2 flex-shrink-0">
-                        <method.icon className="w-5 h-5 text-primary" />
+                        <Mail className="w-5 h-5 text-primary" />
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-semibold">{method.title}</h4>
-                        <p className="text-sm text-base-content/70 mb-2">{method.description}</p>
+                        <h4 className="font-semibold">{contact.type}</h4>
+                        <p className="text-sm text-base-content/70 mb-2">Response time: {contact.response}</p>
                         <a
-                          href={method.action}
+                          href={`mailto:${contact.email}`}
                           className="text-primary hover:text-primary/80 font-medium text-sm"
                         >
-                          {method.contact}
+                          {contact.email}
                         </a>
                       </div>
                     </div>
@@ -287,75 +280,47 @@ export function ContactPage() {
               </div>
             </div>
 
-            {/* Office Info */}
-            <div className="card bg-base-100 shadow-xl">
-              <div className="card-body">
-                <h3 className="card-title mb-4">
-                  <MapPin className="w-5 h-5" />
-                  Our Office
-                </h3>
-                <div className="space-y-3">
-                  <div>
-                    <p className="font-medium">WorldPianos HQ</p>
-                    <p className="text-sm text-base-content/70">
-                      123 Music Street<br />
-                      San Francisco, CA 94102<br />
-                      United States
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-base-content/70">
-                    <Clock className="w-4 h-4" />
-                    <span>Monday - Friday: 9AM - 5PM PST</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Social Media */}
+            {/* Organization Info */}
             <div className="card bg-base-100 shadow-xl">
               <div className="card-body">
                 <h3 className="card-title mb-4">
                   <Globe className="w-5 h-5" />
-                  Follow Us
+                  About {contactContent.about_us.organization}
                 </h3>
-                <div className="space-y-3">
-                  {socialLinks.map((social, index) => (
-                    <a
-                      key={index}
-                      href={social.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-base-200 transition-colors"
-                    >
-                      <social.icon className="w-5 h-5 text-base-content/70" />
-                      <div>
-                        <div className="font-medium">{social.name}</div>
-                        <div className="text-sm text-base-content/60">{social.handle}</div>
-                      </div>
-                    </a>
-                  ))}
-                </div>
+                <p className="text-sm text-base-content/70 leading-relaxed">
+                  {contactContent.about_us.mission}
+                </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* FAQ Section */}
+        {/* Quick FAQ Section */}
         <div className="mt-16">
-          <h2 className="text-3xl font-bold text-center mb-8">Frequently Asked Questions</h2>
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold mb-4">Quick Answers</h2>
+            <p className="text-base-content/70">Common questions answered instantly</p>
+          </div>
           <div className="max-w-4xl mx-auto">
-            <div className="space-y-4">
-              {faqItems.map((item, index) => (
-                <div key={index} className="collapse collapse-plus bg-base-200">
-                  <input type="radio" name="faq-accordion" />
-                  <div className="collapse-title text-lg font-medium">
-                    {item.question}
-                  </div>
-                  <div className="collapse-content">
-                    <p className="text-base-content/80">{item.answer}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {contactContent.quick_faq.map((item, index) => (
+                <div key={index} className="card bg-base-200 shadow-xl">
+                  <div className="card-body">
+                    <div className="flex items-start gap-3">
+                      <HelpCircle className="w-5 h-5 text-primary flex-shrink-0 mt-1" />
+                      <div>
+                        <h3 className="font-semibold mb-2">{item.question}</h3>
+                        <p className="text-sm text-base-content/80">{item.answer}</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
+            </div>
+            <div className="text-center mt-8">
+              <a href="/faq" className="btn btn-outline">
+                View Full FAQ
+              </a>
             </div>
           </div>
         </div>

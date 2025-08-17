@@ -191,10 +191,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     console.log('[AUTH] Signing out')
+    
+    try {
+      // First try Supabase signOut (for OAuth sessions)
+      await supabase.auth.signOut()
+    } catch (error) {
+      console.warn('[AUTH] Supabase signOut failed:', error)
+    }
+    
+    // Then use direct signOut (for email/password sessions)
     const { error } = await directSignOut()
     
     if (error) {
-      console.error('[AUTH] Sign out error:', error)
+      console.error('[AUTH] Direct sign out error:', error)
       // Don't throw error for signout - just clear local state
     }
 

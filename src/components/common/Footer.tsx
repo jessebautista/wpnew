@@ -8,8 +8,17 @@ export function Footer() {
     <footer className="bg-base-200 text-base-content">
       <div className="container mx-auto px-4 py-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Brand */}
-          <div className="space-y-4">
+          {/* Newsletter - Shows first on mobile, last on desktop */}
+          <div className="order-1 md:order-4">
+            <NewsletterSubscription 
+              source="footer"
+              variant="sidebar"
+              className="max-w-none"
+            />
+          </div>
+
+          {/* Brand - Shows second on mobile, first on desktop */}
+          <div className="space-y-4 order-2 md:order-1">
             <div className="flex items-center space-x-2">
               <Piano className="w-6 h-6" />
               <span className="text-xl font-bold">WorldPianos</span>
@@ -17,15 +26,17 @@ export function Footer() {
             <p className="text-sm">
               Connecting piano enthusiasts worldwide, making it easy to find, share, and celebrate public pianos.
             </p>
-            <SocialFollow 
-              variant="horizontal" 
-              size="sm" 
-              showLabels={false}
-            />
+            <div className="flex justify-center md:justify-start">
+              <SocialFollow 
+                variant="horizontal" 
+                size="sm" 
+                showLabels={false}
+              />
+            </div>
           </div>
 
-          {/* Quick Links */}
-          <div>
+          {/* Quick Links - Shows third on mobile, second on desktop */}
+          <div className="order-3 md:order-2 text-center">
             <h3 className="font-semibold text-lg mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li><Link to="/pianos" className="link link-hover">Find Pianos</Link></li>
@@ -35,8 +46,8 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Support */}
-          <div>
+          {/* Support - Shows fourth on mobile, third on desktop */}
+          <div className="order-4 md:order-3 text-center">
             <h3 className="font-semibold text-lg mb-4">Support</h3>
             <ul className="space-y-2">
               <li><Link to="/contact" className="link link-hover">Contact Us</Link></li>
@@ -46,26 +57,19 @@ export function Footer() {
               <li><Link to="/terms" className="link link-hover">Terms of Service</Link></li>
             </ul>
           </div>
-
-          {/* Newsletter */}
-          <div>
-            <NewsletterSubscription 
-              source="footer"
-              variant="sidebar"
-              className="max-w-none"
-            />
-          </div>
         </div>
 
         {/* Bottom Bar */}
         <div className="divider"></div>
-        <div className="flex flex-col md:flex-row justify-between items-center">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-2">
           <p className="text-sm">
-            © 2024 WorldPianos.org. All rights reserved.
+            © 2025 WorldPianos.org. All rights reserved.
           </p>
-          <p className="text-sm">
-            Made with ♪ for piano lovers worldwide
-          </p>
+          <div className="flex flex-col md:flex-row items-center gap-2 text-sm">
+            <p>Made with ♪ for piano lovers worldwide</p>
+            <span className="hidden md:inline">•</span>
+            <p>Powered by Sing for Hope</p>
+          </div>
         </div>
       </div>
     </footer>

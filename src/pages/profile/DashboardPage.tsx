@@ -273,8 +273,8 @@ export function DashboardPage() {
                         Add your first piano to the map or mark one as visited to see your activity here.
                       </p>
                       <div className="space-x-4">
-                        <button className="btn btn-primary">Add a Piano</button>
-                        <button className="btn btn-outline">Explore Pianos</button>
+                        <Link to="/pianos/add" className="btn btn-primary">Add a Piano</Link>
+                        <Link to="/pianos" className="btn btn-outline">Explore Pianos</Link>
                       </div>
                     </div>
                   )}
@@ -346,22 +346,22 @@ export function DashboardPage() {
               <div className="card-body">
                 <h3 className="card-title">Quick Actions</h3>
                 <div className="space-y-2">
-                  <button className="btn btn-outline btn-sm w-full justify-start">
+                  <Link to="/pianos/add" className="btn btn-outline btn-sm w-full justify-start">
                     <Piano className="w-4 h-4 mr-2" />
                     Add a Piano
-                  </button>
-                  <button className="btn btn-outline btn-sm w-full justify-start">
+                  </Link>
+                  <Link to="/events/add" className="btn btn-outline btn-sm w-full justify-start">
                     <Calendar className="w-4 h-4 mr-2" />
                     Create Event
-                  </button>
-                  <button className="btn btn-outline btn-sm w-full justify-start">
+                  </Link>
+                  <Link to="/pianos/map" className="btn btn-outline btn-sm w-full justify-start">
                     <MapPin className="w-4 h-4 mr-2" />
                     Explore Map
-                  </button>
-                  <button className="btn btn-outline btn-sm w-full justify-start">
+                  </Link>
+                  <Link to="/pianos" className="btn btn-outline btn-sm w-full justify-start">
                     <Star className="w-4 h-4 mr-2" />
                     Rate a Piano
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -382,7 +382,10 @@ export function DashboardPage() {
                     value={user?.full_name && user?.bio ? "80" : user?.full_name ? "60" : "40"} 
                     max="100"
                   ></progress>
-                  <button className="btn btn-outline btn-sm w-full">
+                  <button 
+                    className="btn btn-outline btn-sm w-full"
+                    onClick={() => setActiveTab('profile')}
+                  >
                     Complete Profile
                   </button>
                 </div>

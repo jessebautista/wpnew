@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   Search, 
   HelpCircle, 
@@ -7,147 +7,219 @@ import {
   Calendar, 
   Shield, 
   Settings,
-  ChevronDown
+  ChevronDown,
+  Book,
+  Globe,
+  Lock,
+  LifeBuoy
 } from 'lucide-react'
-import { useLanguage } from '../../contexts/LanguageContext'
 
-interface FAQItem {
-  id: string
-  question: string
-  answer: string
-  category: string
-  tags: string[]
+interface FAQCategory {
+  name: string
+  questions: Array<{
+    question: string
+    answer: string
+  }>
+}
+
+interface FAQContent {
+  title: string
+  description: string
+  categories: FAQCategory[]
 }
 
 export function FAQPage() {
-  const { } = useLanguage()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [openItems, setOpenItems] = useState<string[]>([])
 
+  const faqContent: FAQContent = {
+    title: "Frequently Asked Questions",
+    description: "Find answers to common questions about using Worldpianos.org, adding pianos, and connecting with the community.",
+    categories: [
+      {
+        name: "Getting Started",
+        questions: [
+          {
+            question: "How do I create an account?",
+            answer: "Creating an account is simple and free! Click the 'Sign Up' button in the top right corner of any page. You can register with your email address or use social login options. Once registered, you'll be able to add pianos, create events, and track your piano discoveries."
+          },
+          {
+            question: "What is Worldpianos.org?",
+            answer: "Worldpianos.org is a global platform that maps public pianos worldwide. Created by Sing For Hope, we connect piano enthusiasts, help people discover pianos in their area, and build communities around shared musical experiences."
+          },
+          {
+            question: "Is Worldpianos.org free to use?",
+            answer: "Yes! Worldpianos.org is completely free to use. You can browse the map, find pianos, create an account, add piano locations, and participate in events without any cost."
+          }
+        ]
+      },
+      {
+        name: "Piano Mapping",
+        questions: [
+          {
+            question: "How do I add a new piano to the map?",
+            answer: "To add a piano, click the 'Add Piano' button on the map page or in the navigation. You'll need to create an account first. Then, provide the piano's location, add photos if possible, describe its condition, and include any relevant details."
+          },
+          {
+            question: "Can I edit or update piano information?",
+            answer: "Yes! If you're logged in, you can suggest edits to piano information by visiting the piano's page and clicking 'Suggest Edit.' If you originally added the piano, you may have additional editing privileges."
+          },
+          {
+            question: "What if a piano is no longer there or broken?",
+            answer: "Please report the issue using the 'Report Issue' button on the piano's page. You can indicate if the piano is missing, damaged, or access has changed."
+          },
+          {
+            question: "What are the guidelines for piano photos?",
+            answer: "Photos should clearly show the piano and its surroundings. Include wide shots showing the location context and close-ups of the piano itself. Avoid photos with people's faces unless you have permission."
+          }
+        ]
+      },
+      {
+        name: "Events",
+        questions: [
+          {
+            question: "How do I create a piano event?",
+            answer: "Click 'Add Event' on the events page or use the 'Add Event' button in the navigation. You'll need an account to create events. Provide event details including date, time, location, and description."
+          },
+          {
+            question: "What types of events can I create?",
+            answer: "You can create various types of piano-related events: recitals, concerts, informal meetups, piano marathons, flash mobs, festivals, workshops, or any gathering focused on piano music."
+          },
+          {
+            question: "How do I RSVP or join an event?",
+            answer: "Visit the event page and click 'RSVP' or 'Join Event.' You may need to create an account if you haven't already."
+          }
+        ]
+      },
+      {
+        name: "Account Management",
+        questions: [
+          {
+            question: "What is the Piano Passport?",
+            answer: "The Piano Passport is your personal record of piano discoveries and experiences. It tracks the pianos you've visited, events you've attended, and achievements you've unlocked."
+          },
+          {
+            question: "How do I delete my account?",
+            answer: "To delete your account and all associated data, please contact us at privacy@worldpianos.org. We'll process your request within 72 hours and permanently remove your personal information."
+          },
+          {
+            question: "How do I change my email or password?",
+            answer: "Visit your account settings page by clicking your profile icon and selecting 'Settings.' From there, you can update your email address, change your password, and modify other account preferences."
+          }
+        ]
+      },
+      {
+        name: "Privacy & Data",
+        questions: [
+          {
+            question: "What personal information do you collect?",
+            answer: "We collect only the information necessary to provide our services: your email address, optional profile information, and content you choose to share (like piano locations and photos)."
+          },
+          {
+            question: "Do you use cookies or tracking?",
+            answer: "We use essential cookies for basic website functionality and privacy-friendly analytics (Matomo) to understand how people use our site. We don't use tracking cookies for advertising."
+          },
+          {
+            question: "What are my data rights?",
+            answer: "You have the right to access, correct, export, or delete your personal information. To exercise these rights, contact us at privacy@worldpianos.org."
+          }
+        ]
+      },
+      {
+        name: "Technical Support",
+        questions: [
+          {
+            question: "Is there a mobile app?",
+            answer: "Currently, we don't have a dedicated mobile app, but our website is fully responsive and works great on mobile devices."
+          },
+          {
+            question: "Which browsers are supported?",
+            answer: "Worldpianos.org works with all modern browsers including Chrome, Firefox, Safari, and Edge. For the best experience, keep your browser updated."
+          },
+          {
+            question: "How do I report a bug or technical issue?",
+            answer: "Please contact our technical support team at support@worldpianos.org. Include details about what you were trying to do, what happened instead, and what browser/device you're using."
+          }
+        ]
+      },
+      {
+        name: "Community Guidelines",
+        questions: [
+          {
+            question: "What are the community guidelines?",
+            answer: "We ask all community members to be respectful, helpful, and accurate. Submit truthful information about pianos, respect others' contributions, and keep content appropriate for all ages."
+          },
+          {
+            question: "How do I report inappropriate content or behavior?",
+            answer: "Use the 'Report' buttons found throughout the site, or contact us directly at hello@worldpianos.org."
+          },
+          {
+            question: "How can I help improve the platform?",
+            answer: "You can help by adding accurate piano information, reporting issues, participating in events, and sharing the platform with other piano enthusiasts."
+          }
+        ]
+      },
+      {
+        name: "Safety & Security",
+        questions: [
+          {
+            question: "Are the piano locations safe to visit?",
+            answer: "While we strive to maintain accurate information, we cannot guarantee the safety of any location. Always use common sense when visiting pianos, especially in unfamiliar areas."
+          },
+          {
+            question: "What if I encounter a safety issue at a piano location?",
+            answer: "For immediate safety concerns, contact local emergency services first. Then, please report the issue to us at safety@worldpianos.org."
+          },
+          {
+            question: "Is the platform appropriate for children?",
+            answer: "Our platform is family-friendly, but children should always be supervised by adults when visiting piano locations."
+          }
+        ]
+      }
+    ]
+  }
+
+  const getCategoryIcon = (categoryName: string) => {
+    const name = categoryName.toLowerCase()
+    if (name.includes('getting started')) return Book
+    if (name.includes('piano') || name.includes('mapping')) return Piano
+    if (name.includes('event')) return Calendar
+    if (name.includes('account') || name.includes('management')) return Users
+    if (name.includes('privacy') || name.includes('data')) return Lock
+    if (name.includes('technical') || name.includes('support')) return Settings
+    if (name.includes('community') || name.includes('guidelines')) return Users
+    if (name.includes('safety') || name.includes('security')) return Shield
+    return HelpCircle
+  }
+
+
+  // Create categories array with icons
   const categories = [
     { id: 'all', name: 'All Questions', icon: HelpCircle },
-    { id: 'pianos', name: 'Pianos & Locations', icon: Piano },
-    { id: 'community', name: 'Community & Account', icon: Users },
-    { id: 'events', name: 'Events & Meetups', icon: Calendar },
-    { id: 'technical', name: 'Technical Support', icon: Settings },
-    { id: 'safety', name: 'Safety & Moderation', icon: Shield }
+    ...faqContent.categories.map((cat) => ({
+      id: cat.name.toLowerCase().replace(/\s+/g, '-'),
+      name: cat.name,
+      icon: getCategoryIcon(cat.name)
+    }))
   ]
 
-  const faqData: FAQItem[] = [
-    {
-      id: '1',
-      question: 'How do I add a new piano to WorldPianos?',
-      answer: 'Adding a piano is easy! Click the "Add Piano" button in the navigation menu or on the map page. Fill out the form with the piano\'s location, condition, and any relevant details. Include photos if possible. Our community moderators will review your submission and approve it once verified.',
-      category: 'pianos',
-      tags: ['add piano', 'submit', 'location', 'verification']
-    },
-    {
-      id: '2',
-      question: 'What should I do if I find a broken or missing piano?',
-      answer: 'If you encounter a piano that\'s damaged, out of tune, or no longer at its listed location, please report it using the "Report Issue" button on the piano\'s page. Provide details about the current condition and, if possible, photos. We work with local communities and piano maintainers to address these issues.',
-      category: 'pianos',
-      tags: ['broken piano', 'missing piano', 'report', 'maintenance']
-    },
-    {
-      id: '3',
-      question: 'How do I create an account?',
-      answer: 'Click "Sign Up" in the top navigation. You can register with your email address or use social login options like Google or Facebook. Creating an account allows you to add pianos, organize events, save favorites, and engage with the community.',
-      category: 'community',
-      tags: ['account', 'registration', 'sign up', 'social login']
-    },
-    {
-      id: '4',
-      question: 'Is WorldPianos free to use?',
-      answer: 'Yes! WorldPianos is completely free for all users. We\'re a community-driven platform supported by donations and volunteer contributions. There are no premium features or subscription fees.',
-      category: 'community',
-      tags: ['free', 'cost', 'pricing', 'donation']
-    },
-    {
-      id: '5',
-      question: 'How can I organize a piano event or meetup?',
-      answer: 'After creating an account, visit the Events page and click "Create Event." Choose a piano location from our database, set the date and time, and provide event details. You can invite other community members and share your event on social media.',
-      category: 'events',
-      tags: ['create event', 'organize', 'meetup', 'planning']
-    },
-    {
-      id: '6',
-      question: 'Can I attend events without creating an account?',
-      answer: 'While you can view event listings without an account, we recommend registering to RSVP, receive updates, and connect with other attendees. Most event organizers appreciate knowing who\'s planning to attend.',
-      category: 'events',
-      tags: ['attend event', 'RSVP', 'guest access']
-    },
-    {
-      id: '7',
-      question: 'Why isn\'t the map loading or showing pianos?',
-      answer: 'Map issues are usually related to browser permissions or internet connectivity. Make sure you\'ve allowed location access if prompted, and try refreshing the page. If problems persist, try a different browser or clear your browser cache. Contact support if issues continue.',
-      category: 'technical',
-      tags: ['map', 'loading', 'location permission', 'browser']
-    },
-    {
-      id: '8',
-      question: 'How do I change my notification preferences?',
-      answer: 'Go to your account settings (click your profile icon → Settings). In the Notifications section, you can customize email alerts for new pianos in your area, upcoming events, and community updates. You can also unsubscribe from all emails using the link in any email we send.',
-      category: 'technical',
-      tags: ['notifications', 'settings', 'email preferences', 'unsubscribe']
-    },
-    {
-      id: '9',
-      question: 'What are the community guidelines for posting?',
-      answer: 'We encourage respectful, helpful, and accurate contributions. When adding pianos or creating events, provide honest descriptions and current information. Be respectful in comments and interactions. Spam, hate speech, or inappropriate content will be removed and may result in account suspension.',
-      category: 'safety',
-      tags: ['guidelines', 'community rules', 'moderation', 'behavior']
-    },
-    {
-      id: '10',
-      question: 'How do I report inappropriate content or behavior?',
-      answer: 'Use the "Report" button found on piano pages, events, comments, or user profiles. Provide specific details about the issue. Our moderation team reviews all reports promptly. For urgent safety concerns, contact us directly through the Contact page.',
-      category: 'safety',
-      tags: ['report', 'inappropriate content', 'safety', 'moderation']
-    },
-    {
-      id: '11',
-      question: 'Can I edit piano information after submitting?',
-      answer: 'Yes, if you submitted the piano originally, you can edit most details by visiting the piano page and clicking "Edit." Changes to location require moderator approval. Other users can also suggest edits, which are reviewed by our community moderators.',
-      category: 'pianos',
-      tags: ['edit piano', 'update information', 'corrections']
-    },
-    {
-      id: '12',
-      question: 'How accurate is the piano information?',
-      answer: 'Piano information is community-sourced and regularly updated. We encourage users to verify details before visiting and report any changes. Popular pianos are typically more current due to frequent community updates. Always check recent comments for the latest status.',
-      category: 'pianos',
-      tags: ['accuracy', 'verification', 'community updates', 'reliability']
-    },
-    {
-      id: '13',
-      question: 'What should I bring when visiting a public piano?',
-      answer: 'While most public pianos are playable as-is, consider bringing hand sanitizer, wet wipes for the keys, and a small towel. Some outdoor pianos may be affected by weather. Check recent comments on the piano\'s page for current condition updates.',
-      category: 'pianos',
-      tags: ['visiting tips', 'what to bring', 'preparation', 'hygiene']
-    },
-    {
-      id: '14',
-      question: 'How can I support WorldPianos?',
-      answer: 'There are many ways to help! Add pianos in your area, attend and organize events, help moderate content, spread the word on social media, or make a donation. We also welcome volunteers with skills in development, design, music, or community management.',
-      category: 'community',
-      tags: ['support', 'volunteer', 'donation', 'contribute']
-    },
-    {
-      id: '15',
-      question: 'Is my personal information safe?',
-      answer: 'We take privacy seriously and follow industry-standard security practices. We only collect necessary information and never sell user data. Your email is only used for account management and optional notifications. Read our full Privacy Policy for complete details.',
-      category: 'safety',
-      tags: ['privacy', 'security', 'personal data', 'safety']
-    }
-  ]
+  // Flatten all questions for filtering
+  const allQuestions = faqContent.categories.flatMap((category, catIndex) =>
+    category.questions.map((q, qIndex) => ({
+      id: `${catIndex}-${qIndex}`,
+      question: q.question,
+      answer: q.answer,
+      category: category.name.toLowerCase().replace(/\s+/g, '-'),
+      categoryName: category.name
+    }))
+  )
 
-  const filteredFAQs = faqData.filter(faq => {
+  const filteredFAQs = allQuestions.filter(faq => {
     const matchesCategory = selectedCategory === 'all' || faq.category === selectedCategory
     const matchesSearch = searchQuery === '' || 
       faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      faq.answer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      faq.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+      faq.answer.toLowerCase().includes(searchQuery.toLowerCase())
     
     return matchesCategory && matchesSearch
   })
@@ -166,11 +238,8 @@ export function FAQPage() {
       <div className="bg-gradient-to-r from-primary to-secondary text-primary-content py-16">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-5xl font-bold mb-6">Frequently Asked Questions</h1>
-            <p className="text-xl opacity-90">
-              Find answers to common questions about WorldPianos, 
-              our community, and how to make the most of our platform.
-            </p>
+            <h1 className="text-5xl font-bold mb-6">{faqContent.title}</h1>
+            <p className="text-xl opacity-90">{faqContent.description}</p>
           </div>
         </div>
       </div>
@@ -271,16 +340,11 @@ export function FAQPage() {
                           </p>
                         </div>
                         
-                        {/* Tags */}
-                        <div className="flex flex-wrap gap-1 mt-4">
-                          {faq.tags.map((tag, index) => (
-                            <span
-                              key={index}
-                              className="badge badge-outline badge-sm"
-                            >
-                              {tag}
-                            </span>
-                          ))}
+                        {/* Category Badge */}
+                        <div className="mt-4">
+                          <span className="badge badge-outline badge-sm">
+                            {faq.categoryName}
+                          </span>
                         </div>
                       </div>
                     )}

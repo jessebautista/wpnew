@@ -4,7 +4,7 @@ import { Shield, Eye, Lock, Users, Globe, Mail } from 'lucide-react'
 export function PrivacyPage() {
   const { } = useLanguage()
 
-  const lastUpdated = 'January 15, 2024'
+  const lastUpdated = 'August 17, 2025'
 
   return (
     <div className="min-h-screen bg-base-100">

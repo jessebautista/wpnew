@@ -4,7 +4,7 @@ import { Scale, Shield, Users, AlertTriangle, Mail, FileText } from 'lucide-reac
 export function TermsPage() {
   const { } = useLanguage()
 
-  const lastUpdated = 'January 15, 2024'
+  const lastUpdated = 'August 17, 2025'
 
   return (
     <div className="min-h-screen bg-base-100">

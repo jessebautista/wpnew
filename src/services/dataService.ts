@@ -363,9 +363,8 @@ export class DataService {
         updated_at: new Date().toISOString()
       }
 
-      if (rejectionReason) {
-        updateData.rejection_reason = rejectionReason
-      }
+      // Note: rejection_reason column doesn't exist in current schema
+      // TODO: Add rejection_reason column to pianos table if needed
 
       const { error } = await supabase
         .from('pianos')

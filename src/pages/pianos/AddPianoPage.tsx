@@ -362,21 +362,6 @@ export function AddPianoPage() {
 
       <div className="container mx-auto px-4 py-4 md:py-8">
         <div className="max-w-2xl mx-auto">
-          {/* Progress Steps */}
-          <div className="mb-8">
-            <div className="flex justify-center">
-              <ul className="steps steps-horizontal w-full max-w-lg">
-                <li className="step step-primary">Basic Info</li>
-                <li className="step step-primary">Location</li>
-                <li className="step step-primary">Details</li>
-                <li className="step step-primary">Review</li>
-              </ul>
-            </div>
-            <p className="text-center text-sm text-base-content/60 mt-2">
-              Fill out all sections to submit your piano listing
-            </p>
-          </div>
-
           <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
             {/* Basic Information */}
             <div className="card bg-base-100 shadow-xl">

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { usePermissions } from '../../hooks/usePermissions'
 import { Piano, Calendar, BookOpen, User, LogOut, Plus, Book, Accessibility, Menu, X, LayoutDashboard } from 'lucide-react'
@@ -11,8 +11,34 @@ export function Navbar() {
   const { user, signOut } = useAuth()
   const { canAccessAdminPanel, canCreate } = usePermissions()
   const { t } = useLanguage()
+  const location = useLocation()
   const [isAccessibilityPanelOpen, setIsAccessibilityPanelOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
+  const profileMenuRef = useRef<HTMLDivElement>(null)
+
+  // Close profile menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setIsProfileMenuOpen(false)
+      }
+    }
+
+    if (isProfileMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isProfileMenuOpen])
+
+  // Close menus when route changes
+  useEffect(() => {
+    setIsProfileMenuOpen(false)
+    setIsMobileMenuOpen(false)
+  }, [location.pathname])
 
   return (
     <>
@@ -74,15 +100,17 @@ export function Navbar() {
             </button>
 
             {user ? (
-              <div className="dropdown dropdown-end">
+              <div className="relative">
                 <div 
-                  tabIndex={0} 
                   role="button" 
                   className="btn btn-ghost btn-circle avatar"
                   aria-label={t('a11y.userMenu')}
                   aria-haspopup="true"
-                  aria-expanded="false"
-                  onClick={() => setIsMobileMenuOpen(false)}
+                  aria-expanded={isProfileMenuOpen}
+                  onClick={() => {
+                    setIsMobileMenuOpen(false)
+                    setIsProfileMenuOpen(!isProfileMenuOpen)
+                  }}
                 >
                   <div className="w-10 rounded-full">
                     {user.avatar_url ? (
@@ -94,30 +122,71 @@ export function Navbar() {
                     )}
                   </div>
                 </div>
-                <ul 
-                  tabIndex={0} 
-                  className="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52"
-                  role="menu"
-                  aria-label="User menu"
-                >
-                  <li className="menu-title" role="presentation">
-                    <span>{user.full_name || user.email}</span>
-                  </li>
-                  <li role="none"><Link to="/dashboard" role="menuitem"><LayoutDashboard className="w-4 h-4" aria-hidden="true" />{t('nav.dashboard')}</Link></li>
-                  <li role="none"><Link to="/passport" role="menuitem"><Book className="w-4 h-4" aria-hidden="true" />Piano Passport</Link></li>
-                  {canAccessAdminPanel() && (
-                    <>
-                      <li role="none"><Link to="/moderation" role="menuitem">{t('nav.moderation')}</Link></li>
-                      <li role="none"><Link to="/admin" role="menuitem">{t('nav.admin')}</Link></li>
-                    </>
-                  )}
-                  <li role="none">
-                    <button onClick={() => signOut()} role="menuitem">
-                      <LogOut className="w-4 h-4" aria-hidden="true" />
-                      {t('nav.logout')}
-                    </button>
-                  </li>
-                </ul>
+                {isProfileMenuOpen && (
+                  <ul 
+                    className="absolute right-0 top-full mt-3 z-[1] p-2 shadow menu menu-sm bg-base-100 rounded-box w-52"
+                    role="menu"
+                    aria-label="User menu"
+                  >
+                    <li className="menu-title" role="presentation">
+                      <span>{user.full_name || user.email}</span>
+                    </li>
+                    <li role="none">
+                      <Link 
+                        to="/dashboard" 
+                        role="menuitem"
+                        onClick={() => setIsProfileMenuOpen(false)}
+                      >
+                        <LayoutDashboard className="w-4 h-4" aria-hidden="true" />
+                        {t('nav.dashboard')}
+                      </Link>
+                    </li>
+                    <li role="none">
+                      <Link 
+                        to="/passport" 
+                        role="menuitem"
+                        onClick={() => setIsProfileMenuOpen(false)}
+                      >
+                        <Book className="w-4 h-4" aria-hidden="true" />
+                        Piano Passport
+                      </Link>
+                    </li>
+                    {canAccessAdminPanel() && (
+                      <>
+                        <li role="none">
+                          <Link 
+                            to="/moderation" 
+                            role="menuitem"
+                            onClick={() => setIsProfileMenuOpen(false)}
+                          >
+                            {t('nav.moderation')}
+                          </Link>
+                        </li>
+                        <li role="none">
+                          <Link 
+                            to="/admin" 
+                            role="menuitem"
+                            onClick={() => setIsProfileMenuOpen(false)}
+                          >
+                            {t('nav.admin')}
+                          </Link>
+                        </li>
+                      </>
+                    )}
+                    <li role="none">
+                      <button 
+                        onClick={() => {
+                          setIsProfileMenuOpen(false)
+                          signOut()
+                        }} 
+                        role="menuitem"
+                      >
+                        <LogOut className="w-4 h-4" aria-hidden="true" />
+                        {t('nav.logout')}
+                      </button>
+                    </li>
+                  </ul>
+                )}
               </div>
             ) : (
               <div className="flex gap-1 sm:gap-2 flex-shrink-0">

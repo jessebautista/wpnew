@@ -269,21 +269,6 @@ export function AddEventPage() {
 
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
-          {/* Progress Steps */}
-          <div className="mb-8">
-            <div className="flex justify-center">
-              <ul className="steps steps-horizontal w-full max-w-lg">
-                <li className="step step-secondary">Event Info</li>
-                <li className="step step-secondary">Date & Time</li>
-                <li className="step step-secondary">Location</li>
-                <li className="step step-secondary">Publish</li>
-              </ul>
-            </div>
-            <p className="text-center text-sm text-base-content/60 mt-2">
-              Create your piano event in a few simple steps
-            </p>
-          </div>
-
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Basic Information */}
             <div className="card bg-base-100 shadow-xl">

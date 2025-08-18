@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { 
   Shield, 
@@ -19,14 +19,41 @@ import {
   Flag,
   Mail,
   X,
-  Plus
+  Plus,
+  Save,
+  MapPin,
+  Check
 } from 'lucide-react'
 import { useAuth } from '../../components/auth/AuthProvider'
 import { usePermissions } from '../../hooks/usePermissions'
 import { AdminService, type AdminStats, type RecentActivity } from '../../services/adminService'
+import { GeocodingService, type LocationSuggestion } from '../../services/geocodingService'
 import { supabase } from '../../lib/supabase'
-import { NewsletterDashboard } from '../../components/admin/NewsletterDashboard'
-import { SettingsDashboard } from '../../components/admin/SettingsDashboard'
+// TODO: Newsletter Dashboard Implementation
+// The newsletter functionality is temporarily disabled pending full implementation.
+// To re-enable:
+// 1. Uncomment the import below
+// 2. Replace NewsletterComingSoon with <NewsletterDashboard /> in the newsletter tab
+// 3. Ensure database tables are set up for newsletter subscribers and campaigns
+// 4. Complete NewsletterService implementation with email provider integration
+// 5. Test email sending functionality and subscriber management
+// Components ready for use:
+// - NewsletterDashboard: Main dashboard with subscriber and campaign management
+// - NewsletterService: Service layer for newsletter operations (needs completion)
+// import { NewsletterDashboard } from '../../components/admin/NewsletterDashboard'
+// TODO: Settings Dashboard Implementation
+// The settings functionality is temporarily disabled pending full implementation.
+// To re-enable:
+// 1. Uncomment the import below and settings tab button/content
+// 2. Complete SettingsService implementation for system configuration
+// 3. Implement proper permission checks for settings modifications  
+// 4. Connect AI enhancement services and analytics
+// 5. Test all settings functionality thoroughly
+// Components ready for use:
+// - SettingsDashboard: Main settings interface with AI enhancements and analytics
+// - SettingsService: Service layer for settings management (needs completion)
+// - AIEnhancementService: AI-powered content enhancement features
+// import { SettingsDashboard } from '../../components/admin/SettingsDashboard'
 
 
 export function AdminDashboardPage() {
@@ -36,13 +63,9 @@ export function AdminDashboardPage() {
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedTab, setSelectedTab] = useState<'overview' | 'users' | 'content' | 'reports' | 'newsletter' | 'settings'>('overview')
+  const [hasAccess, setHasAccess] = useState(false)
 
-  useEffect(() => {
-    if (!canAccessAdminPanel()) return
-    loadDashboardData()
-  }, [canAccessAdminPanel])
-
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       console.log('Loading admin dashboard data...')
       
@@ -74,9 +97,21 @@ export function AdminDashboardPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, []) // Empty dependency array since this function doesn't depend on any props or state
 
-  if (!canAccessAdminPanel()) {
+  // Check access once and store in state to prevent infinite loops
+  useEffect(() => {
+    const access = canAccessAdminPanel()
+    setHasAccess(access)
+  }, [canAccessAdminPanel])
+
+  // Load data only when access is confirmed
+  useEffect(() => {
+    if (!hasAccess) return
+    loadDashboardData()
+  }, [hasAccess, loadDashboardData])
+
+  if (!hasAccess) {
     return (
       <div className="min-h-screen bg-base-100 flex items-center justify-center">
         <div className="text-center">
@@ -161,13 +196,14 @@ export function AdminDashboardPage() {
             <Mail className="w-4 h-4 mr-2" />
             Newsletter
           </button>
-          <button 
+          {/* TODO: Re-enable settings tab once SettingsDashboard is fully implemented */}
+          {/* <button 
             className={`tab tab-lg ${selectedTab === 'settings' ? 'tab-active' : ''}`}
             onClick={() => setSelectedTab('settings')}
           >
             <Settings className="w-4 h-4 mr-2" />
             Settings
-          </button>
+          </button> */}
         </div>
 
         {/* Tab Content */}
@@ -184,11 +220,12 @@ export function AdminDashboardPage() {
           <ReportsTab />
         )}
         {selectedTab === 'newsletter' && (
-          <NewsletterDashboard />
+          <NewsletterComingSoon />
         )}
-        {selectedTab === 'settings' && (
+        {/* TODO: Re-enable settings tab content once SettingsDashboard is fully implemented */}
+        {/* {selectedTab === 'settings' && (
           <SettingsDashboard />
-        )}
+        )} */}
       </div>
     </div>
   )
@@ -348,13 +385,6 @@ function OverviewTab({ stats, recentActivity }: OverviewTabProps) {
               <Settings className="w-4 h-4 mr-2" />
               Moderation Rules
             </Link>
-            <button 
-              className="btn btn-outline"
-              onClick={() => alert('Analytics dashboard coming soon!')}
-            >
-              <TrendingUp className="w-4 h-4 mr-2" />
-              Analytics
-            </button>
           </div>
         </div>
       </div>
@@ -568,6 +598,9 @@ function ContentTab() {
   const [searchQuery, setSearchQuery] = useState('')
   const [content, setContent] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [selectedContent, setSelectedContent] = useState<any>(null)
 
   useEffect(() => {
     loadContent()
@@ -596,6 +629,37 @@ function ContentTab() {
       setContent([])
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleEditContent = (item: any) => {
+    setSelectedContent({ ...item, type: contentType })
+    setShowEditModal(true)
+  }
+
+  const handleDeleteContent = (item: any) => {
+    setSelectedContent({ ...item, type: contentType })
+    setShowDeleteModal(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!selectedContent) return
+
+    try {
+      const { error } = await supabase
+        .from(selectedContent.type)
+        .delete()
+        .eq('id', selectedContent.id)
+
+      if (error) throw error
+
+      // Refresh the content list
+      loadContent()
+      setShowDeleteModal(false)
+      setSelectedContent(null)
+      
+    } catch (error) {
+      console.error('Error deleting content:', error)
     }
   }
 
@@ -670,18 +734,30 @@ function ContentTab() {
               </div>
 
               <div className="card-actions justify-end">
-                <Link 
-                  to={`/${contentType === 'blog_posts' ? 'blog' : contentType}/${item.id}`}
-                  className="btn btn-ghost btn-sm"
-                >
-                  <Eye className="w-4 h-4" />
-                </Link>
-                <button className="btn btn-ghost btn-sm">
-                  <Edit className="w-4 h-4" />
-                </button>
-                <button className="btn btn-ghost btn-sm text-error">
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <div className="tooltip" data-tip="View content">
+                  <Link 
+                    to={`/${contentType === 'blog_posts' ? 'blog' : contentType}/${item.id}`}
+                    className="btn btn-ghost btn-sm"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </Link>
+                </div>
+                <div className="tooltip" data-tip="Edit content">
+                  <button 
+                    onClick={() => handleEditContent(item)}
+                    className="btn btn-ghost btn-sm"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="tooltip" data-tip="Delete content">
+                  <button 
+                    onClick={() => handleDeleteContent(item)}
+                    className="btn btn-ghost btn-sm text-error"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -698,6 +774,1028 @@ function ContentTab() {
           </p>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && selectedContent && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg mb-4">Confirm Deletion</h3>
+            <div className="flex items-center mb-4">
+              <AlertTriangle className="w-6 h-6 text-warning mr-3" />
+              <span>Are you sure you want to delete this content?</span>
+            </div>
+            <div className="bg-base-200 p-4 rounded-lg mb-6">
+              <p className="font-semibold">{selectedContent.name || selectedContent.title}</p>
+              <p className="text-sm text-base-content/70 mt-1">
+                Type: {selectedContent.type.replace('_', ' ')}
+              </p>
+              <p className="text-sm text-error mt-2">
+                ⚠️ This action cannot be undone.
+              </p>
+            </div>
+            <div className="modal-action">
+              <button 
+                onClick={() => {
+                  setShowDeleteModal(false)
+                  setSelectedContent(null)
+                }}
+                className="btn btn-ghost"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmDelete}
+                className="btn btn-error"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete
+              </button>
+            </div>
+          </div>
+          <div className="modal-backdrop" onClick={() => {
+            setShowDeleteModal(false)
+            setSelectedContent(null)
+          }}></div>
+        </div>
+      )}
+
+      {/* CMS Editor Modal */}
+      {showEditModal && selectedContent && (
+        <ContentEditorModal 
+          content={selectedContent}
+          onClose={() => {
+            setShowEditModal(false)
+            setSelectedContent(null)
+          }}
+          onSave={() => {
+            loadContent()
+            setShowEditModal(false)
+            setSelectedContent(null)
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+interface ContentEditorModalProps {
+  content: any
+  onClose: () => void
+  onSave: () => void
+}
+
+function ContentEditorModal({ content, onClose, onSave }: ContentEditorModalProps) {
+  const [formData, setFormData] = useState(content)
+  const [saving, setSaving] = useState(false)
+
+  const handleSave = async () => {
+    try {
+      setSaving(true)
+      
+      // Map content types to actual table names
+      const tableMap: Record<string, string> = {
+        'blog_posts': 'blog_posts',
+        'pianos': 'pianos', 
+        'events': 'events'
+      }
+      
+      const tableName = tableMap[content.type]
+      if (!tableName) {
+        throw new Error(`Unknown content type: ${content.type}`)
+      }
+      
+      // Clean the form data to only include fields that exist in the database
+      const cleanedData = { ...formData }
+      
+      // Remove any undefined or null values and fields that don't belong in the update
+      Object.keys(cleanedData).forEach(key => {
+        if (cleanedData[key] === undefined || key === 'id' || key === 'created_at' || key === 'author' || key === 'type') {
+          delete cleanedData[key]
+        }
+      })
+      
+      console.log('Saving to table:', tableName, 'Data:', cleanedData)
+      
+      const { data, error } = await supabase
+        .from(tableName)
+        .update(cleanedData)
+        .eq('id', content.id)
+        .select()
+
+      if (error) {
+        console.error('Supabase error:', error)
+        throw error
+      }
+
+      console.log('Save successful:', data)
+      onSave()
+    } catch (error) {
+      console.error('Error saving content:', error)
+      alert(`Failed to save content: ${error.message || 'Unknown error'}`)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const renderEditor = () => {
+    switch (content.type) {
+      case 'blog_posts':
+        return <BlogEditor formData={formData} setFormData={setFormData} />
+      case 'pianos':
+        return <PianoEditor formData={formData} setFormData={setFormData} />
+      case 'events':
+        return <EventEditor formData={formData} setFormData={setFormData} />
+      default:
+        return <div>Editor not implemented for this content type.</div>
+    }
+  }
+
+  return (
+    <div className="modal modal-open">
+      <div className="modal-box max-w-4xl">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="font-bold text-lg">
+            Edit {content.type.replace('_', ' ')} - {content.name || content.title}
+          </h3>
+          <button onClick={onClose} className="btn btn-sm btn-circle btn-ghost">
+            ✕
+          </button>
+        </div>
+        
+        <div className="max-h-96 overflow-y-auto">
+          {renderEditor()}
+        </div>
+        
+        <div className="modal-action">
+          <button onClick={onClose} className="btn btn-ghost">
+            Cancel
+          </button>
+          <button 
+            onClick={handleSave} 
+            className="btn btn-primary"
+            disabled={saving}
+          >
+            {saving ? (
+              <>
+                <span className="loading loading-spinner loading-sm mr-2"></span>
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                Save Changes
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+      <div className="modal-backdrop" onClick={onClose}></div>
+    </div>
+  )
+}
+
+// Individual editor components for different content types
+function BlogEditor({ formData, setFormData }: { formData: any; setFormData: (data: any) => void }) {
+  return (
+    <div className="space-y-6">
+      {/* Basic Information */}
+      <div className="space-y-4">
+        <h4 className="text-lg font-semibold text-base-content border-b border-base-300 pb-2">
+          Basic Information
+        </h4>
+        
+        <div>
+          <label className="label">
+            <span className="label-text font-medium">Blog Post Title *</span>
+          </label>
+          <input
+            type="text"
+            className="input input-bordered w-full"
+            placeholder="Enter a compelling title for your blog post"
+            value={formData.title || ''}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+          />
+        </div>
+        
+        <div>
+          <label className="label">
+            <span className="label-text font-medium">Excerpt</span>
+            <span className="label-text-alt text-base-content/60">Brief summary for listings</span>
+          </label>
+          <textarea
+            className="textarea textarea-bordered w-full"
+            rows={3}
+            placeholder="Write a brief excerpt that will appear in blog listings and previews..."
+            value={formData.excerpt || ''}
+            onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
+          />
+        </div>
+      </div>
+
+      {/* Content Section */}
+      <div className="space-y-4">
+        <h4 className="text-lg font-semibold text-base-content border-b border-base-300 pb-2">
+          Content
+        </h4>
+        
+        <div>
+          <label className="label">
+            <span className="label-text font-medium">Blog Content *</span>
+            <span className="label-text-alt text-base-content/60">HTML content supported</span>
+          </label>
+          <textarea
+            className="textarea textarea-bordered w-full h-64"
+            placeholder="Write your blog post content here. HTML tags are supported for formatting..."
+            value={formData.content || ''}
+            onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+          />
+          <div className="label">
+            <span className="label-text-alt text-base-content/60">
+              💡 Use HTML tags like &lt;p&gt;, &lt;h2&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;ul&gt;, &lt;ol&gt; for formatting
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Metadata & Settings */}
+      <div className="space-y-4">
+        <h4 className="text-lg font-semibold text-base-content border-b border-base-300 pb-2">
+          Metadata & Settings
+        </h4>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="label">
+              <span className="label-text font-medium">Category</span>
+            </label>
+            <select
+              className="select select-bordered w-full"
+              value={formData.category || ''}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+            >
+              <option value="">Select category</option>
+              <option value="News">News</option>
+              <option value="Tutorial">Tutorial</option>
+              <option value="Community">Community</option>
+              <option value="Events">Events</option>
+              <option value="Features">Features</option>
+              <option value="Updates">Updates</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="label">
+              <span className="label-text font-medium">Featured Image URL</span>
+            </label>
+            <input
+              type="url"
+              className="input input-bordered w-full"
+              placeholder="https://example.com/image.jpg"
+              value={formData.featured_image || ''}
+              onChange={(e) => setFormData({ ...formData, featured_image: e.target.value })}
+            />
+          </div>
+        </div>
+        
+        <div>
+          <label className="label">
+            <span className="label-text font-medium">Tags</span>
+            <span className="label-text-alt text-base-content/60">Comma-separated</span>
+          </label>
+          <input
+            type="text"
+            className="input input-bordered w-full"
+            placeholder="piano, music, community, tutorial"
+            value={formData.tags ? formData.tags.join(', ') : ''}
+            onChange={(e) => setFormData({ ...formData, tags: e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag) })}
+          />
+        </div>
+        
+        <div className="flex gap-6">
+          <label className="label cursor-pointer">
+            <span className="label-text font-medium mr-3">Published</span>
+            <input
+              type="checkbox"
+              className="checkbox checkbox-primary"
+              checked={formData.published || false}
+              onChange={(e) => setFormData({ ...formData, published: e.target.checked })}
+            />
+          </label>
+          
+          <label className="label cursor-pointer">
+            <span className="label-text font-medium mr-3">Allow Comments</span>
+            <input
+              type="checkbox"
+              className="checkbox checkbox-primary"
+              checked={formData.allow_comments || false}
+              onChange={(e) => setFormData({ ...formData, allow_comments: e.target.checked })}
+            />
+          </label>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function PianoEditor({ formData, setFormData }: { formData: any; setFormData: (data: any) => void }) {
+  const [locationLoading, setLocationLoading] = useState(false)
+  const [locationSuggestions, setLocationSuggestions] = useState<any[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null)
+  const [hoursType, setHoursType] = useState<'custom' | 'preset'>('preset')
+
+  const handleLocationSearch = async (query: string) => {
+    // Clear any existing timeout
+    if (searchTimeout) {
+      clearTimeout(searchTimeout)
+    }
+
+    setFormData({ ...formData, location_name: query })
+
+    // If query is empty, hide suggestions
+    if (!query.trim()) {
+      setLocationSuggestions([])
+      setShowSuggestions(false)
+      return
+    }
+
+    // Debounce the search
+    const timeout = setTimeout(async () => {
+      try {
+        // Using same geocoding service as AddPianoPage
+        const suggestions = await GeocodingService.searchLocations(query)
+        setLocationSuggestions(suggestions)
+        setShowSuggestions(suggestions.length > 0)
+      } catch (error) {
+        console.error('Location search error:', error)
+        setLocationSuggestions([])
+        setShowSuggestions(false)
+      }
+    }, 300)
+
+    setSearchTimeout(timeout)
+  }
+
+  const handleLocationSelect = (suggestion: any) => {
+    setFormData({
+      ...formData,
+      location_name: suggestion.address,
+      latitude: suggestion.latitude,
+      longitude: suggestion.longitude
+    })
+    setLocationSuggestions([])
+    setShowSuggestions(false)
+  }
+
+  const getCurrentLocation = () => {
+    setLocationLoading(true)
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords
+          setFormData(prev => ({
+            ...prev,
+            latitude,
+            longitude
+          }))
+          
+          // Try to get address from coordinates using reverse geocoding
+          try {
+            const reverseGeocodingUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`
+            const response = await fetch(reverseGeocodingUrl, {
+              headers: {
+                'User-Agent': 'WorldPianos/1.0 (https://worldpianos.org)'
+              }
+            })
+            
+            if (response.ok) {
+              const data = await response.json()
+              const address = data.display_name || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+              setFormData(prev => ({
+                ...prev,
+                location_name: prev.location_name || address
+              }))
+            } else {
+              throw new Error('Reverse geocoding failed')
+            }
+          } catch (error) {
+            console.error('Error getting address:', error)
+            // Fall back to coordinates
+            const coordsAddress = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+            setFormData(prev => ({
+              ...prev,
+              location_name: prev.location_name || coordsAddress
+            }))
+          }
+          
+          setLocationLoading(false)
+        },
+        (error) => {
+          console.error('Error getting location:', error)
+          setLocationLoading(false)
+        }
+      )
+    } else {
+      setLocationLoading(false)
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Basic Information */}
+      <div className="space-y-4">
+        <h4 className="text-lg font-semibold text-base-content border-b border-base-300 pb-2">
+          Basic Information
+        </h4>
+        
+        <div>
+          <label className="label">
+            <span className="label-text font-medium">Piano Name *</span>
+          </label>
+          <input
+            type="text"
+            className="input input-bordered w-full"
+            placeholder="e.g., Central Park Piano, JFK Terminal 4 Piano"
+            value={formData.name || ''}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          />
+        </div>
+        
+        <div>
+          <label className="label">
+            <span className="label-text font-medium">Description</span>
+          </label>
+          <textarea
+            className="textarea textarea-bordered w-full"
+            rows={4}
+            placeholder="Describe the piano, its condition, and what makes it special..."
+            value={formData.description || ''}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="label">
+              <span className="label-text font-medium">Category *</span>
+            </label>
+            <select
+              className="select select-bordered w-full"
+              value={formData.category || ''}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+            >
+              <option value="">Select category</option>
+              <option value="Airport">Airport</option>
+              <option value="Street">Street</option>
+              <option value="Park">Park</option>
+              <option value="Train Station">Train Station</option>
+              <option value="Shopping Center">Shopping Center</option>
+              <option value="University">University</option>
+              <option value="Hospital">Hospital</option>
+              <option value="Hotel">Hotel</option>
+              <option value="Restaurant">Restaurant</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="label">
+              <span className="label-text font-medium">Condition *</span>
+            </label>
+            <select
+              className="select select-bordered w-full"
+              value={formData.condition || ''}
+              onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
+            >
+              <option value="">Select condition</option>
+              <option value="Excellent">Excellent</option>
+              <option value="Good">Good</option>
+              <option value="Fair">Fair</option>
+              <option value="Needs Tuning">Needs Tuning</option>
+              <option value="Damaged">Damaged</option>
+              <option value="Unknown">Unknown</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Location Information */}
+      <div className="space-y-4">
+        <h4 className="text-lg font-semibold text-base-content border-b border-base-300 pb-2">
+          Location
+        </h4>
+        
+        <div>
+          <label className="label">
+            <span className="label-text font-medium">Address/Location *</span>
+          </label>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                placeholder="Enter the full address or location description"
+                className="input input-bordered w-full"
+                value={formData.location_name || ''}
+                onChange={(e) => handleLocationSearch(e.target.value)}
+                onFocus={() => {
+                  if (locationSuggestions.length > 0) {
+                    setShowSuggestions(true)
+                  }
+                }}
+                onBlur={() => {
+                  // Delay hiding suggestions to allow clicking on them
+                  setTimeout(() => setShowSuggestions(false), 200)
+                }}
+              />
+              
+              {/* Location Suggestions Dropdown */}
+              {showSuggestions && locationSuggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 bg-base-100 border border-base-300 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+                  {locationSuggestions.map((suggestion) => (
+                    <button
+                      key={suggestion.id}
+                      type="button"
+                      className="w-full text-left px-4 py-3 hover:bg-base-200 focus:bg-base-200 border-b border-base-200 last:border-b-0"
+                      onClick={() => handleLocationSelect(suggestion)}
+                    >
+                      <div className="flex items-start gap-2">
+                        <MapPin className="w-4 h-4 mt-0.5 text-base-content/50 flex-shrink-0" />
+                        <div>
+                          <div className="font-medium text-sm">{suggestion.place_name}</div>
+                          <div className="text-xs text-base-content/60 mt-1">
+                            {suggestion.latitude.toFixed(4)}, {suggestion.longitude.toFixed(4)}
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <button
+              type="button"
+              onClick={getCurrentLocation}
+              className={`btn btn-outline ${locationLoading ? 'loading' : ''} sm:btn-md btn-sm`}
+              disabled={locationLoading}
+            >
+              {!locationLoading && <MapPin className="w-4 h-4" />}
+              <span className="hidden sm:inline">Use My Location</span>
+              <span className="sm:hidden">Location</span>
+            </button>
+          </div>
+        </div>
+
+        {formData.latitude && formData.longitude && (
+          <div className="alert alert-success">
+            <Check className="w-4 h-4" />
+            <span>Location coordinates captured: {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Additional Details */}
+      <div className="space-y-4">
+        <h4 className="text-lg font-semibold text-base-content border-b border-base-300 pb-2">
+          Additional Details
+        </h4>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="label">
+              <span className="label-text font-medium">Accessibility</span>
+            </label>
+            <input
+              type="text"
+              className="input input-bordered w-full"
+              placeholder="e.g. Wheelchair accessible, Ground level"
+              value={formData.accessibility || ''}
+              onChange={(e) => setFormData({ ...formData, accessibility: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label className="label">
+              <span className="label-text font-medium">Operating Hours</span>
+            </label>
+            
+            <div className="flex flex-col gap-3">
+              <div className="flex gap-2">
+                <label className="cursor-pointer label flex-1">
+                  <span className="label-text">Preset Hours</span>
+                  <input
+                    type="radio"
+                    name="hoursType"
+                    value="preset"
+                    checked={hoursType === 'preset'}
+                    onChange={(e) => setHoursType(e.target.value as 'preset')}
+                    className="radio radio-primary"
+                  />
+                </label>
+                <label className="cursor-pointer label flex-1">
+                  <span className="label-text">Custom Hours</span>
+                  <input
+                    type="radio"
+                    name="hoursType"
+                    value="custom"
+                    checked={hoursType === 'custom'}
+                    onChange={(e) => setHoursType(e.target.value as 'custom')}
+                    className="radio radio-primary"
+                  />
+                </label>
+              </div>
+
+              {hoursType === 'preset' ? (
+                <select
+                  className="select select-bordered w-full"
+                  value={formData.hours || ''}
+                  onChange={(e) => setFormData({ ...formData, hours: e.target.value })}
+                >
+                  <option value="">Select operating hours</option>
+                  <option value="24/7">24/7 (Always Available)</option>
+                  <option value="6:00 AM - 10:00 PM">6:00 AM - 10:00 PM</option>
+                  <option value="7:00 AM - 11:00 PM">7:00 AM - 11:00 PM</option>
+                  <option value="8:00 AM - 8:00 PM">8:00 AM - 8:00 PM</option>
+                  <option value="9:00 AM - 5:00 PM">9:00 AM - 5:00 PM (Business Hours)</option>
+                  <option value="10:00 AM - 6:00 PM">10:00 AM - 6:00 PM</option>
+                  <option value="Varies">Varies by Day</option>
+                  <option value="Unknown">Unknown</option>
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  placeholder="e.g. Mon-Fri 9AM-5PM, Sat 10AM-4PM, Sun Closed"
+                  className="input input-bordered w-full"
+                  value={formData.hours || ''}
+                  onChange={(e) => setFormData({ ...formData, hours: e.target.value })}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function EventEditor({ formData, setFormData }: { formData: any; setFormData: (data: any) => void }) {
+  const [locationLoading, setLocationLoading] = useState(false)
+  const [locationSuggestions, setLocationSuggestions] = useState<any[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null)
+
+  const handleLocationSearch = async (query: string) => {
+    // Clear any existing timeout
+    if (searchTimeout) {
+      clearTimeout(searchTimeout)
+    }
+
+    setFormData({ ...formData, location_name: query })
+
+    // If query is empty, hide suggestions
+    if (!query.trim()) {
+      setLocationSuggestions([])
+      setShowSuggestions(false)
+      return
+    }
+
+    // Debounce the search
+    const timeout = setTimeout(async () => {
+      try {
+        // Using same geocoding service as AddEventPage
+        const suggestions = await GeocodingService.searchLocations(query)
+        setLocationSuggestions(suggestions)
+        setShowSuggestions(suggestions.length > 0)
+      } catch (error) {
+        console.error('Location search error:', error)
+        setLocationSuggestions([])
+        setShowSuggestions(false)
+      }
+    }, 300)
+
+    setSearchTimeout(timeout)
+  }
+
+  const handleLocationSelect = (suggestion: any) => {
+    setFormData({
+      ...formData,
+      location_name: suggestion.address,
+      latitude: suggestion.latitude,
+      longitude: suggestion.longitude
+    })
+    setLocationSuggestions([])
+    setShowSuggestions(false)
+  }
+
+  const getCurrentLocation = () => {
+    setLocationLoading(true)
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords
+          setFormData(prev => ({
+            ...prev,
+            latitude,
+            longitude
+          }))
+          
+          // Try to get address from coordinates using reverse geocoding
+          try {
+            const reverseGeocodingUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`
+            const response = await fetch(reverseGeocodingUrl, {
+              headers: {
+                'User-Agent': 'WorldPianos/1.0 (https://worldpianos.org)'
+              }
+            })
+            
+            if (response.ok) {
+              const data = await response.json()
+              const address = data.display_name || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+              setFormData(prev => ({
+                ...prev,
+                location_name: prev.location_name || address
+              }))
+            } else {
+              throw new Error('Reverse geocoding failed')
+            }
+          } catch (error) {
+            console.error('Error getting address:', error)
+            // Fall back to coordinates
+            const coordsAddress = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+            setFormData(prev => ({
+              ...prev,
+              location_name: prev.location_name || coordsAddress
+            }))
+          }
+          
+          setLocationLoading(false)
+        },
+        (error) => {
+          console.error('Error getting location:', error)
+          setLocationLoading(false)
+        }
+      )
+    } else {
+      setLocationLoading(false)
+    }
+  }
+
+  // Extract date and time from combined datetime
+  const eventDate = formData.date ? new Date(formData.date) : null
+  const dateValue = eventDate ? eventDate.toISOString().split('T')[0] : ''
+  const timeValue = eventDate ? eventDate.toTimeString().split(' ')[0].substring(0, 5) : ''
+
+  const handleDateChange = (newDate: string) => {
+    const currentTime = timeValue || '09:00'
+    const combinedDateTime = `${newDate}T${currentTime}`
+    setFormData({ ...formData, date: new Date(combinedDateTime).toISOString() })
+  }
+
+  const handleTimeChange = (newTime: string) => {
+    const currentDate = dateValue || new Date().toISOString().split('T')[0]
+    const combinedDateTime = `${currentDate}T${newTime}`
+    setFormData({ ...formData, date: new Date(combinedDateTime).toISOString() })
+  }
+
+  // Get minimum date (today)
+  const today = new Date().toISOString().split('T')[0]
+
+  return (
+    <div className="space-y-6">
+      {/* Basic Information */}
+      <div className="space-y-4">
+        <h4 className="text-lg font-semibold text-base-content border-b border-base-300 pb-2">
+          Basic Information
+        </h4>
+        
+        <div>
+          <label className="label">
+            <span className="label-text font-medium">Event Title *</span>
+          </label>
+          <input
+            type="text"
+            className="input input-bordered w-full"
+            placeholder="e.g., Piano Concert in the Park, Jazz Session"
+            value={formData.title || ''}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+          />
+        </div>
+        
+        <div>
+          <label className="label">
+            <span className="label-text font-medium">Description</span>
+            <span className="label-text-alt text-base-content/60">What should attendees expect?</span>
+          </label>
+          <textarea
+            className="textarea textarea-bordered w-full"
+            rows={4}
+            placeholder="Describe the event, what to expect, and any requirements..."
+            value={formData.description || ''}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="label">
+              <span className="label-text font-medium">Date *</span>
+            </label>
+            <input
+              type="date"
+              className="input input-bordered w-full"
+              min={today}
+              value={dateValue}
+              onChange={(e) => handleDateChange(e.target.value)}
+            />
+          </div>
+          
+          <div>
+            <label className="label">
+              <span className="label-text font-medium">Time *</span>
+            </label>
+            <input
+              type="time"
+              className="input input-bordered w-full"
+              value={timeValue}
+              onChange={(e) => handleTimeChange(e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Location Information */}
+      <div className="space-y-4">
+        <h4 className="text-lg font-semibold text-base-content border-b border-base-300 pb-2">
+          Location
+        </h4>
+        
+        <div>
+          <label className="label">
+            <span className="label-text font-medium">Venue/Location *</span>
+          </label>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                className="input input-bordered w-full"
+                placeholder="e.g., Central Park Bandshell, Community Center"
+                value={formData.location_name || ''}
+                onChange={(e) => handleLocationSearch(e.target.value)}
+                onFocus={() => {
+                  if (locationSuggestions.length > 0) {
+                    setShowSuggestions(true)
+                  }
+                }}
+                onBlur={() => {
+                  // Delay hiding suggestions to allow clicking on them
+                  setTimeout(() => setShowSuggestions(false), 200)
+                }}
+              />
+              
+              {/* Location Suggestions Dropdown */}
+              {showSuggestions && locationSuggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 bg-base-100 border border-base-300 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+                  {locationSuggestions.map((suggestion) => (
+                    <button
+                      key={suggestion.id}
+                      type="button"
+                      className="w-full text-left px-4 py-3 hover:bg-base-200 focus:bg-base-200 border-b border-base-200 last:border-b-0"
+                      onClick={() => handleLocationSelect(suggestion)}
+                    >
+                      <div className="flex items-start gap-2">
+                        <MapPin className="w-4 h-4 mt-0.5 text-base-content/50 flex-shrink-0" />
+                        <div>
+                          <div className="font-medium text-sm">{suggestion.place_name}</div>
+                          <div className="text-xs text-base-content/60 mt-1">
+                            {suggestion.latitude.toFixed(4)}, {suggestion.longitude.toFixed(4)}
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <button
+              type="button"
+              onClick={getCurrentLocation}
+              className={`btn btn-outline ${locationLoading ? 'loading' : ''} sm:btn-md btn-sm`}
+              disabled={locationLoading}
+            >
+              {!locationLoading && <MapPin className="w-4 h-4" />}
+              <span className="hidden sm:inline">Use My Location</span>
+              <span className="sm:hidden">Location</span>
+            </button>
+          </div>
+          
+          {formData.latitude && formData.longitude && (
+            <div className="alert alert-success mt-2">
+              <Check className="w-4 h-4" />
+              <span>Location coordinates captured: {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Event Details */}
+      <div className="space-y-4">
+        <h4 className="text-lg font-semibold text-base-content border-b border-base-300 pb-2">
+          Event Details
+        </h4>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="label">
+              <span className="label-text font-medium">Category *</span>
+            </label>
+            <select
+              className="select select-bordered w-full"
+              value={formData.category || ''}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+            >
+              <option value="">Select category</option>
+              <option value="Concert">Concert</option>
+              <option value="Meetup">Meetup</option>
+              <option value="Workshop">Workshop</option>
+              <option value="Installation">Installation</option>
+              <option value="Festival">Festival</option>
+              <option value="Community Event">Community Event</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="label">
+              <span className="label-text font-medium">Organizer *</span>
+            </label>
+            <input
+              type="text"
+              className="input input-bordered w-full"
+              placeholder="Your name or organization"
+              value={formData.organizer || ''}
+              onChange={(e) => setFormData({ ...formData, organizer: e.target.value })}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="label">
+              <span className="label-text font-medium">Contact Email *</span>
+            </label>
+            <input
+              type="email"
+              className="input input-bordered w-full"
+              placeholder="contact@example.com"
+              value={formData.contact_email || ''}
+              onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
+            />
+          </div>
+          
+          <div>
+            <label className="label">
+              <span className="label-text font-medium">Contact Phone</span>
+            </label>
+            <input
+              type="tel"
+              className="input input-bordered w-full"
+              placeholder="+1 (555) 123-4567"
+              value={formData.contact_phone || ''}
+              onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="label">
+              <span className="label-text font-medium">Website/Registration URL</span>
+            </label>
+            <input
+              type="url"
+              className="input input-bordered w-full"
+              placeholder="https://example.com/event"
+              value={formData.meeting_url || ''}
+              onChange={(e) => setFormData({ ...formData, meeting_url: e.target.value })}
+            />
+          </div>
+          
+          <div>
+            <label className="label">
+              <span className="label-text font-medium">Max Attendees</span>
+            </label>
+            <input
+              type="number"
+              className="input input-bordered w-full"
+              placeholder="Leave empty for unlimited"
+              min="1"
+              value={formData.max_attendees || ''}
+              onChange={(e) => setFormData({ ...formData, max_attendees: e.target.value ? parseInt(e.target.value) : null })}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -1025,6 +2123,48 @@ function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserModalProp
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  )
+}
+
+// TODO: Replace with actual NewsletterDashboard component once newsletter functionality is implemented
+function NewsletterComingSoon() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+      <div className="max-w-md mx-auto">
+        <div className="mb-6">
+          <Mail className="w-16 h-16 mx-auto text-primary opacity-50" />
+        </div>
+        <h2 className="text-2xl font-bold mb-4 text-base-content">Newsletter Dashboard</h2>
+        <p className="text-base-content/70 mb-6 leading-relaxed">
+          The newsletter management system is currently under development. This feature will allow you to:
+        </p>
+        <ul className="text-left text-base-content/60 space-y-2 mb-8">
+          <li className="flex items-center">
+            <CheckCircle className="w-4 h-4 mr-2 text-success" />
+            Manage subscriber lists and segments
+          </li>
+          <li className="flex items-center">
+            <CheckCircle className="w-4 h-4 mr-2 text-success" />
+            Create and send newsletter campaigns
+          </li>
+          <li className="flex items-center">
+            <CheckCircle className="w-4 h-4 mr-2 text-success" />
+            Track email metrics and engagement
+          </li>
+          <li className="flex items-center">
+            <CheckCircle className="w-4 h-4 mr-2 text-success" />
+            Automate newsletter workflows
+          </li>
+        </ul>
+        <div className="bg-base-200 p-4 rounded-lg">
+          <h3 className="font-semibold mb-2 text-base-content">Coming Soon</h3>
+          <p className="text-sm text-base-content/60">
+            We're working hard to bring you comprehensive newsletter management tools. 
+            Stay tuned for updates!
+          </p>
+        </div>
       </div>
     </div>
   )

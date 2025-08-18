@@ -76,13 +76,20 @@ export function DashboardPage() {
           pianos_added: userPianos.data?.length || 0,
           events_created: userEvents.data?.length || 0,
           photos_uploaded: userImages.data?.length || 0,
-          average_rating: pianoVisits.data?.length > 0 
+          average_rating: pianoVisits.data && pianoVisits.data.length > 0 
             ? pianoVisits.data.reduce((sum, visit) => sum + (visit.rating || 0), 0) / pianoVisits.data.length
             : 0
         }
         
         // Get real recent activity from database
-        const activity = []
+        const activity: Array<{
+          type: string;
+          title: string;
+          description: string;
+          timestamp: string;
+          status: string;
+          id: string;
+        }> = []
         
         // Add recent piano visits
         if (pianoVisits.data && pianoVisits.data.length > 0) {
@@ -244,7 +251,7 @@ export function DashboardPage() {
       const fileName = `avatars/${user.id}/${Date.now()}.${fileExt}`
       
       // Upload to Supabase storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('piano-images') // Reuse existing bucket
         .upload(fileName, file, {
           cacheControl: '3600',

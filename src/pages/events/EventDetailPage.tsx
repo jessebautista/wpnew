@@ -22,7 +22,7 @@ import { ShareButton } from '../../components/social/ShareButton'
 import { ShareModal } from '../../components/social/ShareModal'
 import { ReportModal } from '../../components/modals/ReportModal'
 import { SocialSharingService } from '../../services/socialSharingService'
-import { findBySlugOrId, generateEventSlug, extractIdFromSlug } from '../../utils/slugUtils'
+import { findBySlugOrId, generateEventSlug } from '../../utils/slugUtils'
 import type { Event } from '../../types'
 import 'leaflet/dist/leaflet.css'
 

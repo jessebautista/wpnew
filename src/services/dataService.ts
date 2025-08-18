@@ -348,7 +348,7 @@ export class DataService {
   /**
    * Update moderation status for a piano
    */
-  static async updatePianoModerationStatus(pianoId: string, status: 'approved' | 'rejected', _reviewerId: string, rejectionReason?: string): Promise<boolean> {
+  static async updatePianoModerationStatus(pianoId: string, status: 'approved' | 'rejected', _reviewerId: string): Promise<boolean> {
     if (shouldUseMockData('supabase')) {
       console.log(`[MOCK] Updating piano ${pianoId} moderation status to ${status}`)
       return Promise.resolve(true)
@@ -384,7 +384,7 @@ export class DataService {
   /**
    * Update event moderation status
    */
-  static async updateEventModerationStatus(eventId: string, status: 'approved' | 'rejected', reviewerId: string, rejectionReason?: string): Promise<boolean> {
+  static async updateEventModerationStatus(eventId: string, status: 'approved' | 'rejected', reviewerId: string): Promise<boolean> {
     if (shouldUseMockData('supabase')) {
       console.log(`[MOCK] Updating event ${eventId} moderation status to ${status}`)
       return Promise.resolve(true)

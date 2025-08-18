@@ -36,7 +36,7 @@ export class CommentService {
       // Get unique author IDs to fetch user data
       const authorIds = [...new Set(data?.map(comment => comment.author_id).filter(Boolean))]
       
-      let users = []
+      let users: Array<{ id: string; full_name: string; email: string }> = []
       if (authorIds.length > 0) {
         const { data: userData } = await supabase
           .from('users')

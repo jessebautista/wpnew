@@ -202,7 +202,7 @@ export function ModerationQueuePage() {
       }
       
       if (item.type === 'piano' && user?.id) {
-        const success = await DataService.updatePianoModerationStatus(itemId, 'rejected', user.id, reason)
+        const success = await DataService.updatePianoModerationStatus(itemId, 'rejected', user.id)
         if (success) {
           setItems(prev => prev.map(prevItem => 
             prevItem.id === itemId 
@@ -220,7 +220,7 @@ export function ModerationQueuePage() {
           console.error(`[MODERATION] Failed to reject ${item.type} ${itemId}`)
         }
       } else if (item.type === 'event' && user?.id) {
-        const success = await DataService.updateEventModerationStatus(itemId, 'rejected', user.id, reason)
+        const success = await DataService.updateEventModerationStatus(itemId, 'rejected', user.id)
         if (success) {
           setItems(prev => prev.map(prevItem => 
             prevItem.id === itemId 

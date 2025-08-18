@@ -1,16 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { 
   Mail, 
-  MessageCircle, 
-  MapPin, 
-  Phone, 
-  Clock,
   Send,
   CheckCircle,
   Globe,
-  Twitter,
-  Github,
-  Instagram,
   HelpCircle
 } from 'lucide-react'
 

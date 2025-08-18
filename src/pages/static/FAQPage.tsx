@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { 
   Search, 
   HelpCircle, 
@@ -9,9 +9,7 @@ import {
   Settings,
   ChevronDown,
   Book,
-  Globe,
-  Lock,
-  LifeBuoy
+  Lock
 } from 'lucide-react'
 
 interface FAQCategory {

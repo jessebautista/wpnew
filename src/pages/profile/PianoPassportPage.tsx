@@ -13,8 +13,6 @@ import {
   Globe
 } from 'lucide-react'
 import { useAuth } from '../../components/auth/AuthProvider'
-import { DataService } from '../../services/dataService'
-import { PianoVisitService } from '../../services/pianoVisitService'
 import type { Piano, Achievement } from '../../types'
 import { supabase } from '../../lib/supabase'
 
@@ -74,11 +72,6 @@ export function PianoPassportPage() {
         .select('*')
         .eq('submitted_by', user.id)
       
-      // Get user's events
-      const { data: userEvents } = await supabase
-        .from('events')
-        .select('*')
-        .eq('created_by', user.id)
       
       // Calculate stats from real data
       const visits = pianoVisits || []
@@ -125,7 +118,6 @@ export function PianoPassportPage() {
 
       // Generate achievements based on real stats
       const pianosAdded = userPianos?.length || 0
-      const eventsCreated = userEvents?.length || 0
       
       const dynamicAchievements: Achievement[] = [
         {

@@ -371,8 +371,7 @@ function UsersTab({ canAdmin }: UsersTabProps) {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
+  const [currentPage] = useState(1)
   const [showCreateModal, setShowCreateModal] = useState(false)
 
   useEffect(() => {
@@ -384,7 +383,6 @@ function UsersTab({ canAdmin }: UsersTabProps) {
       setLoading(true)
       const result = await AdminService.getUsers(currentPage, 20, roleFilter || undefined, searchQuery || undefined)
       setUsers(result.users)
-      setTotalPages(result.totalPages)
     } catch (error) {
       console.error('Error loading users:', error)
     } finally {
@@ -705,6 +703,7 @@ function ContentTab() {
 }
 
 function ReportsTab() {
+  const { user } = useAuth()
   const [reports, setReports] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('')

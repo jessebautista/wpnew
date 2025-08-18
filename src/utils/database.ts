@@ -353,7 +353,7 @@ export const userService = {
         // Extract unique countries from piano visits
         const countries = new Set(
           visitsData.data?.map(v => {
-            const location = v.pianos?.location_name || ''
+            const location = (v.pianos as any)?.location_name || ''
             // Simple country extraction - get last part after comma
             const parts = location.split(',')
             return parts[parts.length - 1]?.trim()

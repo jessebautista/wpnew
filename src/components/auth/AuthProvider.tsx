@@ -58,6 +58,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           if (storedSession?.user) {
             console.log('[AUTH] Found existing stored session for:', storedSession.user.email)
+            
+            // Set the session in the Supabase client for RLS policies
+            await supabase.auth.setSession({
+              access_token: storedSession.access_token,
+              refresh_token: storedSession.refresh_token
+            })
+            
             setSupabaseUser(storedSession.user as SupabaseUser)
             const profile = await getOrCreateUserProfile(storedSession.user)
             setUser(profile)
@@ -112,6 +119,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (session?.user) {
       console.log('[AUTH] Sign in successful')
+      
+      // Set the session in the Supabase client for RLS policies
+      await supabase.auth.setSession({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token
+      })
+      
       setSupabaseUser(session.user as SupabaseUser)
       const profile = await getOrCreateUserProfile(session.user)
       setUser(profile as User)

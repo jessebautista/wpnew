@@ -18,55 +18,21 @@ import {
   UserX,
   Flag,
   Mail,
-  X
+  X,
+  Plus
 } from 'lucide-react'
 import { useAuth } from '../../components/auth/AuthProvider'
 import { usePermissions } from '../../hooks/usePermissions'
-import { mockPianos, mockEvents, mockBlogPosts, mockUsers } from '../../data/mockData'
-// import { ModerationService } from '../../services/moderationService'
+import { AdminService, type AdminStats, type RecentActivity } from '../../services/adminService'
+import { supabase } from '../../lib/supabase'
 import { NewsletterDashboard } from '../../components/admin/NewsletterDashboard'
 import { SettingsDashboard } from '../../components/admin/SettingsDashboard'
 
-interface DashboardStats {
-  users: {
-    total: number
-    active: number
-    newThisWeek: number
-    banned: number
-  }
-  content: {
-    pianos: { total: number; pending: number; approved: number; rejected: number }
-    events: { total: number; pending: number; approved: number; rejected: number }
-    blogPosts: { total: number; pending: number; approved: number; rejected: number }
-  }
-  moderation: {
-    pendingItems: number
-    flaggedItems: number
-    autoApproved: number
-    manualReviews: number
-  }
-  activity: {
-    dailySignups: number
-    dailySubmissions: number
-    dailyModerations: number
-  }
-}
-
-interface RecentActivity {
-  id: string
-  type: 'user_signup' | 'content_submit' | 'moderation_action' | 'report'
-  title: string
-  description: string
-  timestamp: string
-  status?: 'success' | 'warning' | 'error'
-  userId?: string
-  contentId?: string
-}
 
 export function AdminDashboardPage() {
   const { user } = useAuth()
   const { canAccessAdminPanel, canAdmin } = usePermissions()
-  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [stats, setStats] = useState<AdminStats | null>(null)
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedTab, setSelectedTab] = useState<'overview' | 'users' | 'content' | 'reports' | 'newsletter' | 'settings'>('overview')
@@ -78,85 +44,33 @@ export function AdminDashboardPage() {
 
   const loadDashboardData = async () => {
     try {
-      // Mock dashboard stats
-      const dashboardStats: DashboardStats = {
-        users: {
-          total: 1247,
-          active: 892,
-          newThisWeek: 23,
-          banned: 5
-        },
-        content: {
-          pianos: { total: mockPianos.length, pending: 3, approved: mockPianos.length - 5, rejected: 2 },
-          events: { total: mockEvents.length, pending: 1, approved: mockEvents.length - 2, rejected: 1 },
-          blogPosts: { total: mockBlogPosts.length, pending: 2, approved: mockBlogPosts.length - 3, rejected: 1 }
-        },
-        moderation: {
-          pendingItems: 6,
-          flaggedItems: 2,
-          autoApproved: 15,
-          manualReviews: 8
-        },
-        activity: {
-          dailySignups: 12,
-          dailySubmissions: 8,
-          dailyModerations: 15
-        }
-      }
+      console.log('Loading admin dashboard data...')
+      
+      // Load real statistics from database
+      const [dashboardStats, activities] = await Promise.all([
+        AdminService.getDashboardStats(),
+        AdminService.getRecentActivity(10)
+      ])
 
-      // Mock recent activity
-      const activities: RecentActivity[] = [
-        {
-          id: '1',
-          type: 'user_signup',
-          title: 'New user registration',
-          description: 'Sarah Johnson joined WorldPianos',
-          timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-          status: 'success',
-          userId: 'user123'
-        },
-        {
-          id: '2',
-          type: 'content_submit',
-          title: 'Piano submission',
-          description: 'Central Station Piano submitted for review',
-          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          status: 'warning',
-          contentId: 'piano456'
-        },
-        {
-          id: '3',
-          type: 'moderation_action',
-          title: 'Content approved',
-          description: 'London Bridge Piano approved by moderator',
-          timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-          status: 'success',
-          contentId: 'piano789'
-        },
-        {
-          id: '4',
-          type: 'report',
-          title: 'Content reported',
-          description: 'Piano listing flagged for inappropriate content',
-          timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-          status: 'error',
-          contentId: 'piano321'
-        },
-        {
-          id: '5',
-          type: 'content_submit',
-          title: 'Event created',
-          description: 'Jazz Piano Night event submitted',
-          timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
-          status: 'warning',
-          contentId: 'event654'
-        }
-      ]
+      console.log('Dashboard stats loaded:', dashboardStats)
+      console.log('Recent activity loaded:', activities)
 
       setStats(dashboardStats)
       setRecentActivity(activities)
     } catch (error) {
       console.error('Error loading dashboard data:', error)
+      // Fallback to empty state on error
+      setStats({
+        users: { total: 0, active: 0, newThisWeek: 0, byRole: {} },
+        content: {
+          pianos: { total: 0, pending: 0, approved: 0, rejected: 0 },
+          events: { total: 0, pending: 0, approved: 0, rejected: 0 },
+          blogPosts: { total: 0, pending: 0, approved: 0, rejected: 0 }
+        },
+        moderation: { pendingItems: 0, flaggedItems: 0, totalReports: 0 },
+        activity: { dailySignups: 0, dailySubmissions: 0, dailyComments: 0 }
+      })
+      setRecentActivity([])
     } finally {
       setLoading(false)
     }
@@ -281,7 +195,7 @@ export function AdminDashboardPage() {
 }
 
 interface OverviewTabProps {
-  stats: DashboardStats
+  stats: AdminStats
   recentActivity: RecentActivity[]
 }
 
@@ -330,7 +244,7 @@ function OverviewTab({ stats, recentActivity }: OverviewTabProps) {
           <div className="stat-title">Moderation Queue</div>
           <div className="stat-value text-warning">{stats.moderation.pendingItems}</div>
           <div className="stat-desc">
-            {stats.moderation.flaggedItems} flagged items
+            {stats.moderation.totalReports} total reports
           </div>
         </div>
       </div>
@@ -425,7 +339,7 @@ function OverviewTab({ stats, recentActivity }: OverviewTabProps) {
       <div className="card bg-base-100 shadow-xl">
         <div className="card-body">
           <h2 className="card-title">Quick Actions</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <Link to="/moderation" className="btn btn-outline">
               <Shield className="w-4 h-4 mr-2" />
               Moderation Queue
@@ -434,13 +348,12 @@ function OverviewTab({ stats, recentActivity }: OverviewTabProps) {
               <Settings className="w-4 h-4 mr-2" />
               Moderation Rules
             </Link>
-            <button className="btn btn-outline">
+            <button 
+              className="btn btn-outline"
+              onClick={() => alert('Analytics dashboard coming soon!')}
+            >
               <TrendingUp className="w-4 h-4 mr-2" />
               Analytics
-            </button>
-            <button className="btn btn-outline">
-              <Users className="w-4 h-4 mr-2" />
-              User Management
             </button>
           </div>
         </div>
@@ -454,36 +367,53 @@ interface UsersTabProps {
 }
 
 function UsersTab({ canAdmin }: UsersTabProps) {
-  const [users] = useState(mockUsers.concat([
-    {
-      id: '3',
-      email: 'moderator@worldpianos.org',
-      full_name: 'Jane Moderator',
-      username: 'janemod',
-      avatar_url: null,
-      bio: 'Community moderator',
-      location: 'San Francisco, CA',
-      role: 'moderator',
-      created_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: '4',
-      email: 'user1@example.com',
-      full_name: 'Mike User',
-      username: 'mikeuser',
-      avatar_url: null,
-      bio: 'Piano lover from Chicago',
-      location: 'Chicago, IL',
-      role: 'user',
-      created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-      updated_at: new Date().toISOString()
-    }
-  ]))
+  const [users, setUsers] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [roleFilter, setRoleFilter] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [showCreateModal, setShowCreateModal] = useState(false)
 
-  const handleUserAction = (userId: string, action: 'promote' | 'demote' | 'ban' | 'unban') => {
-    console.log(`User action: ${action} for user ${userId}`)
-    // In a real app, this would update the user in the database
+  useEffect(() => {
+    loadUsers()
+  }, [currentPage, roleFilter, searchQuery])
+
+  const loadUsers = async () => {
+    try {
+      setLoading(true)
+      const result = await AdminService.getUsers(currentPage, 20, roleFilter || undefined, searchQuery || undefined)
+      setUsers(result.users)
+      setTotalPages(result.totalPages)
+    } catch (error) {
+      console.error('Error loading users:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleUserAction = async (userId: string, action: 'promote' | 'demote' | 'ban' | 'unban') => {
+    try {
+      let newRole = ''
+      switch (action) {
+        case 'promote':
+          newRole = 'moderator'
+          break
+        case 'demote':
+          newRole = 'user'
+          break
+        default:
+          console.log(`Action ${action} not implemented yet`)
+          return
+      }
+
+      if (newRole) {
+        await AdminService.updateUserRole(userId, newRole)
+        loadUsers() // Refresh the list
+      }
+    } catch (error) {
+      console.error(`Error performing ${action} on user ${userId}:`, error)
+    }
   }
 
   return (
@@ -495,30 +425,51 @@ function UsersTab({ canAdmin }: UsersTabProps) {
             type="text"
             placeholder="Search users..."
             className="input input-bordered"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <select className="select select-bordered">
+          <select 
+            className="select select-bordered"
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+          >
             <option value="">All Roles</option>
             <option value="admin">Admin</option>
             <option value="moderator">Moderator</option>
             <option value="user">User</option>
+            <option value="guest">Guest</option>
           </select>
+          {canAdmin && (
+            <button 
+              className="btn btn-primary"
+              onClick={() => setShowCreateModal(true)}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add User
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="table table-zebra w-full">
-          <thead>
-            <tr>
-              <th>User</th>
-              <th>Role</th>
-              <th>Location</th>
-              <th>Joined</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => (
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <span className="loading loading-spinner loading-lg"></span>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="table table-zebra w-full">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Role</th>
+                <th>Location</th>
+                <th>Joined</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((user) => (
               <tr key={user.id}>
                 <td>
                   <div className="flex items-center gap-3">
@@ -553,45 +504,63 @@ function UsersTab({ canAdmin }: UsersTabProps) {
                 </td>
                 <td>
                   <div className="flex gap-1">
-                    <button className="btn btn-ghost btn-xs">
-                      <Eye className="w-3 h-3" />
-                    </button>
-                    <button className="btn btn-ghost btn-xs">
-                      <Edit className="w-3 h-3" />
-                    </button>
+                    <div className="tooltip" data-tip="View user details">
+                      <button className="btn btn-ghost btn-xs">
+                        <Eye className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <div className="tooltip" data-tip="Edit user">
+                      <button className="btn btn-ghost btn-xs">
+                        <Edit className="w-3 h-3" />
+                      </button>
+                    </div>
                     {canAdmin && user.role !== 'admin' && (
                       <>
                         {user.role === 'user' && (
-                          <button 
-                            onClick={() => handleUserAction(user.id, 'promote')}
-                            className="btn btn-ghost btn-xs text-success"
-                          >
-                            <UserCheck className="w-3 h-3" />
-                          </button>
+                          <div className="tooltip" data-tip="Promote to moderator">
+                            <button 
+                              onClick={() => handleUserAction(user.id, 'promote')}
+                              className="btn btn-ghost btn-xs text-success"
+                            >
+                              <UserCheck className="w-3 h-3" />
+                            </button>
+                          </div>
                         )}
                         {user.role === 'moderator' && (
-                          <button 
-                            onClick={() => handleUserAction(user.id, 'demote')}
-                            className="btn btn-ghost btn-xs text-warning"
-                          >
-                            <UserX className="w-3 h-3" />
-                          </button>
+                          <div className="tooltip" data-tip="Demote to user">
+                            <button 
+                              onClick={() => handleUserAction(user.id, 'demote')}
+                              className="btn btn-ghost btn-xs text-warning"
+                            >
+                              <UserX className="w-3 h-3" />
+                            </button>
+                          </div>
                         )}
-                        <button 
-                          onClick={() => handleUserAction(user.id, 'ban')}
-                          className="btn btn-ghost btn-xs text-error"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
+                        <div className="tooltip" data-tip="Ban user">
+                          <button 
+                            onClick={() => handleUserAction(user.id, 'ban')}
+                            className="btn btn-ghost btn-xs text-error"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
                       </>
                     )}
                   </div>
                 </td>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Create User Modal */}
+      <CreateUserModal 
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onUserCreated={loadUsers}
+      />
     </div>
   )
 }
@@ -599,22 +568,38 @@ function UsersTab({ canAdmin }: UsersTabProps) {
 function ContentTab() {
   const [contentType, setContentType] = useState<'pianos' | 'events' | 'blog_posts'>('pianos')
   const [searchQuery, setSearchQuery] = useState('')
+  const [content, setContent] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const getContent = () => {
-    switch (contentType) {
-      case 'pianos': return mockPianos
-      case 'events': return mockEvents
-      case 'blog_posts': return mockBlogPosts
-      default: return []
+  useEffect(() => {
+    loadContent()
+  }, [contentType, searchQuery])
+
+  const loadContent = async () => {
+    try {
+      setLoading(true)
+      let query = supabase.from(contentType).select('*')
+
+      if (searchQuery) {
+        if (contentType === 'pianos') {
+          query = query.ilike('name', `%${searchQuery}%`)
+        } else {
+          query = query.ilike('title', `%${searchQuery}%`)
+        }
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false }).limit(50)
+
+      if (error) throw error
+
+      setContent(data || [])
+    } catch (error) {
+      console.error('Error loading content:', error)
+      setContent([])
+    } finally {
+      setLoading(false)
     }
   }
-
-  const content = getContent().filter(item => {
-    const title = 'title' in item ? item.title : ''
-    const name = 'name' in item ? item.name : ''
-    const query = searchQuery.toLowerCase()
-    return title?.toLowerCase().includes(query) || name?.toLowerCase().includes(query)
-  })
 
   return (
     <div className="space-y-6">
@@ -640,15 +625,25 @@ function ContentTab() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {content.map((item: any) => (
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <span className="loading loading-spinner loading-lg"></span>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {content.map((item: any) => (
           <div key={item.id} className="card bg-base-100 shadow-xl">
             <div className="card-body">
               <h3 className="card-title text-lg">
                 {item.name || item.title}
-                {item.verified && (
-                  <div className="badge badge-success badge-sm">Verified</div>
-                )}
+                <div className={`badge badge-sm ${
+                  item.moderation_status === 'approved' ? 'badge-success' :
+                  item.moderation_status === 'pending' ? 'badge-warning' :
+                  item.moderation_status === 'rejected' ? 'badge-error' :
+                  'badge-ghost'
+                }`}>
+                  {item.moderation_status || 'pending'}
+                </div>
               </h3>
               
               <div className="text-sm text-base-content/70 space-y-1">
@@ -692,10 +687,11 @@ function ContentTab() {
               </div>
             </div>
           </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {content.length === 0 && (
+      {!loading && content.length === 0 && (
         <div className="text-center py-12">
           <BookOpen className="w-16 h-16 mx-auto mb-4 text-base-content/50" />
           <h3 className="text-2xl font-bold mb-2">No Content Found</h3>
@@ -709,38 +705,50 @@ function ContentTab() {
 }
 
 function ReportsTab() {
-  const mockReports = [
-    {
-      id: '1',
-      type: 'piano',
-      contentId: 'piano-123',
-      contentTitle: 'Suspicious Piano Location',
-      reason: 'Inappropriate content',
-      reportedBy: 'user456',
-      reporterName: 'John Smith',
-      status: 'pending',
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-      description: 'This piano location seems to be promoting inappropriate activities.'
-    },
-    {
-      id: '2',
-      type: 'event',
-      contentId: 'event-456',
-      contentTitle: 'Spam Event Posting',
-      reason: 'Spam',
-      reportedBy: 'user789',
-      reporterName: 'Sarah Johnson',
-      status: 'resolved',
-      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-      description: 'This event appears to be spam advertising unrelated services.'
+  const [reports, setReports] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [statusFilter, setStatusFilter] = useState('')
+
+  useEffect(() => {
+    loadReports()
+  }, [statusFilter])
+
+  const loadReports = async () => {
+    try {
+      setLoading(true)
+      const result = await AdminService.getReports(1, 50, statusFilter || undefined)
+      setReports(result.reports)
+    } catch (error) {
+      console.error('Error loading reports:', error)
+      setReports([])
+    } finally {
+      setLoading(false)
     }
-  ]
+  }
+
+  const handleReportAction = async (reportId: string, action: 'resolved' | 'dismissed') => {
+    try {
+      if (!user?.id) {
+        console.error('No user ID available for report action')
+        return
+      }
+      
+      await AdminService.updateReportStatus(reportId, action, user.id)
+      loadReports() // Refresh the list
+    } catch (error) {
+      console.error(`Error ${action} report:`, error)
+    }
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Reports & Flags</h2>
-        <select className="select select-bordered">
+        <select 
+          className="select select-bordered"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
           <option value="">All Status</option>
           <option value="pending">Pending</option>
           <option value="resolved">Resolved</option>
@@ -748,69 +756,277 @@ function ReportsTab() {
         </select>
       </div>
 
-      <div className="space-y-4">
-        {mockReports.map((report) => (
-          <div key={report.id} className="card bg-base-100 shadow-xl">
-            <div className="card-body">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <h3 className="card-title">
-                    {report.contentTitle}
-                    <div className={`badge ${
-                      report.status === 'pending' ? 'badge-warning' :
-                      report.status === 'resolved' ? 'badge-success' :
-                      'badge-ghost'
-                    }`}>
-                      {report.status}
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <span className="loading loading-spinner loading-lg"></span>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {reports.map((report) => (
+            <div key={report.id} className="card bg-base-100 shadow-xl">
+              <div className="card-body">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <h3 className="card-title">
+                      {report.content_type} Report
+                      <div className={`badge ${
+                        report.status === 'pending' ? 'badge-warning' :
+                        report.status === 'resolved' ? 'badge-success' :
+                        'badge-ghost'
+                      }`}>
+                        {report.status}
+                      </div>
+                    </h3>
+                    
+                    <div className="text-sm text-base-content/70 mt-2 space-y-1">
+                      <div><strong>Type:</strong> {report.content_type}</div>
+                      <div><strong>Reason:</strong> {report.reason}</div>
+                      <div><strong>Content ID:</strong> {report.content_id}</div>
+                      <div><strong>Date:</strong> {new Date(report.created_at).toLocaleString()}</div>
                     </div>
-                  </h3>
-                  
-                  <div className="text-sm text-base-content/70 mt-2 space-y-1">
-                    <div><strong>Type:</strong> {report.type}</div>
-                    <div><strong>Reason:</strong> {report.reason}</div>
-                    <div><strong>Reported by:</strong> {report.reporterName}</div>
-                    <div><strong>Date:</strong> {new Date(report.timestamp).toLocaleString()}</div>
+                    
+                    {report.description && (
+                      <p className="text-sm mt-3 p-3 bg-base-200 rounded">
+                        {report.description}
+                      </p>
+                    )}
                   </div>
                   
-                  <p className="text-sm mt-3 p-3 bg-base-200 rounded">
-                    {report.description}
-                  </p>
-                </div>
-                
-                <div className="flex flex-col gap-2">
-                  <Link 
-                    to={`/${report.type}s/${report.contentId}`}
-                    className="btn btn-outline btn-sm"
-                  >
-                    <Eye className="w-4 h-4 mr-1" />
-                    View Content
-                  </Link>
-                  {report.status === 'pending' && (
-                    <>
-                      <button className="btn btn-success btn-sm">
-                        <CheckCircle className="w-4 h-4 mr-1" />
-                        Resolve
-                      </button>
-                      <button className="btn btn-error btn-sm">
-                        <X className="w-4 h-4 mr-1" />
-                        Dismiss
-                      </button>
-                    </>
-                  )}
+                  <div className="flex flex-col gap-2">
+                    <Link 
+                      to={`/${report.content_type}s/${report.content_id}`}
+                      className="btn btn-outline btn-sm"
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      View Content
+                    </Link>
+                    {report.status === 'pending' && (
+                      <>
+                        <button 
+                          onClick={() => handleReportAction(report.id, 'resolved')}
+                          className="btn btn-success btn-sm"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-1" />
+                          Resolve
+                        </button>
+                        <button 
+                          onClick={() => handleReportAction(report.id, 'dismissed')}
+                          className="btn btn-error btn-sm"
+                        >
+                          <X className="w-4 h-4 mr-1" />
+                          Dismiss
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {mockReports.length === 0 && (
+      {!loading && reports.length === 0 && (
         <div className="text-center py-12">
           <Flag className="w-16 h-16 mx-auto mb-4 text-base-content/50" />
           <h3 className="text-2xl font-bold mb-2">No Reports</h3>
           <p className="text-base-content/70">All clear! No reports to review.</p>
         </div>
       )}
+    </div>
+  )
+}
+
+interface CreateUserModalProps {
+  isOpen: boolean
+  onClose: () => void
+  onUserCreated: () => void
+}
+
+function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserModalProps) {
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    full_name: '',
+    role: 'user',
+    location: ''
+  })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!formData.email || !formData.full_name || !formData.password) {
+      setError('Email, full name, and password are required')
+      return
+    }
+
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long')
+      return
+    }
+
+    try {
+      setLoading(true)
+      setError('')
+
+      await AdminService.createUser({
+        email: formData.email,
+        password: formData.password,
+        full_name: formData.full_name,
+        role: formData.role,
+        location: formData.location || undefined
+      })
+
+      // Reset form and close modal
+      setFormData({
+        email: '',
+        password: '',
+        full_name: '',
+        role: 'user',
+        location: ''
+      })
+      onClose()
+      onUserCreated()
+    } catch (error: any) {
+      console.error('Error creating user:', error)
+      if (error.code === '23505') {
+        setError('A user with this email already exists.')
+      } else {
+        setError('Failed to create user. Please try again.')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleClose = () => {
+    setFormData({
+      email: '',
+      password: '',
+      full_name: '',
+      role: 'user',
+      location: ''
+    })
+    setError('')
+    onClose()
+  }
+
+  if (!isOpen) return null
+
+  return (
+    <div className="modal modal-open">
+      <div className="modal-box">
+        <h3 className="font-bold text-lg mb-4">Add New User</h3>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text">Email *</span>
+            </label>
+            <input
+              type="email"
+              className="input input-bordered"
+              value={formData.email}
+              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              placeholder="user@example.com"
+              required
+            />
+          </div>
+
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text">Password *</span>
+            </label>
+            <input
+              type="password"
+              className="input input-bordered"
+              value={formData.password}
+              onChange={(e) => setFormData({...formData, password: e.target.value})}
+              placeholder="Minimum 6 characters"
+              required
+              minLength={6}
+            />
+          </div>
+
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text">Full Name *</span>
+            </label>
+            <input
+              type="text"
+              className="input input-bordered"
+              value={formData.full_name}
+              onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+              placeholder="John Doe"
+              required
+            />
+          </div>
+
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text">Role</span>
+            </label>
+            <select 
+              className="select select-bordered"
+              value={formData.role}
+              onChange={(e) => setFormData({...formData, role: e.target.value})}
+            >
+              <option value="user">User</option>
+              <option value="moderator">Moderator</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text">Location (optional)</span>
+            </label>
+            <input
+              type="text"
+              className="input input-bordered"
+              value={formData.location}
+              onChange={(e) => setFormData({...formData, location: e.target.value})}
+              placeholder="City, Country"
+            />
+          </div>
+
+          {error && (
+            <div className="alert alert-error">
+              <span>{error}</span>
+            </div>
+          )}
+
+          <div className="modal-action">
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={handleClose}
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <span className="loading loading-spinner loading-xs mr-2"></span>
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create User
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }

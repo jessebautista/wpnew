@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { getEnvironmentConfig, logConfigurationStatus } from '../config/environment'
+import { getStoredSession } from '../utils/directAuth'
 
 const config = getEnvironmentConfig()
 
@@ -17,6 +18,31 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: true
   }
 })
+
+/**
+ * Get an authenticated Supabase client with the current user's token
+ */
+export function getAuthenticatedSupabase() {
+  const session = getStoredSession()
+  
+  if (session?.access_token) {
+    // Create a new client instance with the user's access token
+    return createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
+  }
+  
+  // Fallback to regular client
+  return supabase
+}
 
 // Export configuration helpers
 export { shouldUseMockData } from '../config/environment'

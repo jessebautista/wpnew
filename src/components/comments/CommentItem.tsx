@@ -12,13 +12,13 @@ interface CommentItemProps {
 }
 
 export function CommentItem({ comment, currentUser, onUpdate, onDelete }: CommentItemProps) {
-  const { canModerate } = usePermissions()
+  const { canModerate, canAdmin } = usePermissions()
   const [isEditing, setIsEditing] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const canEdit = currentUser && (currentUser.id === comment.author_id || canModerate())
-  const canDeleteComment = currentUser && (currentUser.id === comment.author_id || canModerate())
+  const canDeleteComment = canAdmin() // Only admins can delete comments
 
   const handleUpdate = async (content: string) => {
     try {
@@ -79,7 +79,7 @@ export function CommentItem({ comment, currentUser, onUpdate, onDelete }: Commen
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-sm">
-              {comment.author?.full_name || comment.author?.email || 'Unknown User'}
+              {comment.author_name || comment.author?.full_name || comment.author?.email || 'Unknown User'}
             </span>
             <span className="text-xs text-base-content/60">
               {formatDate(comment.created_at)}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { generateEventSlug } from '../../utils/slugUtils'
 import type { Event } from '../../types'
 
 interface EventCalendarProps {
@@ -147,7 +148,7 @@ export function EventCalendar({ events, onDateSelect, selectedDate }: EventCalen
                   {day.events.slice(0, 2).map((event) => (
                     <Link
                       key={event.id}
-                      to={`/events/${event.id}`}
+                      to={`/events/${generateEventSlug(event.title, event.id, event.date)}`}
                       className="block"
                       onClick={(e) => e.stopPropagation()}
                     >

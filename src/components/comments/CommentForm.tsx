@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Send, X } from 'lucide-react'
+import ReCAPTCHA from 'react-google-recaptcha'
 
 interface CommentFormProps {
   onSubmit: (content: string) => Promise<void>
@@ -20,6 +21,11 @@ export function CommentForm({
 }: CommentFormProps) {
   const [content, setContent] = useState(initialValue)
   const [error, setError] = useState('')
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null)
+  const recaptchaRef = useRef<ReCAPTCHA>(null)
+  
+  // Get reCAPTCHA site key from environment variables
+  const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI' // Test key
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -35,12 +41,26 @@ export function CommentForm({
       return
     }
 
+    if (!recaptchaToken) {
+      setError('Please complete the reCAPTCHA verification')
+      return
+    }
+
     try {
       setError('')
       await onSubmit(trimmedContent)
       setContent('')
+      setRecaptchaToken(null)
+      recaptchaRef.current?.reset()
     } catch (error) {
       setError('Failed to submit comment. Please try again.')
+    }
+  }
+
+  const handleRecaptchaChange = (token: string | null) => {
+    setRecaptchaToken(token)
+    if (error && token) {
+      setError('') // Clear error when reCAPTCHA is completed
     }
   }
 
@@ -77,11 +97,21 @@ export function CommentForm({
         </label>
       </div>
 
+      {/* reCAPTCHA */}
+      <div className="form-control">
+        <ReCAPTCHA
+          ref={recaptchaRef}
+          sitekey={RECAPTCHA_SITE_KEY}
+          onChange={handleRecaptchaChange}
+          theme="light"
+        />
+      </div>
+
       <div className="flex items-center gap-2">
         <button
           type="submit"
           className="btn btn-primary btn-sm"
-          disabled={submitting || !content.trim()}
+          disabled={submitting || !content.trim() || !recaptchaToken}
         >
           {submitting ? (
             <span className="loading loading-spinner loading-xs"></span>

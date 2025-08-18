@@ -4,6 +4,7 @@ import { Calendar, MapPin, Search, User, Filter, Grid, List, CheckCircle, X, Che
 import { DataService } from '../../services/dataService'
 import { EventCalendar } from '../../components/events/EventCalendar'
 import { useAuth } from '../../hooks/useAuth'
+import { generateEventSlug } from '../../utils/slugUtils'
 import type { Event } from '../../types'
 import { EVENT_CATEGORIES } from '../../types'
 
@@ -313,7 +314,7 @@ export function EventsPage() {
                         {upcomingEvents.slice(0, 5).map((event) => (
                           <Link
                             key={event.id}
-                            to={`/events/${event.id}`}
+                            to={`/events/${generateEventSlug(event.title, event.id, event.date)}`}
                             className="block p-3 bg-base-200 rounded-lg hover:bg-base-300 transition-colors"
                           >
                             <div className="flex items-start gap-3">
@@ -347,7 +348,11 @@ export function EventsPage() {
               /* List View */
               <div className="space-y-6">
                 {currentEvents.map((event) => (
-                  <div key={event.id} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+                  <Link
+                    key={event.id}
+                    to={`/events/${generateEventSlug(event.title, event.id, event.date)}`}
+                    className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-300 cursor-pointer"
+                  >
                     <div className="card-body">
                       <div className="flex flex-col lg:flex-row lg:items-start gap-6">
                         {/* Date */}
@@ -367,12 +372,10 @@ export function EventsPage() {
 
                         {/* Event Details */}
                         <div className="flex-1">
-                          <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                          <div className="flex flex-col gap-4">
                             <div className="flex-1">
                               <h3 className="card-title text-xl mb-2">
-                                <Link to={`/events/${event.id}`} className="hover:link">
-                                  {event.title}
-                                </Link>
+                                <span className="line-clamp-2">{event.title}</span>
                                 {event.verified && (
                                   <div className="badge badge-success badge-sm">Verified</div>
                                 )}
@@ -414,17 +417,11 @@ export function EventsPage() {
                                 )}
                               </div>
                             </div>
-                            
-                            <div className="flex flex-col gap-2 min-w-fit">
-                              <Link to={`/events/${event.id}`} className="btn btn-primary">
-                                View Details
-                              </Link>
-                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
 
                 {/* Pagination */}

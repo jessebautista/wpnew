@@ -36,11 +36,9 @@ export function CommentSection({ contentType, contentId, allowComments = true }:
   }
 
   const handleAddComment = async (content: string) => {
-    if (!user) return
-
     try {
       setSubmitting(true)
-      const newComment = await CommentService.addComment(contentType, contentId, content, user.id)
+      const newComment = await CommentService.addComment(contentType, contentId, content, user)
       setComments(prev => [...prev, newComment])
       setShowForm(false)
     } catch (error) {
@@ -88,7 +86,7 @@ export function CommentSection({ contentType, contentId, allowComments = true }:
           </h3>
         </div>
         
-        {user && !showForm && (
+        {!showForm && (
           <button
             onClick={() => setShowForm(true)}
             className="btn btn-primary btn-sm"
@@ -100,7 +98,7 @@ export function CommentSection({ contentType, contentId, allowComments = true }:
       </div>
 
       {/* Comment Form */}
-      {showForm && user && (
+      {showForm && (
         <div className="mb-6">
           <CommentForm
             onSubmit={handleAddComment}
@@ -127,23 +125,9 @@ export function CommentSection({ contentType, contentId, allowComments = true }:
         <div className="text-center py-8">
           <MessageCircle className="w-12 h-12 mx-auto mb-4 text-base-content/50" />
           <h4 className="text-lg font-medium mb-2">No comments yet</h4>
-          <p className="text-base-content/70 mb-4">
+          <p className="text-base-content/70">
             Be the first to share your thoughts!
           </p>
-          {user && !showForm && (
-            <button
-              onClick={() => setShowForm(true)}
-              className="btn btn-primary"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add First Comment
-            </button>
-          )}
-          {!user && (
-            <p className="text-sm text-base-content/60">
-              <a href="/login" className="link">Sign in</a> to leave a comment
-            </p>
-          )}
         </div>
       )}
     </div>

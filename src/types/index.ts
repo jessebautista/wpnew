@@ -121,6 +121,7 @@ export interface Comment {
   content_type: 'piano' | 'event' | 'blog_post'
   content_id: string
   author_id: string
+  author_name?: string
   created_at: string
   updated_at: string
   author?: User

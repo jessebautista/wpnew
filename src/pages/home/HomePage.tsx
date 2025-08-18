@@ -3,6 +3,7 @@ import { Piano, Map, Calendar, Users, Star } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { MockDataService } from '../../data/mockData'
 import { NewsletterSubscription } from '../../components/newsletter/NewsletterSubscription'
+import { generateEventSlug } from '../../utils/slugUtils'
 import type { Piano as PianoType, Event } from '../../types'
 
 export function HomePage() {
@@ -158,7 +159,7 @@ export function HomePage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {upcomingEvents.map((event) => (
-                <Link key={event.id} to={`/events/${event.id}`} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-300 cursor-pointer">
+                <Link key={event.id} to={`/events/${generateEventSlug(event.title, event.id, event.date)}`} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-300 cursor-pointer">
                   <div className="card-body">
                     <h3 className="card-title">{event.title}</h3>
                     <p className="text-sm text-base-content/70 mb-2">

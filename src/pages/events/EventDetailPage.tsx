@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker } from 'react-leaflet'
 import { 
   Calendar, 
@@ -9,37 +9,69 @@ import {
   Flag, 
   CheckCircle,
   Users,
-  ChevronLeft
+  ChevronLeft,
+  Share2,
+  LogIn
 } from 'lucide-react'
 import { useAuth } from '../../components/auth/AuthProvider'
 import { usePermissions } from '../../hooks/usePermissions'
 import { DataService } from '../../services/dataService'
+import { EventInterestService } from '../../services/eventInterestService'
 import { CommentSection } from '../../components/comments/CommentSection'
 import { ShareButton } from '../../components/social/ShareButton'
+import { ShareModal } from '../../components/social/ShareModal'
+import { ReportModal } from '../../components/modals/ReportModal'
 import { SocialSharingService } from '../../services/socialSharingService'
+import { findBySlugOrId, generateEventSlug, extractIdFromSlug } from '../../utils/slugUtils'
 import type { Event } from '../../types'
 import 'leaflet/dist/leaflet.css'
 
 export function EventDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const { } = useAuth()
+  const { user } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
   const { canEdit, canVerify } = usePermissions()
   const [event, setEvent] = useState<Event | null>(null)
   const [loading, setLoading] = useState(true)
   const [isInterested, setIsInterested] = useState(false)
   const [attendeeCount, setAttendeeCount] = useState(0)
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [showReportModal, setShowReportModal] = useState(false)
+  const [interestLoading, setInterestLoading] = useState(false)
 
   useEffect(() => {
     const loadEvent = async () => {
       if (!id) return
 
       try {
-        console.log('Loading event with ID:', id)
-        const eventData = await DataService.getEvent(id)
-        console.log('Found event:', eventData)
-        if (eventData) {
-          setEvent(eventData)
-          setAttendeeCount(eventData.attendee_count || Math.floor(Math.random() * 50) + 5)
+        console.log('Loading event with slug/ID:', id)
+        
+        // First, get all events to search by slug
+        const allEvents = await DataService.getEvents()
+        
+        // Try to find the event by slug or ID
+        const foundEvent = findBySlugOrId(
+          allEvents, 
+          id, 
+          (event: Event) => generateEventSlug(event.title, event.id, event.date)
+        )
+        
+        if (foundEvent) {
+          console.log('Found event:', foundEvent)
+          setEvent(foundEvent)
+          
+          // Load real attendee count and user interest
+          const count = await EventInterestService.getInterestCount(foundEvent.id)
+          setAttendeeCount(count)
+          
+          // Load user's interest status if logged in
+          if (user) {
+            const userInterest = await EventInterestService.getUserInterest(foundEvent.id, user.id)
+            setIsInterested(userInterest)
+          }
+        } else {
+          console.log('Event not found')
         }
       } catch (error) {
         console.error('Error loading event:', error)
@@ -49,11 +81,38 @@ export function EventDetailPage() {
     }
 
     loadEvent()
-  }, [id])
+  }, [id, user])
 
-  const handleInterestToggle = () => {
-    setIsInterested(!isInterested)
-    setAttendeeCount(prev => isInterested ? prev - 1 : prev + 1)
+  const handleInterestToggle = async () => {
+    if (!user) {
+      // Redirect to login if not authenticated
+      navigate('/login', { state: { from: location.pathname } })
+      return
+    }
+
+    if (!event) return
+
+    try {
+      setInterestLoading(true)
+      const result = await EventInterestService.toggleInterest(event.id, user.id)
+      setIsInterested(result.interested)
+      setAttendeeCount(result.count)
+    } catch (error) {
+      console.error('Error toggling interest:', error)
+      // Optionally show error toast
+    } finally {
+      setInterestLoading(false)
+    }
+  }
+
+  const handleReport = () => {
+    if (!user) {
+      // Redirect to login if not authenticated
+      navigate('/login', { state: { from: location.pathname } })
+      return
+    }
+
+    setShowReportModal(true)
   }
 
   const getShareData = () => {
@@ -173,19 +232,35 @@ export function EventDetailPage() {
                   <button 
                     onClick={handleInterestToggle}
                     className={`btn ${isInterested ? 'btn-success' : 'btn-primary'}`}
+                    disabled={interestLoading}
                   >
-                    <Heart className={`w-4 h-4 mr-2 ${isInterested ? 'fill-current' : ''}`} />
-                    {isInterested ? 'Interested' : 'I\'m Interested'}
+                    {interestLoading ? (
+                      <span className="loading loading-spinner loading-xs mr-2"></span>
+                    ) : (
+                      <>
+                        {!user && <LogIn className="w-4 h-4 mr-2" />}
+                        <Heart className={`w-4 h-4 mr-2 ${isInterested ? 'fill-current' : ''}`} />
+                      </>
+                    )}
+                    {!user ? 'Sign In to Show Interest' : isInterested ? 'Interested' : 'I\'m Interested'}
                   </button>
                   
                   {getShareData() && (
-                    <ShareButton
-                      shareData={getShareData()!}
-                      contentType="event"
-                      contentId={event.id}
-                      variant="dropdown"
-                      className="btn-outline"
-                    />
+                    <>
+                      <ShareButton
+                        shareData={getShareData()!}
+                        contentType="event"
+                        contentId={event.id}
+                        variant="button"
+                      />
+                      <button 
+                        className="btn btn-ghost"
+                        onClick={() => setShowShareModal(true)}
+                      >
+                        <Share2 className="w-4 h-4 mr-2" />
+                        More Options
+                      </button>
+                    </>
                   )}
                   
                   {canEdit(event.created_by) && (
@@ -196,9 +271,13 @@ export function EventDetailPage() {
                     <button className="btn btn-success btn-sm">Verify Event</button>
                   )}
                   
-                  <button className="btn btn-ghost btn-sm">
+                  <button 
+                    onClick={handleReport}
+                    className="btn btn-ghost btn-sm"
+                  >
+                    {!user && <LogIn className="w-4 h-4 mr-2" />}
                     <Flag className="w-4 h-4 mr-2" />
-                    Report
+                    {!user ? 'Sign In to Report' : 'Report'}
                   </button>
                 </div>
               </div>
@@ -273,6 +352,37 @@ export function EventDetailPage() {
               </div>
             )}
 
+            {/* Quick Info - Mobile Only (above comments) */}
+            <div className="card bg-base-100 shadow-xl lg:hidden">
+              <div className="card-body">
+                <h3 className="card-title">Quick Info</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-base-content/70">Date</span>
+                    <span className="font-medium">
+                      {eventDate.toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-base-content/70">Time</span>
+                    <span className="font-medium">
+                      {eventDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-base-content/70">Category</span>
+                    <span className="badge badge-secondary">{event.category}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-base-content/70">Status</span>
+                    <span className={`badge ${event.verified ? 'badge-success' : 'badge-warning'}`}>
+                      {event.verified ? 'Verified' : 'Pending'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Comments */}
             <CommentSection
               contentType="event"
@@ -283,8 +393,8 @@ export function EventDetailPage() {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Quick Info */}
-            <div className="card bg-base-100 shadow-xl">
+            {/* Quick Info - Desktop Only */}
+            <div className="card bg-base-100 shadow-xl hidden lg:block">
               <div className="card-body">
                 <h3 className="card-title">Quick Info</h3>
                 <div className="space-y-3">
@@ -326,6 +436,29 @@ export function EventDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Share Modal */}
+      {getShareData() && (
+        <ShareModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          shareData={getShareData()!}
+          contentType="event"
+          contentId={event.id}
+        />
+      )}
+
+      {/* Report Modal */}
+      {event && (
+        <ReportModal
+          isOpen={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          contentType="event"
+          contentId={event.id}
+          contentTitle={event.title}
+          userId={user?.id}
+        />
+      )}
     </div>
   )
 }

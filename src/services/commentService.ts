@@ -1,80 +1,224 @@
 import type { Comment } from '../types'
+import { shouldUseMockData, supabase } from '../lib/supabase'
 import { mockUsers } from '../data/mockData'
+import { getDisplayName } from '../utils/usernameGenerator'
 
 export class CommentService {
   private static comments: Comment[] = []
 
   static async getComments(contentType: 'piano' | 'event' | 'blog_post', contentId: string): Promise<Comment[]> {
-    // Mock API delay
-    await new Promise(resolve => setTimeout(resolve, 300))
+    if (shouldUseMockData('supabase')) {
+      console.log('[MOCK] Fetching comments from mock data')
+      await new Promise(resolve => setTimeout(resolve, 300))
+      return this.comments
+        .filter(comment => comment.content_type === contentType && comment.content_id === contentId)
+        .map(comment => ({
+          ...comment,
+          author: mockUsers.find(user => user.id === comment.author_id)
+        }))
+        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    }
 
-    return this.comments
-      .filter(comment => comment.content_type === contentType && comment.content_id === contentId)
-      .map(comment => ({
+    try {
+      console.log('[SUPABASE] Fetching comments from Supabase')
+      const { data, error } = await supabase
+        .from('comments')
+        .select('*')
+        .eq('content_type', contentType)
+        .eq('content_id', contentId)
+        .order('created_at', { ascending: true })
+
+      if (error) {
+        console.error('Error fetching comments:', error)
+        return []
+      }
+
+      // Get unique author IDs to fetch profile data
+      const authorIds = [...new Set(data?.map(comment => comment.author_id).filter(Boolean))]
+      
+      let profiles = []
+      if (authorIds.length > 0) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('id, full_name, email')
+          .in('id', authorIds)
+        profiles = profileData || []
+      }
+
+      return data?.map(comment => ({
         ...comment,
-        author: mockUsers.find(user => user.id === comment.author_id)
-      }))
-      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+        author: profiles.find(profile => profile.id === comment.author_id) || undefined
+      })) || []
+    } catch (error) {
+      console.error('Error fetching comments:', error)
+      return []
+    }
   }
 
   static async addComment(
     contentType: 'piano' | 'event' | 'blog_post',
     contentId: string,
     content: string,
-    authorId: string
+    user?: any
   ): Promise<Comment> {
-    // Mock API delay
-    await new Promise(resolve => setTimeout(resolve, 500))
+    if (shouldUseMockData('supabase')) {
+      console.log('[MOCK] Adding comment with mock data')
+      await new Promise(resolve => setTimeout(resolve, 500))
 
-    const newComment: Comment = {
-      id: `comment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      content: content.trim(),
-      content_type: contentType,
-      content_id: contentId,
-      author_id: authorId,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      author: mockUsers.find(user => user.id === authorId)
+      const authorName = getDisplayName(user)
+      const newComment: Comment = {
+        id: `comment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        content: content.trim(),
+        content_type: contentType,
+        content_id: contentId,
+        author_id: user?.id || 'anonymous',
+        author_name: authorName,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        author: user ? mockUsers.find(mockUser => mockUser.id === user.id) : undefined
+      }
+
+      this.comments.push(newComment)
+      return newComment
     }
 
-    this.comments.push(newComment)
-    return newComment
+    try {
+      console.log('[SUPABASE] Adding comment to Supabase')
+      const displayName = getDisplayName(user)
+      
+      const { data, error } = await supabase
+        .from('comments')
+        .insert({
+          content: content.trim(),
+          content_type: contentType,
+          content_id: contentId,
+          author_id: user?.id || 'anonymous',
+          author_name: displayName
+        })
+        .select('*')
+        .single()
+
+      if (error) {
+        console.error('Error adding comment:', error)
+        throw error
+      }
+
+      return data
+    } catch (error) {
+      console.error('Error adding comment:', error)
+      throw error
+    }
   }
 
   static async updateComment(commentId: string, content: string): Promise<Comment | null> {
-    // Mock API delay
-    await new Promise(resolve => setTimeout(resolve, 500))
+    if (shouldUseMockData('supabase')) {
+      console.log('[MOCK] Updating comment with mock data')
+      await new Promise(resolve => setTimeout(resolve, 500))
 
-    const commentIndex = this.comments.findIndex(comment => comment.id === commentId)
-    if (commentIndex === -1) return null
+      const commentIndex = this.comments.findIndex(comment => comment.id === commentId)
+      if (commentIndex === -1) return null
 
-    this.comments[commentIndex] = {
-      ...this.comments[commentIndex],
-      content: content.trim(),
-      updated_at: new Date().toISOString()
+      this.comments[commentIndex] = {
+        ...this.comments[commentIndex],
+        content: content.trim(),
+        updated_at: new Date().toISOString()
+      }
+
+      return {
+        ...this.comments[commentIndex],
+        author: mockUsers.find(user => user.id === this.comments[commentIndex].author_id)
+      }
     }
 
-    return {
-      ...this.comments[commentIndex],
-      author: mockUsers.find(user => user.id === this.comments[commentIndex].author_id)
+    try {
+      console.log('[SUPABASE] Updating comment in Supabase')
+      const { data, error } = await supabase
+        .from('comments')
+        .update({ 
+          content: content.trim(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', commentId)
+        .select('*')
+        .single()
+
+      if (error) {
+        console.error('Error updating comment:', error)
+        return null
+      }
+
+      // Fetch the author profile separately
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .eq('id', data.author_id)
+        .single()
+
+      return {
+        ...data,
+        author: profileData || undefined
+      }
+    } catch (error) {
+      console.error('Error updating comment:', error)
+      return null
     }
   }
 
   static async deleteComment(commentId: string): Promise<boolean> {
-    // Mock API delay
-    await new Promise(resolve => setTimeout(resolve, 500))
+    if (shouldUseMockData('supabase')) {
+      console.log('[MOCK] Deleting comment with mock data')
+      await new Promise(resolve => setTimeout(resolve, 500))
 
-    const commentIndex = this.comments.findIndex(comment => comment.id === commentId)
-    if (commentIndex === -1) return false
+      const commentIndex = this.comments.findIndex(comment => comment.id === commentId)
+      if (commentIndex === -1) return false
 
-    this.comments.splice(commentIndex, 1)
-    return true
+      this.comments.splice(commentIndex, 1)
+      return true
+    }
+
+    try {
+      console.log('[SUPABASE] Deleting comment from Supabase')
+      const { error } = await supabase
+        .from('comments')
+        .delete()
+        .eq('id', commentId)
+
+      if (error) {
+        console.error('Error deleting comment:', error)
+        return false
+      }
+
+      return true
+    } catch (error) {
+      console.error('Error deleting comment:', error)
+      return false
+    }
   }
 
   static async getCommentCount(contentType: 'piano' | 'event' | 'blog_post', contentId: string): Promise<number> {
-    return this.comments.filter(comment => 
-      comment.content_type === contentType && comment.content_id === contentId
-    ).length
+    if (shouldUseMockData('supabase')) {
+      return this.comments.filter(comment => 
+        comment.content_type === contentType && comment.content_id === contentId
+      ).length
+    }
+
+    try {
+      const { count, error } = await supabase
+        .from('comments')
+        .select('*', { count: 'exact', head: true })
+        .eq('content_type', contentType)
+        .eq('content_id', contentId)
+
+      if (error) {
+        console.error('Error getting comment count:', error)
+        return 0
+      }
+
+      return count || 0
+    } catch (error) {
+      console.error('Error getting comment count:', error)
+      return 0
+    }
   }
 
   // Initialize with some mock comments
@@ -90,6 +234,7 @@ export class CommentService {
         content_type: 'piano',
         content_id: '1',
         author_id: '1',
+        author_name: 'MusicalEnthusiast123',
         created_at: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(),
         updated_at: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString()
       },
@@ -99,6 +244,7 @@ export class CommentService {
         content_type: 'piano',
         content_id: '1',
         author_id: '2',
+        author_name: 'HarmonicPlayer456',
         created_at: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString(),
         updated_at: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString()
       },
@@ -108,6 +254,7 @@ export class CommentService {
         content_type: 'piano',
         content_id: '2',
         author_id: '1',
+        author_name: 'CreativeComposer789',
         created_at: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString(),
         updated_at: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString()
       },
@@ -118,6 +265,7 @@ export class CommentService {
         content_type: 'event',
         content_id: '1',
         author_id: '2',
+        author_name: 'PassionatePerformer234',
         created_at: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString(),
         updated_at: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString()
       },
@@ -127,6 +275,7 @@ export class CommentService {
         content_type: 'event',
         content_id: '1',
         author_id: '1',
+        author_name: 'InspiringMaestro567',
         created_at: new Date(now.getTime() - 12 * 60 * 60 * 1000).toISOString(),
         updated_at: new Date(now.getTime() - 12 * 60 * 60 * 1000).toISOString()
       },
@@ -137,6 +286,7 @@ export class CommentService {
         content_type: 'blog_post',
         content_id: '1',
         author_id: '1',
+        author_name: 'DynamicDreamer890',
         created_at: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString(),
         updated_at: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString()
       },
@@ -146,6 +296,7 @@ export class CommentService {
         content_type: 'blog_post',
         content_id: '1',
         author_id: '2',
+        author_name: 'VibrantVirtuoso345',
         created_at: new Date(now.getTime() - 1 * 60 * 60 * 1000).toISOString(),
         updated_at: new Date(now.getTime() - 1 * 60 * 60 * 1000).toISOString()
       }

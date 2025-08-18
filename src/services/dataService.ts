@@ -637,6 +637,41 @@ export class DataService {
   }
 
   /**
+   * Get blog post by ID
+   */
+  static async getBlogPostById(id: string): Promise<BlogPost | null> {
+    if (shouldUseMockData('supabase')) {
+      console.log(`[MOCK] Fetching blog post ${id} from mock data`)
+      return Promise.resolve(mockBlogPosts.find(p => p.id === id) || null)
+    }
+    
+    try {
+      // Use direct fetch instead of Supabase client for public access
+      console.log(`[DIRECT] Fetching blog post ${id} via direct API call`)
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/blog_posts?select=*&id=eq.${id}&published=eq.true`, {
+        headers: {
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        signal: AbortSignal.timeout(10000) // 10 second timeout
+      })
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      const data = await response.json()
+      console.log(`[DIRECT] Successfully fetched blog post ${id}`)
+      return data.length > 0 ? data[0] : null
+    } catch (error) {
+      console.error(`Direct fetch error for blog post ${id}:`, error)
+      // Fallback to mock data on connection error
+      return mockBlogPosts.find(p => p.id === id) || null
+    }
+  }
+
+  /**
    * Search functionality
    */
   static async searchContent(query: string, type?: 'pianos' | 'events' | 'blog'): Promise<{

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { BookOpen, Search, User, Calendar, Filter, Plus, Eye, Heart, MessageCircle, Tag, Clock, Check, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { BookOpen, Search, Calendar, Filter, Plus, Eye, Tag, Clock, Check, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react'
 import { DataService } from '../../services/dataService'
 import { usePermissions } from '../../hooks/usePermissions'
 import type { BlogPost } from '../../types'
@@ -195,7 +195,7 @@ export function BlogPage() {
           </div>
 
           {/* Filters */}
-          <div className="flex flex-wrap gap-4 items-center">
+          <div className="flex flex-wrap gap-4 items-center justify-center md:justify-start">
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-base-content/70" />
               <span className="text-sm font-medium text-base-content/70">Filters:</span>
@@ -273,97 +273,103 @@ export function BlogPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
               {/* Main Content */}
               <div className="lg:col-span-2">
-                <div className="space-y-8">
+                <div className="space-y-4 md:space-y-6">
                   {currentPosts.map((post) => (
-                    <article key={post.id} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
-                      {post.featured_image && (
-                        <figure>
-                          <img src={post.featured_image} alt={post.title} className="w-full h-48 object-cover" />
-                        </figure>
-                      )}
-                      <div className="card-body">
-                        <div className="flex items-center gap-4 text-sm text-base-content/70 mb-3">
-                          {post.category && (
-                            <button
-                              onClick={() => handleCategorySelect(post.category || '')}
-                              className="badge badge-primary hover:badge-primary-focus cursor-pointer"
-                            >
-                              {post.category}
-                            </button>
-                          )}
-                          {post.moderation_status && getModerationStatusBadge(post.moderation_status)}
-                          <div className="flex items-center">
-                            <Calendar className="w-4 h-4 mr-1" />
-                            {new Date(post.created_at).toLocaleDateString('en-US', {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric'
-                            })}
-                          </div>
-                          <div className="flex items-center">
-                            <User className="w-4 h-4 mr-1" />
-                            {post.author?.full_name || 'WorldPianos Team'}
-                          </div>
-                        </div>
-                        
-                        <h2 className="card-title text-2xl mb-3">
-                          <Link to={`/blog/${post.id}`} className="hover:link">
-                            {post.title}
-                          </Link>
-                        </h2>
-                        
-                        <p className="text-base-content/80 leading-relaxed mb-4">
-                          {post.excerpt || post.content.substring(0, 200) + '...'}
-                        </p>
-                        
-                        {/* Post Metrics */}
-                        <div className="flex items-center gap-4 text-sm text-base-content/50 mb-4">
-                          <div className="flex items-center">
-                            <Eye className="w-4 h-4 mr-1" />
-                            {Math.floor(Math.random() * 500) + 50} views
-                          </div>
-                          <div className="flex items-center">
-                            <Heart className="w-4 h-4 mr-1" />
-                            {Math.floor(Math.random() * 50) + 5} likes
-                          </div>
-                          <div className="flex items-center">
-                            <MessageCircle className="w-4 h-4 mr-1" />
-                            {Math.floor(Math.random() * 20)} comments
-                          </div>
-                        </div>
-                        
-                        {post.tags && post.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mb-4">
-                            {post.tags.slice(0, 3).map((tag, index) => (
-                              <button
-                                key={index}
-                                onClick={() => handleTagSelect(tag)}
-                                className="badge badge-outline badge-sm hover:badge-accent cursor-pointer"
-                              >
-                                {tag}
-                              </button>
-                            ))}
-                            {post.tags.length > 3 && (
-                              <span className="badge badge-ghost badge-sm">
-                                +{post.tags.length - 3} more
-                              </span>
-                            )}
-                          </div>
+                    <Link key={post.id} to={`/blog/${post.id}`} className="block">
+                      <article className="card bg-base-100 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-[1.02] cursor-pointer">
+                        {post.featured_image && (
+                          <figure>
+                            <img src={post.featured_image} alt={post.title} className="w-full h-40 md:h-48 object-cover" />
+                          </figure>
                         )}
-                        
-                        <div className="card-actions justify-between items-center">
-                          <div className="text-sm text-base-content/50">
-                            {Math.ceil(post.content.split(' ').length / 200)} min read
+                        <div className="card-body p-4 md:p-6">
+                          {/* Meta info - more compact for mobile */}
+                          <div className="flex flex-wrap items-center gap-2 md:gap-3 text-sm text-base-content/70 mb-3">
+                            {post.category && (
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleCategorySelect(post.category || '');
+                                }}
+                                className="badge badge-primary hover:badge-primary-focus cursor-pointer"
+                              >
+                                {post.category}
+                              </button>
+                            )}
+                            {post.moderation_status && getModerationStatusBadge(post.moderation_status)}
+                            <div className="flex items-center">
+                              <Calendar className="w-3 h-3 md:w-4 md:h-4 mr-1" />
+                              <span className="hidden sm:inline">
+                                {new Date(post.created_at).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric'
+                                })}
+                              </span>
+                              <span className="sm:hidden">
+                                {new Date(post.created_at).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric'
+                                })}
+                              </span>
+                            </div>
                           </div>
-                          <Link to={`/blog/${post.id}`} className="btn btn-primary">
-                            Read More
-                          </Link>
+                          
+                          <h2 className="card-title text-lg md:text-xl lg:text-2xl mb-2 md:mb-3 line-clamp-2 hover:text-primary transition-colors">
+                            {post.title}
+                          </h2>
+                          
+                          <p className="text-base-content/80 leading-relaxed mb-3 md:mb-4 text-sm md:text-base line-clamp-3">
+                            {post.excerpt || post.content.substring(0, 150) + '...'}
+                          </p>
+                          
+                          {/* Simplified metrics - fewer on mobile */}
+                          <div className="flex items-center gap-3 md:gap-4 text-xs md:text-sm text-base-content/50 mb-3">
+                            <div className="flex items-center">
+                              <Clock className="w-3 h-3 md:w-4 md:h-4 mr-1" />
+                              {Math.ceil(post.content.split(' ').length / 200)} min read
+                            </div>
+                            <div className="hidden sm:flex items-center">
+                              <Eye className="w-3 h-3 md:w-4 md:h-4 mr-1" />
+                              {Math.floor(Math.random() * 500) + 50} views
+                            </div>
+                          </div>
+                          
+                          {/* Tags - limited for mobile */}
+                          {post.tags && post.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1 md:gap-2">
+                              {post.tags.slice(0, 3).map((tag, index) => (
+                                <button
+                                  key={index}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleTagSelect(tag);
+                                  }}
+                                  className={`badge badge-outline badge-sm hover:badge-accent cursor-pointer text-xs ${index >= 2 ? 'hidden md:inline-flex' : ''}`}
+                                >
+                                  {tag}
+                                </button>
+                              ))}
+                              {post.tags.length > 3 && (
+                                <span className="badge badge-ghost badge-sm text-xs hidden md:inline-flex">
+                                  +{post.tags.length - 3}
+                                </span>
+                              )}
+                              {post.tags.length > 2 && (
+                                <span className="badge badge-ghost badge-sm text-xs md:hidden">
+                                  +{post.tags.length - 2}
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    </article>
+                      </article>
+                    </Link>
                   ))}
                 </div>
 

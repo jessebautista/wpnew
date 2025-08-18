@@ -6,7 +6,7 @@ import {
   Piano as PianoIcon, 
   Calendar, 
   BookOpen, 
-  TrendingUp, 
+ 
   AlertTriangle,
   CheckCircle,
   BarChart3,
@@ -27,7 +27,7 @@ import {
 import { useAuth } from '../../components/auth/AuthProvider'
 import { usePermissions } from '../../hooks/usePermissions'
 import { AdminService, type AdminStats, type RecentActivity } from '../../services/adminService'
-import { GeocodingService, type LocationSuggestion } from '../../services/geocodingService'
+import { GeocodingService } from '../../services/geocodingService'
 import { supabase } from '../../lib/supabase'
 // TODO: Newsletter Dashboard Implementation
 // The newsletter functionality is temporarily disabled pending full implementation.
@@ -891,7 +891,7 @@ function ContentEditorModal({ content, onClose, onSave }: ContentEditorModalProp
       onSave()
     } catch (error) {
       console.error('Error saving content:', error)
-      alert(`Failed to save content: ${error.message || 'Unknown error'}`)
+      alert(`Failed to save content: ${(error as Error).message || 'Unknown error'}`)
     } finally {
       setSaving(false)
     }
@@ -1153,7 +1153,7 @@ function PianoEditor({ formData, setFormData }: { formData: any; setFormData: (d
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const { latitude, longitude } = position.coords
-          setFormData(prev => ({
+          setFormData((prev: any) => ({
             ...prev,
             latitude,
             longitude
@@ -1171,7 +1171,7 @@ function PianoEditor({ formData, setFormData }: { formData: any; setFormData: (d
             if (response.ok) {
               const data = await response.json()
               const address = data.display_name || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
-              setFormData(prev => ({
+              setFormData((prev: any) => ({
                 ...prev,
                 location_name: prev.location_name || address
               }))
@@ -1182,7 +1182,7 @@ function PianoEditor({ formData, setFormData }: { formData: any; setFormData: (d
             console.error('Error getting address:', error)
             // Fall back to coordinates
             const coordsAddress = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
-            setFormData(prev => ({
+            setFormData((prev: any) => ({
               ...prev,
               location_name: prev.location_name || coordsAddress
             }))
@@ -1493,7 +1493,7 @@ function EventEditor({ formData, setFormData }: { formData: any; setFormData: (d
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const { latitude, longitude } = position.coords
-          setFormData(prev => ({
+          setFormData((prev: any) => ({
             ...prev,
             latitude,
             longitude
@@ -1511,7 +1511,7 @@ function EventEditor({ formData, setFormData }: { formData: any; setFormData: (d
             if (response.ok) {
               const data = await response.json()
               const address = data.display_name || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
-              setFormData(prev => ({
+              setFormData((prev: any) => ({
                 ...prev,
                 location_name: prev.location_name || address
               }))
@@ -1522,7 +1522,7 @@ function EventEditor({ formData, setFormData }: { formData: any; setFormData: (d
             console.error('Error getting address:', error)
             // Fall back to coordinates
             const coordsAddress = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
-            setFormData(prev => ({
+            setFormData((prev: any) => ({
               ...prev,
               location_name: prev.location_name || coordsAddress
             }))

@@ -18,9 +18,10 @@ import {
   Globe,
   Settings,
   Shield,
-  UserCog
+  UserCog,
+  Camera
 } from 'lucide-react'
-import { userService } from '../../utils/database'
+import { supabase } from '../../lib/supabase'
 
 interface ProfileFormData {
   full_name: string
@@ -39,9 +40,17 @@ export function DashboardPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'admin'>('overview')
   
   // Profile editing states
-  const [isEditing, setIsEditing] = useState(false)
+  const [editingField, setEditingField] = useState<keyof ProfileFormData | null>(null)
   const [profileLoading, setProfileLoading] = useState(false)
+  const [avatarUploading, setAvatarUploading] = useState(false)
   const [formData, setFormData] = useState<ProfileFormData>({
+    full_name: '',
+    username: '',
+    bio: '',
+    location: '',
+    website: ''
+  })
+  const [originalData, setOriginalData] = useState<ProfileFormData>({
     full_name: '',
     username: '',
     bio: '',
@@ -54,12 +63,87 @@ export function DashboardPage() {
       if (!user) return
       
       try {
-        const [pianoStats, activity] = await Promise.all([
-          userService.getPianoStats(user.id),
-          userService.getRecentActivity(user.id, 5)
+        // Get real stats from database
+        const [pianoVisits, userImages, userPianos, userEvents] = await Promise.all([
+          supabase.from('piano_visits').select('*').eq('user_id', user.id),
+          supabase.from('piano_images').select('*').eq('uploaded_by', user.id),
+          supabase.from('pianos').select('*').eq('submitted_by', user.id),
+          supabase.from('events').select('*').eq('created_by', user.id)
         ])
+        
+        const pianoStats = {
+          pianos_visited: pianoVisits.data?.length || 0,
+          pianos_added: userPianos.data?.length || 0,
+          events_created: userEvents.data?.length || 0,
+          photos_uploaded: userImages.data?.length || 0,
+          average_rating: pianoVisits.data?.length > 0 
+            ? pianoVisits.data.reduce((sum, visit) => sum + (visit.rating || 0), 0) / pianoVisits.data.length
+            : 0
+        }
+        
+        // Get real recent activity from database
+        const activity = []
+        
+        // Add recent piano visits
+        if (pianoVisits.data && pianoVisits.data.length > 0) {
+          const recentVisits = pianoVisits.data
+            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            .slice(0, 3)
+          
+          recentVisits.forEach(visit => {
+            activity.push({
+              type: 'piano_visit',
+              title: 'Piano Rating',
+              description: `Rated a piano ${visit.rating}/5 stars`,
+              timestamp: visit.created_at,
+              status: 'approved',
+              id: `visit-${visit.id}`
+            })
+          })
+        }
+        
+        // Add recent image uploads
+        if (userImages.data && userImages.data.length > 0) {
+          const recentImages = userImages.data
+            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            .slice(0, 2)
+          
+          recentImages.forEach(image => {
+            activity.push({
+              type: 'photo_upload',
+              title: 'Photo Upload',
+              description: 'Uploaded a piano photo',
+              timestamp: image.created_at,
+              status: 'approved',
+              id: `image-${image.id}`
+            })
+          })
+        }
+        
+        // Add recent piano submissions
+        if (userPianos.data && userPianos.data.length > 0) {
+          const recentPianos = userPianos.data
+            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            .slice(0, 2)
+          
+          recentPianos.forEach(piano => {
+            activity.push({
+              type: 'piano_added',
+              title: 'Piano Added',
+              description: `Added "${piano.name}" to the map`,
+              timestamp: piano.created_at,
+              status: piano.moderation_status || 'pending',
+              id: `piano-${piano.id}`
+            })
+          })
+        }
+        
+        // Sort all activity by date and take the 5 most recent
+        activity.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        const recentActivity = activity.slice(0, 5)
+        
         setStats(pianoStats)
-        setRecentActivity(activity)
+        setRecentActivity(recentActivity)
       } catch (error) {
         console.error('Error loading stats:', error)
       } finally {
@@ -73,13 +157,15 @@ export function DashboardPage() {
   // Initialize profile form data when user changes
   useEffect(() => {
     if (user) {
-      setFormData({
+      const userData = {
         full_name: user.full_name || '',
         username: user.username || '',
         bio: user.bio || '',
         location: user.location || '',
         website: user.website || ''
-      })
+      }
+      setFormData(userData)
+      setOriginalData(userData)
     }
   }, [user])
 
@@ -89,34 +175,111 @@ export function DashboardPage() {
   }
 
   const handleSave = async () => {
+    if (!user) return
+    
     setProfileLoading(true)
     try {
-      // TODO: Implement profile update API call
-      console.log('Saving profile data:', formData)
+      const { error } = await supabase
+        .from('users')
+        .update({
+          full_name: formData.full_name,
+          username: formData.username,
+          bio: formData.bio,
+          location: formData.location,
+          website: formData.website
+        })
+        .eq('id', user.id)
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      if (error) {
+        throw error
+      }
       
-      setIsEditing(false)
+      // Update original data
+      setOriginalData(formData)
+      setEditingField(null)
+      
+      // Show success feedback
+      alert('Profile updated successfully!')
     } catch (error) {
       console.error('Error saving profile:', error)
+      alert('Failed to update profile. Please try again.')
     } finally {
       setProfileLoading(false)
     }
   }
 
   const handleCancel = () => {
-    // Reset form data to original user data
-    if (user) {
-      setFormData({
-        full_name: user.full_name || '',
-        username: user.username || '',
-        bio: user.bio || '',
-        location: user.location || '',
-        website: user.website || ''
-      })
+    // Reset form data to original data
+    setFormData(originalData)
+    setEditingField(null)
+  }
+  
+  const hasChanges = () => {
+    return JSON.stringify(formData) !== JSON.stringify(originalData)
+  }
+  
+  const startEditing = (field: keyof ProfileFormData) => {
+    setEditingField(field)
+  }
+
+  const handleAvatarUpload = async (file: File) => {
+    if (!user) return
+    
+    try {
+      setAvatarUploading(true)
+      
+      // Validate file
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        alert('Image must be less than 5MB')
+        return
+      }
+      
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+        alert('Please upload a JPG, PNG, or WebP image')
+        return
+      }
+      
+      // Generate unique filename
+      const fileExt = file.name.split('.').pop()
+      const fileName = `avatars/${user.id}/${Date.now()}.${fileExt}`
+      
+      // Upload to Supabase storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('piano-images') // Reuse existing bucket
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        })
+      
+      if (uploadError) {
+        throw uploadError
+      }
+      
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('piano-images')
+        .getPublicUrl(fileName)
+      
+      // Update user's avatar_url in database
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ avatar_url: urlData.publicUrl })
+        .eq('id', user.id)
+      
+      if (updateError) {
+        throw updateError
+      }
+      
+      // Show success message and reload page to reflect changes
+      alert('Avatar updated successfully!')
+      window.location.reload()
+      
+    } catch (error) {
+      console.error('Error uploading avatar:', error)
+      alert('Failed to upload avatar. Please try again.')
+    } finally {
+      setAvatarUploading(false)
     }
-    setIsEditing(false)
   }
 
   const profileCompleteness = () => {
@@ -141,9 +304,9 @@ export function DashboardPage() {
         <div className="container mx-auto px-4">
           <div className="flex items-center space-x-6">
             <div className="avatar">
-              <div className="w-20 h-20 rounded-full bg-primary-content/20">
+              <div className="w-20 h-20 rounded-full bg-primary-content/20 overflow-hidden">
                 {user?.avatar_url ? (
-                  <img src={user.avatar_url} alt="Avatar" />
+                  <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
                   <div className="flex items-center justify-center w-full h-full text-2xl font-bold">
                     {user?.full_name?.[0] || user?.email[0] || 'U'}
@@ -442,15 +605,7 @@ export function DashboardPage() {
                     <User className="w-6 h-6" />
                     Profile Information
                   </h2>
-                  {!isEditing ? (
-                    <button
-                      onClick={() => setIsEditing(true)}
-                      className="btn btn-outline btn-sm"
-                    >
-                      <Edit3 className="w-4 h-4 mr-2" />
-                      Edit Profile
-                    </button>
-                  ) : (
+                  {hasChanges() && (
                     <div className="flex gap-2">
                       <button
                         onClick={handleSave}
@@ -465,7 +620,7 @@ export function DashboardPage() {
                         ) : (
                           <>
                             <Save className="w-4 h-4 mr-2" />
-                            Save
+                            Save Changes
                           </>
                         )}
                       </button>
@@ -482,19 +637,49 @@ export function DashboardPage() {
                 </div>
 
                 {/* Avatar Section */}
-                <div className="flex items-center gap-6 mb-8">
-                  <div className="avatar">
-                    <div className="w-24 h-24 rounded-full bg-primary text-primary-content flex items-center justify-center">
-                      {user?.avatar_url ? (
-                        <img src={user.avatar_url} alt="Profile" className="rounded-full" />
-                      ) : (
-                        <span className="text-2xl font-bold">
-                          {user?.full_name?.[0] || user?.email[0] || 'U'}
-                        </span>
-                      )}
+                <div className="flex items-start gap-6 mb-8">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="avatar">
+                      <div className="w-24 h-24 rounded-full bg-primary text-primary-content flex items-center justify-center relative overflow-hidden">
+                        {user?.avatar_url ? (
+                          <img src={user.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-2xl font-bold">
+                            {user?.full_name?.[0] || user?.email[0] || 'U'}
+                          </span>
+                        )}
+                        {avatarUploading && (
+                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                            <span className="loading loading-spinner loading-sm text-white"></span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) handleAvatarUpload(file)
+                        }}
+                        className="hidden"
+                        id="avatar-upload"
+                        disabled={avatarUploading}
+                      />
+                      <label
+                        htmlFor="avatar-upload"
+                        className={`btn btn-outline btn-sm ${avatarUploading ? 'btn-disabled' : 'cursor-pointer'}`}
+                      >
+                        <Camera className="w-4 h-4 mr-2" />
+                        {avatarUploading ? 'Uploading...' : 'Change Photo'}
+                      </label>
+                      <div className="text-xs text-base-content/50 mt-1">
+                        JPG, PNG, WebP • Max 5MB
+                      </div>
                     </div>
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <h3 className="text-xl font-semibold">
                       {user?.full_name || user?.username || 'Piano Enthusiast'}
                     </h3>
@@ -511,73 +696,117 @@ export function DashboardPage() {
                   </div>
                 </div>
 
-                {/* Profile Form */}
+                {/* Profile Form - Inline Editing */}
                 <div className="space-y-6">
+                  {/* Full Name */}
                   <div className="form-control">
                     <label className="label">
                       <span className="label-text">Full Name</span>
                     </label>
-                    {isEditing ? (
+                    {editingField === 'full_name' ? (
                       <input
                         type="text"
                         className="input input-bordered"
                         value={formData.full_name}
                         onChange={(e) => handleInputChange('full_name', e.target.value)}
                         placeholder="Enter your full name"
+                        autoFocus
+                        onBlur={() => setEditingField(null)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') setEditingField(null)
+                          if (e.key === 'Escape') {
+                            setFormData(prev => ({ ...prev, full_name: originalData.full_name }))
+                            setEditingField(null)
+                          }
+                        }}
                       />
                     ) : (
-                      <div className="text-lg">
-                        {user?.full_name || (
-                          <span className="text-base-content/50 italic">Not set</span>
+                      <div 
+                        className="text-lg p-3 border border-transparent rounded-lg hover:border-base-300 hover:bg-base-50 cursor-pointer transition-colors min-h-[3rem] flex items-center"
+                        onClick={() => startEditing('full_name')}
+                      >
+                        {formData.full_name || (
+                          <span className="text-base-content/50 italic">Click to set your full name</span>
                         )}
+                        <Edit3 className="w-4 h-4 ml-auto text-base-content/30" />
                       </div>
                     )}
                   </div>
 
+                  {/* Username */}
                   <div className="form-control">
                     <label className="label">
                       <span className="label-text">Username</span>
                     </label>
-                    {isEditing ? (
+                    {editingField === 'username' ? (
                       <input
                         type="text"
                         className="input input-bordered"
                         value={formData.username}
                         onChange={(e) => handleInputChange('username', e.target.value)}
                         placeholder="Choose a username"
+                        autoFocus
+                        onBlur={() => setEditingField(null)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') setEditingField(null)
+                          if (e.key === 'Escape') {
+                            setFormData(prev => ({ ...prev, username: originalData.username }))
+                            setEditingField(null)
+                          }
+                        }}
                       />
                     ) : (
-                      <div className="text-lg">
-                        {user?.username || (
-                          <span className="text-base-content/50 italic">Not set</span>
+                      <div 
+                        className="text-lg p-3 border border-transparent rounded-lg hover:border-base-300 hover:bg-base-50 cursor-pointer transition-colors min-h-[3rem] flex items-center"
+                        onClick={() => startEditing('username')}
+                      >
+                        {formData.username || (
+                          <span className="text-base-content/50 italic">Click to set your username</span>
                         )}
+                        <Edit3 className="w-4 h-4 ml-auto text-base-content/30" />
                       </div>
                     )}
                   </div>
 
+                  {/* Bio */}
                   <div className="form-control">
                     <label className="label">
                       <span className="label-text">Bio</span>
                     </label>
-                    {isEditing ? (
+                    {editingField === 'bio' ? (
                       <textarea
                         className="textarea textarea-bordered h-24"
                         value={formData.bio}
                         onChange={(e) => handleInputChange('bio', e.target.value)}
                         placeholder="Tell us about yourself and your love for piano..."
+                        autoFocus
+                        onBlur={() => setEditingField(null)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Escape') {
+                            setFormData(prev => ({ ...prev, bio: originalData.bio }))
+                            setEditingField(null)
+                          }
+                        }}
                       />
                     ) : (
-                      <div className="text-lg min-h-[6rem] p-3 border border-base-300 rounded-lg bg-base-50">
-                        {user?.bio || (
-                          <span className="text-base-content/50 italic">
-                            Tell us about yourself and your love for piano...
-                          </span>
-                        )}
+                      <div 
+                        className="text-lg min-h-[6rem] p-3 border border-transparent rounded-lg hover:border-base-300 hover:bg-base-50 cursor-pointer transition-colors flex items-start"
+                        onClick={() => startEditing('bio')}
+                      >
+                        <div className="flex-1">
+                          {formData.bio || (
+                            <span className="text-base-content/50 italic">
+                              Click to tell us about yourself and your love for piano...
+                            </span>
+                          )}
+                        </div>
+                        <Edit3 className="w-4 h-4 ml-2 text-base-content/30 flex-shrink-0" />
                       </div>
                     )}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Location */}
                     <div className="form-control">
                       <label className="label">
                         <span className="label-text flex items-center gap-2">
@@ -585,23 +814,37 @@ export function DashboardPage() {
                           Location
                         </span>
                       </label>
-                      {isEditing ? (
+                      {editingField === 'location' ? (
                         <input
                           type="text"
                           className="input input-bordered"
                           value={formData.location}
                           onChange={(e) => handleInputChange('location', e.target.value)}
                           placeholder="City, Country"
+                          autoFocus
+                          onBlur={() => setEditingField(null)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') setEditingField(null)
+                            if (e.key === 'Escape') {
+                              setFormData(prev => ({ ...prev, location: originalData.location }))
+                              setEditingField(null)
+                            }
+                          }}
                         />
                       ) : (
-                        <div className="text-lg">
-                          {user?.location || (
-                            <span className="text-base-content/50 italic">Not set</span>
+                        <div 
+                          className="text-lg p-3 border border-transparent rounded-lg hover:border-base-300 hover:bg-base-50 cursor-pointer transition-colors min-h-[3rem] flex items-center"
+                          onClick={() => startEditing('location')}
+                        >
+                          {formData.location || (
+                            <span className="text-base-content/50 italic">Click to set location</span>
                           )}
+                          <Edit3 className="w-4 h-4 ml-auto text-base-content/30" />
                         </div>
                       )}
                     </div>
 
+                    {/* Website */}
                     <div className="form-control">
                       <label className="label">
                         <span className="label-text flex items-center gap-2">
@@ -609,28 +852,42 @@ export function DashboardPage() {
                           Website
                         </span>
                       </label>
-                      {isEditing ? (
+                      {editingField === 'website' ? (
                         <input
                           type="url"
                           className="input input-bordered"
                           value={formData.website}
                           onChange={(e) => handleInputChange('website', e.target.value)}
                           placeholder="https://your-website.com"
+                          autoFocus
+                          onBlur={() => setEditingField(null)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') setEditingField(null)
+                            if (e.key === 'Escape') {
+                              setFormData(prev => ({ ...prev, website: originalData.website }))
+                              setEditingField(null)
+                            }
+                          }}
                         />
                       ) : (
-                        <div className="text-lg">
-                          {user?.website ? (
+                        <div 
+                          className="text-lg p-3 border border-transparent rounded-lg hover:border-base-300 hover:bg-base-50 cursor-pointer transition-colors min-h-[3rem] flex items-center"
+                          onClick={() => startEditing('website')}
+                        >
+                          {formData.website ? (
                             <a
-                              href={user.website}
+                              href={formData.website}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="link link-primary"
+                              className="link link-primary flex-1"
+                              onClick={(e) => e.stopPropagation()}
                             >
-                              {user.website}
+                              {formData.website}
                             </a>
                           ) : (
-                            <span className="text-base-content/50 italic">Not set</span>
+                            <span className="text-base-content/50 italic">Click to set website</span>
                           )}
+                          <Edit3 className="w-4 h-4 ml-auto text-base-content/30" />
                         </div>
                       )}
                     </div>

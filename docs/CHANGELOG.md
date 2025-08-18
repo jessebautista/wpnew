@@ -9,6 +9,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added - 2025-08-18
 
+#### User Profile & Avatar System
+- **Piano Passport Real Data**: Connected Piano Passport page to live database for accurate user journey tracking
+  - **Real Visit History**: Shows actual piano visits with ratings, locations, and timestamps
+  - **Live Photo Count**: Counts user's actual uploaded images from piano_images table
+  - **Dynamic Achievements**: Achievement progress based on real user activity and contributions
+  - **Country Tracking**: Calculates countries visited from actual piano location data
+  - **Favorite Pianos**: Shows user's highest-rated pianos (4+ stars) from visit history
+
+#### User Profile & Avatar System
+- **Complete Avatar Upload System**: Users can now upload and change their profile pictures
+  - **Photo Upload Interface**: Click "Change Photo" button in profile settings to select image
+  - **File Validation**: Supports JPG, PNG, WebP formats with 5MB size limit
+  - **Real-time Upload Feedback**: Loading spinner overlay and progress indication during upload
+  - **Automatic UI Updates**: Page refreshes to show new avatar across all locations
+  - **Proper Image Display**: Object-cover styling for perfect circular avatars with fallback to user initials
+  - **Storage Integration**: Images stored in Supabase storage under organized `avatars/{user_id}/` structure
+
+- **Enhanced Profile Management**: Completely redesigned profile editing with inline functionality
+  - **Inline Editing Interface**: Click any profile field to edit directly without separate edit mode
+  - **Real-time Save Detection**: Save/Cancel buttons only appear when changes are detected
+  - **Keyboard Navigation**: Enter to save, Escape to cancel, auto-focus on edit start
+  - **Real Database Integration**: Actual Supabase updates with success/error feedback
+  - **Field-by-Field Editing**: Edit full name, username, bio, location, and website independently
+  - **Visual Feedback**: Hover effects, edit icons, and smooth transitions for intuitive UX
+
+- **Dashboard Data Integration**: Connected dashboard to real database for live statistics
+  - **Real Activity Feed**: Shows actual piano visits, photo uploads, and piano submissions from database
+  - **Live Statistics**: Piano visits, photos uploaded, average ratings from user's actual data
+  - **Proper Timestamps**: Fixed "Invalid Date" errors with real created_at timestamps from database
+  - **Achievement System**: Dynamic achievements based on real user activity and contributions
+
 #### Piano Features Implementation
 - **Complete Piano Single Page Enhancement**: Added full functionality for image uploads, ratings, and comments
   - **Image Upload System**: Users can upload multiple photos with captions via modal interface
@@ -354,6 +385,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Event cards now show only "View Details" button for cleaner interface
 
 ### Technical Details
+
+#### Files Modified (User Profile & Database Integration)
+- `src/pages/profile/DashboardPage.tsx`: Complete redesign with inline editing, avatar upload, and real data integration
+- `src/pages/profile/PianoPassportPage.tsx`: Connected to live database with real visit history and achievements
+- `src/services/pianoVisitService.ts`: Enhanced with proper upsert logic to handle unique constraints
+- `SUPABASE_SETUP_INSTRUCTIONS.md`: Added event_interests table and updated setup instructions
+- `docs/CHANGELOG.md`: Comprehensive documentation of new features and improvements
 
 #### Files Modified (Piano Features Implementation)
 - `src/pages/pianos/PianoDetailPage.tsx`: Complete enhancement with image upload, rating system, and statistics

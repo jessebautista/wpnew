@@ -13,8 +13,10 @@ import {
   Globe
 } from 'lucide-react'
 import { useAuth } from '../../components/auth/AuthProvider'
-import type { Piano, PianoVisit, Achievement } from '../../types'
-import { userService, pianoService } from '../../utils/database'
+import { DataService } from '../../services/dataService'
+import { PianoVisitService } from '../../services/pianoVisitService'
+import type { Piano, Achievement } from '../../types'
+import { supabase } from '../../lib/supabase'
 
 interface PianoStats {
   totalVisits: number
@@ -24,7 +26,8 @@ interface PianoStats {
   favoriteCategory: string
   totalPhotos: number
   averageRating: number
-  recentVisits: PianoVisit[]
+  recentVisits: any[]
+  pianoVisits: any[]
 }
 
 export function PianoPassportPage() {
@@ -42,82 +45,156 @@ export function PianoPassportPage() {
     if (!user?.id) return
 
     try {
-      // Load user piano stats
-      const userStats = await userService.getPianoStats(user.id)
+      // Get user's piano visits
+      const { data: pianoVisits } = await supabase
+        .from('piano_visits')
+        .select(`
+          *,
+          pianos:piano_id (
+            id,
+            name,
+            location_name,
+            category,
+            latitude,
+            longitude
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
       
-      // Load all pianos to calculate additional stats
-      const allPianos = await pianoService.getAll()
-      const userPianos = allPianos.filter(p => p.created_by === user.id)
+      // Get user's uploaded images
+      const { data: userImages } = await supabase
+        .from('piano_images')
+        .select('*')
+        .eq('uploaded_by', user.id)
+      
+      // Get user's created pianos
+      const { data: userPianos } = await supabase
+        .from('pianos')
+        .select('*')
+        .eq('submitted_by', user.id)
+      
+      // Get user's events
+      const { data: userEvents } = await supabase
+        .from('events')
+        .select('*')
+        .eq('created_by', user.id)
+      
+      // Calculate stats from real data
+      const visits = pianoVisits || []
+      const totalVisits = visits.length
+      const uniquePianos = new Set(visits.map(v => v.piano_id)).size
+      const totalPhotos = userImages?.length || 0
+      
+      // Calculate average rating
+      const ratingsSum = visits.reduce((sum, visit) => sum + (visit.rating || 0), 0)
+      const averageRating = totalVisits > 0 ? Math.round((ratingsSum / totalVisits) * 10) / 10 : 0
+      
+      // Calculate countries visited (extract from piano locations)
+      const countriesVisited = new Set(
+        visits
+          .map(v => v.pianos?.location_name)
+          .filter(Boolean)
+          .map(location => {
+            // Simple country extraction - in production, use proper geocoding
+            const parts = location.split(',')
+            return parts[parts.length - 1]?.trim()
+          })
+          .filter(Boolean)
+      ).size
       
       // Calculate categories explored
-      const categoriesExplored = [...new Set(userPianos.map(p => p.category))]
-      const favoriteCategory = categoriesExplored.length > 0 ? categoriesExplored[0] : 'None'
+      const categoriesExplored = [...new Set(
+        visits
+          .map(v => v.pianos?.category)
+          .filter(Boolean)
+      )]
+      const favoriteCategory = categoriesExplored[0] || 'None'
       
-      // TODO: Replace with real data when piano_visits table and photo tracking is implemented
       const passportStats: PianoStats = {
-        totalVisits: userStats.pianos_visited || 0,
-        uniquePianos: userStats.pianos_visited || 0,
-        countriesVisited: userStats.countries_visited || 0,
+        totalVisits,
+        uniquePianos,
+        countriesVisited,
         categoriesExplored,
         favoriteCategory,
-        totalPhotos: 0, // TODO: Count from piano_images table
-        averageRating: 0, // TODO: Calculate from piano_visits ratings
-        recentVisits: [] // TODO: Load from piano_visits table
+        totalPhotos,
+        averageRating,
+        recentVisits: visits.slice(0, 5),
+        pianoVisits: visits
       }
 
       // Generate achievements based on real stats
+      const pianosAdded = userPianos?.length || 0
+      const eventsCreated = userEvents?.length || 0
+      
       const dynamicAchievements: Achievement[] = [
         {
           id: '1',
           title: 'First Steps',
-          description: 'Add your first piano',
+          description: 'Rate your first piano',
           icon: 'piano',
           category: 'milestone',
-          earned: userStats.pianos_added > 0,
-          earned_at: userStats.pianos_added > 0 ? new Date().toISOString() : null,
-          progress: Math.min(userStats.pianos_added, 1),
+          earned: totalVisits > 0,
+          earned_at: totalVisits > 0 ? new Date().toISOString() : null,
+          progress: Math.min(totalVisits, 1),
           target: 1
         },
         {
           id: '2',
-          title: 'Piano Collector',
-          description: 'Add 5 different pianos',
+          title: 'Piano Explorer',
+          description: 'Visit 5 different pianos',
           icon: 'map',
           category: 'exploration',
-          earned: userStats.pianos_added >= 5,
-          earned_at: userStats.pianos_added >= 5 ? new Date().toISOString() : null,
-          progress: userStats.pianos_added,
+          earned: uniquePianos >= 5,
+          earned_at: uniquePianos >= 5 ? new Date().toISOString() : null,
+          progress: uniquePianos,
           target: 5
         },
         {
           id: '3',
-          title: 'Event Organizer',
-          description: 'Create your first event',
-          icon: 'globe',
-          category: 'community',
-          earned: userStats.events_created > 0,
-          earned_at: userStats.events_created > 0 ? new Date().toISOString() : null,
-          progress: Math.min(userStats.events_created, 1),
-          target: 1
+          title: 'Photographer',
+          description: 'Upload 3 piano photos',
+          icon: 'camera',
+          category: 'contribution',
+          earned: totalPhotos >= 3,
+          earned_at: totalPhotos >= 3 ? new Date().toISOString() : null,
+          progress: totalPhotos,
+          target: 3
         },
         {
           id: '4',
-          title: 'Explorer',
+          title: 'Globe Trotter',
           description: 'Visit pianos in 3 different countries',
-          icon: 'camera',
+          icon: 'globe',
           category: 'exploration',
-          earned: userStats.countries_visited >= 3,
-          earned_at: userStats.countries_visited >= 3 ? new Date().toISOString() : null,
-          progress: userStats.countries_visited,
+          earned: countriesVisited >= 3,
+          earned_at: countriesVisited >= 3 ? new Date().toISOString() : null,
+          progress: countriesVisited,
           target: 3
+        },
+        {
+          id: '5',
+          title: 'Piano Contributor',
+          description: 'Add a piano to the map',
+          icon: 'award',
+          category: 'contribution',
+          earned: pianosAdded > 0,
+          earned_at: pianosAdded > 0 ? new Date().toISOString() : null,
+          progress: Math.min(pianosAdded, 1),
+          target: 1
         }
       ]
 
       setStats(passportStats)
       setAchievements(dynamicAchievements)
       
-      // Set favorite pianos as the most recent user-created pianos
-      setFavoritePianos(userPianos.slice(0, 2))
+      // Set favorite pianos from highest rated visits
+      const favoritePianos = visits
+        .filter(v => v.pianos && v.rating >= 4)
+        .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+        .slice(0, 3)
+        .map(v => v.pianos)
+      setFavoritePianos(favoritePianos)
       
     } catch (error) {
       console.error('Error loading passport data:', error)
@@ -131,7 +208,8 @@ export function PianoPassportPage() {
         favoriteCategory: 'None',
         totalPhotos: 0,
         averageRating: 0,
-        recentVisits: []
+        recentVisits: [],
+        pianoVisits: []
       })
       setAchievements([])
       setFavoritePianos([])
@@ -270,8 +348,11 @@ export function PianoPassportPage() {
                       </div>
                       <div className="flex-1">
                         <Link to={`/pianos/${visit.piano_id}`} className="font-medium hover:link">
-                          Piano Visit #{visit.id}
+                          {visit.pianos?.name || 'Piano Visit'}
                         </Link>
+                        <div className="text-xs text-base-content/50 mb-1">
+                          {visit.pianos?.location_name}
+                        </div>
                         <div className="flex items-center gap-1 text-sm text-base-content/70">
                           <div className="rating rating-xs">
                             {[1, 2, 3, 4, 5].map((star) => (
@@ -281,7 +362,7 @@ export function PianoPassportPage() {
                               />
                             ))}
                           </div>
-                          <span>• {new Date(visit.visited_at).toLocaleDateString()}</span>
+                          <span>• {new Date(visit.created_at).toLocaleDateString()}</span>
                         </div>
                       </div>
                     </div>

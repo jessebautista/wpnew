@@ -32,22 +32,51 @@ export class PianoVisitService {
         throw new Error('User must be authenticated to rate pianos')
       }
 
-      const { data: visit, error } = await supabase
+      // First, try to get existing visit
+      const { data: existingVisit } = await supabase
         .from('piano_visits')
-        .upsert([{
-          piano_id: data.piano_id,
-          user_id: user.id,
-          rating: data.rating,
-          notes: data.notes || null
-        }])
-        .select()
+        .select('*')
+        .eq('piano_id', data.piano_id)
+        .eq('user_id', user.id)
         .single()
 
-      if (error) {
-        throw new Error(`Failed to save rating: ${error.message}`)
-      }
+      if (existingVisit) {
+        // Update existing visit
+        const { data: visit, error } = await supabase
+          .from('piano_visits')
+          .update({
+            rating: data.rating,
+            notes: data.notes || null
+          })
+          .eq('piano_id', data.piano_id)
+          .eq('user_id', user.id)
+          .select()
+          .single()
 
-      return visit
+        if (error) {
+          throw new Error(`Failed to update rating: ${error.message}`)
+        }
+
+        return visit
+      } else {
+        // Create new visit
+        const { data: visit, error } = await supabase
+          .from('piano_visits')
+          .insert([{
+            piano_id: data.piano_id,
+            user_id: user.id,
+            rating: data.rating,
+            notes: data.notes || null
+          }])
+          .select()
+          .single()
+
+        if (error) {
+          throw new Error(`Failed to create rating: ${error.message}`)
+        }
+
+        return visit
+      }
     } catch (error) {
       console.error('Piano visit upsert error:', error)
       throw error

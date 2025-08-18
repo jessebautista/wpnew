@@ -124,7 +124,7 @@ export class EventInterestService {
         .from('event_interests')
         .select(`
           *,
-          profiles:user_id (
+          users:user_id (
             id,
             full_name,
             email,

@@ -40,6 +40,7 @@ export function PianoDetailPage() {
   const [uploadingImages, setUploadingImages] = useState(false)
   const [pianoStats, setPianoStats] = useState({ averageRating: 0, visitCount: 0 })
   const [ratingNotes, setRatingNotes] = useState('')
+  const [ratingSaving, setRatingSaving] = useState(false)
 
   useEffect(() => {
     const loadPianoDetails = async () => {
@@ -108,7 +109,9 @@ export function PianoDetailPage() {
     if (!id || !user) return
     
     try {
+      setRatingSaving(true)
       setUserRating(rating)
+      
       await PianoVisitService.upsertVisit({
         piano_id: id,
         rating,
@@ -120,10 +123,16 @@ export function PianoDetailPage() {
       // Refresh piano stats
       const stats = await PianoVisitService.getPianoStats(id)
       setPianoStats(stats)
+      
+      // Show success feedback
+      alert('Rating saved successfully!')
     } catch (error) {
       console.error('Error saving rating:', error)
+      alert('Failed to save rating. Please try again.')
       // Reset rating on error
       setUserRating(0)
+    } finally {
+      setRatingSaving(false)
     }
   }
 
@@ -364,8 +373,16 @@ export function PianoDetailPage() {
                       <button 
                         className="btn btn-primary btn-sm"
                         onClick={() => handleRating(userRating)}
+                        disabled={ratingSaving}
                       >
-                        Save Rating
+                        {ratingSaving ? (
+                          <>
+                            <span className="loading loading-spinner loading-xs mr-2"></span>
+                            Saving...
+                          </>
+                        ) : (
+                          'Save Rating'
+                        )}
                       </button>
                     )}
                   </div>

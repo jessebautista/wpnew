@@ -33,21 +33,21 @@ export class CommentService {
         return []
       }
 
-      // Get unique author IDs to fetch profile data
+      // Get unique author IDs to fetch user data
       const authorIds = [...new Set(data?.map(comment => comment.author_id).filter(Boolean))]
       
-      let profiles = []
+      let users = []
       if (authorIds.length > 0) {
-        const { data: profileData } = await supabase
-          .from('profiles')
+        const { data: userData } = await supabase
+          .from('users')
           .select('id, full_name, email')
           .in('id', authorIds)
-        profiles = profileData || []
+        users = userData || []
       }
 
       return data?.map(comment => ({
         ...comment,
-        author: profiles.find(profile => profile.id === comment.author_id) || undefined
+        author: users.find(user => user.id === comment.author_id) || undefined
       })) || []
     } catch (error) {
       console.error('Error fetching comments:', error)
@@ -147,16 +147,16 @@ export class CommentService {
         return null
       }
 
-      // Fetch the author profile separately
-      const { data: profileData } = await supabase
-        .from('profiles')
+      // Fetch the author user data separately
+      const { data: userData } = await supabase
+        .from('users')
         .select('id, full_name, email')
         .eq('id', data.author_id)
         .single()
 
       return {
         ...data,
-        author: profileData || undefined
+        author: userData || undefined
       }
     } catch (error) {
       console.error('Error updating comment:', error)

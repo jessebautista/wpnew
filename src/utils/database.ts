@@ -381,6 +381,86 @@ export const userService = {
         }
       }
     }
+  },
+
+  async getRecentActivity(userId: string, limit: number = 10): Promise<any[]> {
+    if (useMockData()) {
+      return [
+        {
+          id: '1',
+          type: 'piano_added',
+          title: 'Added a piano',
+          description: 'Central Park Piano',
+          timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+          icon: 'piano'
+        },
+        {
+          id: '2', 
+          type: 'event_created',
+          title: 'Created an event',
+          description: 'Piano Meetup',
+          timestamp: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
+          icon: 'calendar'
+        }
+      ]
+    }
+
+    try {
+      const activities: any[] = []
+
+      // Get recent pianos added by user
+      const { data: recentPianos, error: pianoError } = await supabase
+        .from('pianos')
+        .select('id, name, created_at, moderation_status')
+        .eq('created_by', userId)
+        .order('created_at', { ascending: false })
+        .limit(Math.ceil(limit / 2))
+
+      if (pianoError) throw pianoError
+
+      recentPianos?.forEach(piano => {
+        activities.push({
+          id: `piano-${piano.id}`,
+          type: 'piano_added',
+          title: 'Added a piano',
+          description: piano.name,
+          timestamp: piano.created_at,
+          icon: 'piano',
+          status: piano.moderation_status
+        })
+      })
+
+      // Get recent events created by user  
+      const { data: recentEvents, error: eventError } = await supabase
+        .from('events')
+        .select('id, title, created_at, moderation_status')
+        .eq('created_by', userId)
+        .order('created_at', { ascending: false })
+        .limit(Math.ceil(limit / 2))
+
+      if (eventError) throw eventError
+
+      recentEvents?.forEach(event => {
+        activities.push({
+          id: `event-${event.id}`,
+          type: 'event_created',
+          title: 'Created an event',
+          description: event.title,
+          timestamp: event.created_at,
+          icon: 'calendar',
+          status: event.moderation_status
+        })
+      })
+
+      // Sort by timestamp and limit
+      return activities
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        .slice(0, limit)
+
+    } catch (error) {
+      console.error('Error fetching user recent activity:', error)
+      return []
+    }
   }
 }
 

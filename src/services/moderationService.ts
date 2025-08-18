@@ -196,10 +196,27 @@ export class ModerationService {
       // Mock implementation
       console.log(`[MOCK] Approving ${contentType} ${contentId}`)
     } else {
-      // Real Supabase implementation
-      // In a real app, this would update the database
-      console.log(`Approving ${contentType} ${contentId}`)
-      // TODO: Add actual Supabase update logic here
+      // Real Supabase implementation - Update the database
+      const { supabase } = await import('../lib/supabase')
+      
+      const tableName = contentType === 'blog_post' ? 'blog_posts' : `${contentType}s`
+      
+      const { error } = await supabase
+        .from(tableName)
+        .update({
+          moderation_status: 'approved',
+          verified: true,
+          verified_by: moderatorId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', contentId)
+
+      if (error) {
+        console.error(`Error approving ${contentType} ${contentId}:`, error)
+        throw error
+      }
+
+      console.log(`Successfully approved ${contentType} ${contentId}`)
     }
     
     this.logAction(
@@ -220,8 +237,32 @@ export class ModerationService {
     moderatorId: string,
     reason: string
   ): Promise<void> {
-    // In a real app, this would update the database
-    console.log(`Rejecting ${contentType} ${contentId}`)
+    if (shouldUseMockData('supabase')) {
+      // Mock implementation
+      console.log(`[MOCK] Rejecting ${contentType} ${contentId}`)
+    } else {
+      // Real Supabase implementation - Update the database
+      const { supabase } = await import('../lib/supabase')
+      
+      const tableName = contentType === 'blog_post' ? 'blog_posts' : `${contentType}s`
+      
+      const { error } = await supabase
+        .from(tableName)
+        .update({
+          moderation_status: 'rejected',
+          verified: false,
+          verified_by: moderatorId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', contentId)
+
+      if (error) {
+        console.error(`Error rejecting ${contentType} ${contentId}:`, error)
+        throw error
+      }
+
+      console.log(`Successfully rejected ${contentType} ${contentId}`)
+    }
     
     this.logAction(
       contentId,

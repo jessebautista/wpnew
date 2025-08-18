@@ -13,7 +13,9 @@ import {
   Calendar,
   ChevronLeft,
   StarIcon,
-  Camera
+  Camera,
+  Upload,
+  X
 } from 'lucide-react'
 import { useAuth } from '../../components/auth/AuthProvider'
 import { DataService } from '../../services/dataService'
@@ -21,6 +23,8 @@ import { CommentSection } from '../../components/comments/CommentSection'
 import { ShareButton } from '../../components/social/ShareButton'
 import { ShareModal } from '../../components/social/ShareModal'
 import { SocialSharingService } from '../../services/socialSharingService'
+import { ImageUploadService } from '../../services/imageUploadService'
+import { PianoVisitService } from '../../services/pianoVisitService'
 import type { Piano } from '../../types'
 import 'leaflet/dist/leaflet.css'
 
@@ -32,6 +36,10 @@ export function PianoDetailPage() {
   const [isVisited, setIsVisited] = useState(false)
   const [userRating, setUserRating] = useState(0)
   const [showShareModal, setShowShareModal] = useState(false)
+  const [showImageUpload, setShowImageUpload] = useState(false)
+  const [uploadingImages, setUploadingImages] = useState(false)
+  const [pianoStats, setPianoStats] = useState({ averageRating: 0, visitCount: 0 })
+  const [ratingNotes, setRatingNotes] = useState('')
 
   useEffect(() => {
     const loadPianoDetails = async () => {
@@ -42,6 +50,20 @@ export function PianoDetailPage() {
         const pianoData = await DataService.getPiano(id)
         console.log('Found piano:', pianoData)
         setPiano(pianoData)
+        
+        // Load piano stats
+        const stats = await PianoVisitService.getPianoStats(id)
+        setPianoStats(stats)
+        
+        // Load user's rating if logged in
+        if (user) {
+          const userVisit = await PianoVisitService.getUserVisit(id)
+          if (userVisit) {
+            setUserRating(userVisit.rating)
+            setRatingNotes(userVisit.notes || '')
+            setIsVisited(true)
+          }
+        }
       } catch (error) {
         console.error('Error loading piano details:', error)
       } finally {
@@ -50,16 +72,59 @@ export function PianoDetailPage() {
     }
 
     loadPianoDetails()
-  }, [id])
+  }, [id, user])
 
-  const handleVisitToggle = () => {
+  const handleVisitToggle = async () => {
+    if (!id || !user) return
+    
+    if (!isVisited && userRating === 0) {
+      // If marking as visited but no rating, set a default rating of 3
+      await handleRating(3)
+    }
+    
     setIsVisited(!isVisited)
-    // In a real app, this would call an API to update the user's visited pianos
   }
 
-  const handleRating = (rating: number) => {
-    setUserRating(rating)
-    // In a real app, this would save the rating to the database
+  const handleImageUpload = async (files: File[], captions: string[]) => {
+    if (!id || !user) return
+    
+    try {
+      setUploadingImages(true)
+      await ImageUploadService.uploadAndCreateRecords(files, id, captions)
+      
+      // Refresh piano data to show new images
+      const pianoData = await DataService.getPiano(id)
+      setPiano(pianoData)
+      setShowImageUpload(false)
+    } catch (error) {
+      console.error('Error uploading images:', error)
+      alert('Failed to upload images. Please try again.')
+    } finally {
+      setUploadingImages(false)
+    }
+  }
+
+  const handleRating = async (rating: number) => {
+    if (!id || !user) return
+    
+    try {
+      setUserRating(rating)
+      await PianoVisitService.upsertVisit({
+        piano_id: id,
+        rating,
+        notes: ratingNotes
+      })
+      
+      setIsVisited(true)
+      
+      // Refresh piano stats
+      const stats = await PianoVisitService.getPianoStats(id)
+      setPianoStats(stats)
+    } catch (error) {
+      console.error('Error saving rating:', error)
+      // Reset rating on error
+      setUserRating(0)
+    }
   }
 
 
@@ -245,7 +310,14 @@ export function PianoDetailPage() {
                       Be the first to share a photo of this piano!
                     </p>
                     {user && (
-                      <button className="btn btn-primary">Upload Photo</button>
+                      <button 
+                        className="btn btn-primary"
+                        onClick={() => setShowImageUpload(true)}
+                        disabled={uploadingImages}
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        {uploadingImages ? 'Uploading...' : 'Upload Photo'}
+                      </button>
                     )}
                   </div>
                 )}
@@ -257,21 +329,45 @@ export function PianoDetailPage() {
               <div className="card bg-base-100 shadow-xl">
                 <div className="card-body">
                   <h2 className="card-title">Rate This Piano</h2>
-                  <div className="flex items-center space-x-2">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        className={`btn btn-ghost btn-sm p-1 ${
-                          star <= userRating ? 'text-yellow-500' : 'text-base-content/30'
-                        }`}
-                        onClick={() => handleRating(star)}
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          className={`btn btn-ghost btn-sm p-1 ${
+                            star <= userRating ? 'text-yellow-500' : 'text-base-content/30'
+                          }`}
+                          onClick={() => handleRating(star)}
+                        >
+                          <StarIcon className={`w-6 h-6 ${star <= userRating ? 'fill-current' : ''}`} />
+                        </button>
+                      ))}
+                      <span className="ml-2 text-sm text-base-content/70">
+                        {userRating > 0 ? `${userRating}/5 stars` : 'Click to rate'}
+                      </span>
+                    </div>
+                    
+                    <div>
+                      <label className="label">
+                        <span className="label-text">Notes (optional)</span>
+                      </label>
+                      <textarea
+                        className="textarea textarea-bordered w-full"
+                        placeholder="Share your experience with this piano..."
+                        value={ratingNotes}
+                        onChange={(e) => setRatingNotes(e.target.value)}
+                        rows={3}
+                      />
+                    </div>
+                    
+                    {userRating > 0 && (
+                      <button 
+                        className="btn btn-primary btn-sm"
+                        onClick={() => handleRating(userRating)}
                       >
-                        <StarIcon className={`w-6 h-6 ${star <= userRating ? 'fill-current' : ''}`} />
+                        Save Rating
                       </button>
-                    ))}
-                    <span className="ml-2 text-sm text-base-content/70">
-                      {userRating > 0 ? `${userRating}/5 stars` : 'Click to rate'}
-                    </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -317,13 +413,17 @@ export function PianoDetailPage() {
                 <div className="stats stats-vertical">
                   <div className="stat">
                     <div className="stat-title">Visitors</div>
-                    <div className="stat-value text-primary">42</div>
-                    <div className="stat-desc">People who played this piano</div>
+                    <div className="stat-value text-primary">{pianoStats.visitCount}</div>
+                    <div className="stat-desc">People who rated this piano</div>
                   </div>
                   <div className="stat">
-                    <div className="stat-title">Comments</div>
-                    <div className="stat-value text-secondary">--</div>
-                    <div className="stat-desc">Community reviews</div>
+                    <div className="stat-title">Average Rating</div>
+                    <div className="stat-value text-secondary">
+                      {pianoStats.averageRating > 0 ? pianoStats.averageRating.toFixed(1) : '--'}
+                    </div>
+                    <div className="stat-desc">
+                      {pianoStats.averageRating > 0 ? 'Out of 5 stars' : 'No ratings yet'}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -376,6 +476,141 @@ export function PianoDetailPage() {
           contentId={piano.id}
         />
       )}
+
+      {/* Image Upload Modal */}
+      <ImageUploadModal
+        isOpen={showImageUpload}
+        onClose={() => setShowImageUpload(false)}
+        onUpload={handleImageUpload}
+        uploading={uploadingImages}
+      />
+    </div>
+  )
+}
+
+// Image Upload Modal Component
+interface ImageUploadModalProps {
+  isOpen: boolean
+  onClose: () => void
+  onUpload: (files: File[], captions: string[]) => void
+  uploading: boolean
+}
+
+function ImageUploadModal({ isOpen, onClose, onUpload, uploading }: ImageUploadModalProps) {
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const [captions, setCaptions] = useState<string[]>([])
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    setSelectedFiles(files)
+    setCaptions(files.map(() => ''))
+  }
+
+  const handleCaptionChange = (index: number, caption: string) => {
+    const newCaptions = [...captions]
+    newCaptions[index] = caption
+    setCaptions(newCaptions)
+  }
+
+  const handleUpload = () => {
+    if (selectedFiles.length > 0) {
+      onUpload(selectedFiles, captions)
+    }
+  }
+
+  const handleClose = () => {
+    setSelectedFiles([])
+    setCaptions([])
+    onClose()
+  }
+
+  if (!isOpen) return null
+
+  return (
+    <div className="modal modal-open">
+      <div className="modal-box w-11/12 max-w-2xl">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold">Upload Photos</h2>
+          <button 
+            className="btn btn-ghost btn-sm"
+            onClick={handleClose}
+            disabled={uploading}
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="label">
+              <span className="label-text">Select Photos</span>
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFileSelect}
+              className="file-input file-input-bordered w-full"
+              disabled={uploading}
+            />
+            <div className="label">
+              <span className="label-text-alt">Max 10MB per image. JPG, PNG, WebP, GIF allowed.</span>
+            </div>
+          </div>
+
+          {selectedFiles.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="font-semibold">Selected Images</h3>
+              {selectedFiles.map((file, index) => (
+                <div key={index} className="flex items-center space-x-3 p-3 bg-base-200 rounded-lg">
+                  <div className="w-16 h-16 bg-base-300 rounded-lg overflow-hidden">
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={file.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium text-sm">{file.name}</div>
+                    <input
+                      type="text"
+                      placeholder="Add a caption (optional)"
+                      value={captions[index] || ''}
+                      onChange={(e) => handleCaptionChange(index, e.target.value)}
+                      className="input input-sm input-bordered w-full mt-2"
+                      disabled={uploading}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="modal-action">
+          <button 
+            className="btn btn-ghost" 
+            onClick={handleClose}
+            disabled={uploading}
+          >
+            Cancel
+          </button>
+          <button 
+            className="btn btn-primary" 
+            onClick={handleUpload}
+            disabled={selectedFiles.length === 0 || uploading}
+          >
+            {uploading ? (
+              <>
+                <span className="loading loading-spinner loading-sm mr-2"></span>
+                Uploading...
+              </>
+            ) : (
+              `Upload ${selectedFiles.length} Photo${selectedFiles.length > 1 ? 's' : ''}`
+            )}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

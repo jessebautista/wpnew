@@ -100,13 +100,21 @@ export class ImageUploadService {
   /**
    * Create piano image record in database
    */
-  static async createPianoImageRecord(pianoId: string, imageUrl: string, altText?: string): Promise<any> {
+  static async createPianoImageRecord(pianoId: string, imageUrl: string, caption?: string, altText?: string): Promise<any> {
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        throw new Error('User must be authenticated to upload images')
+      }
+
       const { data, error } = await supabase
         .from('piano_images')
         .insert([{
           piano_id: pianoId,
+          uploaded_by: user.id,
           image_url: imageUrl,
+          caption: caption || null,
           alt_text: altText || `Piano image for ${pianoId}`
         }])
         .select()
@@ -126,15 +134,23 @@ export class ImageUploadService {
   /**
    * Upload images and create database records
    */
-  static async uploadAndCreateRecords(files: File[], pianoId: string): Promise<any[]> {
+  static async uploadAndCreateRecords(
+    files: File[], 
+    pianoId: string, 
+    captions?: string[]
+  ): Promise<any[]> {
     try {
       // Upload images to storage
       const uploadResults = await this.uploadImages(files, pianoId)
 
       // Create database records
       const imageRecords = await Promise.all(
-        uploadResults.map(result => 
-          this.createPianoImageRecord(pianoId, result.publicUrl)
+        uploadResults.map((result, index) => 
+          this.createPianoImageRecord(
+            pianoId, 
+            result.publicUrl, 
+            captions?.[index]
+          )
         )
       )
 

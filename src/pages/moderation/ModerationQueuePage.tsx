@@ -155,9 +155,26 @@ export function ModerationQueuePage() {
         } else {
           console.error(`[MODERATION] Failed to approve ${item.type} ${itemId}`)
         }
+      } else if (item.type === 'event' && user?.id) {
+        const success = await DataService.updateEventModerationStatus(itemId, 'approved', user.id)
+        if (success) {
+          setItems(prev => prev.map(prevItem => 
+            prevItem.id === itemId 
+              ? { 
+                  ...prevItem, 
+                  status: 'approved', 
+                  reviewed_at: new Date().toISOString(),
+                  reviewed_by: user?.id 
+                }
+              : prevItem
+          ))
+          console.log(`[MODERATION] Approved ${item.type} ${itemId}`)
+        } else {
+          console.error(`[MODERATION] Failed to approve ${item.type} ${itemId}`)
+        }
       } else {
-        // For now, just update UI for events and blog posts
-        // TODO: Add similar methods for events and blog posts
+        // For now, just update UI for blog posts only
+        // TODO: Add similar method for blog posts
         setItems(prev => prev.map(prevItem => 
           prevItem.id === itemId 
             ? { 
@@ -202,9 +219,27 @@ export function ModerationQueuePage() {
         } else {
           console.error(`[MODERATION] Failed to reject ${item.type} ${itemId}`)
         }
+      } else if (item.type === 'event' && user?.id) {
+        const success = await DataService.updateEventModerationStatus(itemId, 'rejected', user.id, reason)
+        if (success) {
+          setItems(prev => prev.map(prevItem => 
+            prevItem.id === itemId 
+              ? { 
+                  ...prevItem, 
+                  status: 'rejected', 
+                  reviewed_at: new Date().toISOString(),
+                  reviewed_by: user?.id,
+                  rejection_reason: reason
+                }
+              : prevItem
+          ))
+          console.log(`[MODERATION] Rejected ${item.type} ${itemId} with reason: ${reason}`)
+        } else {
+          console.error(`[MODERATION] Failed to reject ${item.type} ${itemId}`)
+        }
       } else {
-        // For now, just update UI for events and blog posts  
-        // TODO: Add similar methods for events and blog posts
+        // For now, just update UI for blog posts only
+        // TODO: Add similar method for blog posts
         setItems(prev => prev.map(prevItem => 
           prevItem.id === itemId 
             ? { 

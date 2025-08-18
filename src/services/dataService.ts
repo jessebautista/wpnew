@@ -382,6 +382,40 @@ export class DataService {
   }
 
   /**
+   * Update event moderation status
+   */
+  static async updateEventModerationStatus(eventId: string, status: 'approved' | 'rejected', reviewerId: string, rejectionReason?: string): Promise<boolean> {
+    if (shouldUseMockData('supabase')) {
+      console.log(`[MOCK] Updating event ${eventId} moderation status to ${status}`)
+      return Promise.resolve(true)
+    }
+
+    try {
+      console.log(`[SUPABASE] Updating event ${eventId} moderation status to ${status}`)
+      
+      const updateData: any = {
+        moderation_status: status,
+        verified: status === 'approved',
+        verified_by: reviewerId,
+        updated_at: new Date().toISOString()
+      }
+
+      const { error } = await supabase
+        .from('events')
+        .update(updateData)
+        .eq('id', eventId)
+
+      if (error) throw error
+
+      console.log(`[SUPABASE] Successfully updated event ${eventId} moderation status`)
+      return true
+    } catch (error) {
+      console.error(`Error updating event moderation status:`, error)
+      return false
+    }
+  }
+
+  /**
    * Get user's pending piano submissions
    */
   static async getUserPendingPianos(userId: string): Promise<Piano[]> {

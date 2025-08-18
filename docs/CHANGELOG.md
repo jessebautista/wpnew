@@ -9,6 +9,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added - 2025-08-18
 
+#### Piano Features Implementation
+- **Complete Piano Single Page Enhancement**: Added full functionality for image uploads, ratings, and comments
+  - **Image Upload System**: Users can upload multiple photos with captions via modal interface
+    - File validation (JPG, PNG, WebP, GIF up to 10MB)
+    - Image preview with caption input
+    - Compression and optimization before upload
+    - Real-time gallery refresh after upload
+  - **Rating & Visit System**: Comprehensive user rating functionality
+    - 1-5 star rating system with visual feedback
+    - Optional notes/review text for each rating
+    - Visit tracking with one rating per user per piano
+    - Real-time average rating and visitor count display
+  - **Enhanced Statistics**: Live data display in piano details sidebar
+    - Real visitor count from database
+    - Average rating calculation with fallback display
+    - Dynamic stats update after user interactions
+
+- **Database Schema Extensions**: Created supporting tables for new piano features
+  - **piano_visits table**: Stores user ratings, notes, and visit timestamps with unique constraint per user/piano
+  - **Enhanced piano_images table**: Added user attribution and caption support
+  - **Storage Integration**: Configured Supabase storage bucket with proper RLS policies for authenticated uploads
+
+- **Service Layer Implementation**: New services for piano feature management
+  - **PianoVisitService**: Handles rating CRUD operations, user visit tracking, and piano statistics
+  - **Enhanced ImageUploadService**: Added user authentication, caption support, and batch upload functionality
+  - **Storage Policy Management**: Configured authenticated user upload policies with public read access
+
 #### Admin Dashboard Enhancements
 - **Complete Admin Dashboard Live Data Integration**: Migrated admin dashboard from mock data to real Supabase database connections
   - **Overview Tab**: Real-time statistics with user counts, content stats by moderation status, and recent activity feed
@@ -26,6 +53,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed - 2025-08-18
 
+#### Piano Features Storage & Security
+- **Storage RLS Policy Issues**: Resolved image upload failures due to missing storage bucket policies
+  - **Root Cause**: Storage bucket had RLS enabled but no policies for authenticated users
+  - **Solution**: Created storage policies allowing authenticated users to upload and public read access
+  - **Alternative**: Option to disable RLS entirely on storage bucket for simpler implementation
+  - **Testing**: Verified successful image uploads with proper file validation and storage
+
 #### User Authentication & Profile Creation
 - **Database Trigger Issues**: Resolved critical user profile creation failures preventing login functionality
   - **Root Cause**: Database trigger attempted to create profiles in non-existent `profiles` table instead of actual `users` table
@@ -40,6 +74,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Error Handling**: Comprehensive error catching and user feedback for failed operations
 
 ### Technical Implementation
+
+#### Piano Features Implementation
+- **New Database Tables**: Created supporting schema for piano features
+  - **piano_visits**: UUID primary key, piano_id, user_id, rating (1-5), notes, timestamps, unique constraint
+  - **Storage Policies**: Authenticated upload, public read access for piano-images bucket
+  - **Indexes**: Optimized queries with piano_id and user_id indexes on piano_visits table
+
+- **Service Architecture**: Modular service design for piano features
+  - **PianoVisitService**: upsertVisit(), getUserVisit(), getPianoStats(), getPianoVisits()
+  - **ImageUploadService**: Enhanced with user authentication, caption support, batch operations
+  - **Frontend Integration**: Real-time UI updates, loading states, error handling
+
+- **Component Design**: Enhanced PianoDetailPage with new functionality
+  - **ImageUploadModal**: File selection, preview, caption input, validation, progress indication
+  - **Rating Interface**: Interactive star rating, notes input, save functionality
+  - **Statistics Display**: Real-time visitor count and average rating with fallback states
+  - **State Management**: Proper loading states, error handling, and user feedback
 
 #### Database Schema Corrections
 - **Trigger Removal**: Disabled problematic automatic profile creation trigger causing enum casting errors
@@ -303,6 +354,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Event cards now show only "View Details" button for cleaner interface
 
 ### Technical Details
+
+#### Files Modified (Piano Features Implementation)
+- `src/pages/pianos/PianoDetailPage.tsx`: Complete enhancement with image upload, rating system, and statistics
+- `src/services/pianoVisitService.ts`: New service for rating and visit management
+- `src/services/imageUploadService.ts`: Enhanced with user attribution and caption support
+- `supabase/migrations/009_add_piano_features.sql`: Database schema for piano_visits table
+- `SUPABASE_SETUP_INSTRUCTIONS.md`: Setup guide for database tables and storage policies
 
 #### Files Modified (TypeScript & Deployment Fixes)
 - `src/types/index.ts`: Extended User, Event, Piano, and BlogPost interfaces with missing properties

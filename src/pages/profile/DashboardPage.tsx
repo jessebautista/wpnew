@@ -34,6 +34,7 @@ export function DashboardPage() {
   const { user } = useAuth()
   const { canModerate, canAdmin } = usePermissions()
   const [stats, setStats] = useState<any>(null)
+  const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'admin'>('overview')
   
@@ -53,8 +54,12 @@ export function DashboardPage() {
       if (!user) return
       
       try {
-        const pianoStats = await userService.getPianoStats(user.id)
+        const [pianoStats, activity] = await Promise.all([
+          userService.getPianoStats(user.id),
+          userService.getRecentActivity(user.id, 5)
+        ])
         setStats(pianoStats)
+        setRecentActivity(activity)
       } catch (error) {
         console.error('Error loading stats:', error)
       } finally {
@@ -252,31 +257,63 @@ export function DashboardPage() {
               <div className="card-body">
                 <h2 className="card-title">Recent Activity</h2>
                 <div className="space-y-4">
-                  <div className="flex items-center space-x-4 p-4 bg-base-200 rounded-lg">
-                    <div className="w-2 h-2 bg-primary rounded-full"></div>
-                    <div className="flex-1">
-                      <p className="font-medium">Welcome to WorldPianos!</p>
-                      <p className="text-sm text-base-content/70">
-                        Your account was created. Start exploring pianos near you!
-                      </p>
-                    </div>
-                    <div className="text-sm text-base-content/50">
-                      {new Date(user?.created_at || '').toLocaleDateString()}
-                    </div>
-                  </div>
-                  
-                  {stats?.pianos_added === 0 && stats?.pianos_visited === 0 && (
-                    <div className="text-center py-8">
-                      <Piano className="w-16 h-16 mx-auto text-base-content/30 mb-4" />
-                      <h3 className="text-lg font-semibold mb-2">Start Your Piano Journey!</h3>
-                      <p className="text-base-content/70 mb-4">
-                        Add your first piano to the map or mark one as visited to see your activity here.
-                      </p>
-                      <div className="space-x-4">
-                        <Link to="/pianos/add" className="btn btn-primary">Add a Piano</Link>
-                        <Link to="/pianos" className="btn btn-outline">Explore Pianos</Link>
+                  {recentActivity.length > 0 ? (
+                    recentActivity.map((activity) => (
+                      <div key={activity.id} className="flex items-center space-x-4 p-4 bg-base-200 rounded-lg">
+                        <div className="w-2 h-2 bg-primary rounded-full"></div>
+                        <div className="flex-1">
+                          <p className="font-medium">{activity.title}</p>
+                          <p className="text-sm text-base-content/70">
+                            {activity.description}
+                          </p>
+                          {activity.status && (
+                            <div className="mt-1">
+                              <span className={`text-xs px-2 py-1 rounded-full ${
+                                activity.status === 'approved' ? 'bg-green-100 text-green-800' :
+                                activity.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                activity.status === 'rejected' ? 'bg-red-100 text-red-800' : 
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {activity.status}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-sm text-base-content/50">
+                          {new Date(activity.timestamp).toLocaleDateString()}
+                        </div>
                       </div>
-                    </div>
+                    ))
+                  ) : (
+                    <>
+                      <div className="flex items-center space-x-4 p-4 bg-base-200 rounded-lg">
+                        <div className="w-2 h-2 bg-primary rounded-full"></div>
+                        <div className="flex-1">
+                          <p className="font-medium">Welcome to WorldPianos!</p>
+                          <p className="text-sm text-base-content/70">
+                            Your account was created. Start exploring pianos near you!
+                          </p>
+                        </div>
+                        <div className="text-sm text-base-content/50">
+                          {new Date(user?.created_at || '').toLocaleDateString()}
+                        </div>
+                      </div>
+                      
+                      {stats?.pianos_added === 0 && stats?.events_created === 0 && (
+                        <div className="text-center py-8">
+                          <Piano className="w-16 h-16 mx-auto text-base-content/30 mb-4" />
+                          <h3 className="text-lg font-semibold mb-2">Start Your Piano Journey!</h3>
+                          <p className="text-base-content/70 mb-4">
+                            Add your first piano to the map or create an event to see your activity here.
+                          </p>
+                          <div className="space-x-4">
+                            <Link to="/pianos/add" className="btn btn-primary">Add a Piano</Link>
+                            <Link to="/events/add" className="btn btn-secondary">Create Event</Link>
+                            <Link to="/pianos" className="btn btn-outline">Explore Pianos</Link>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

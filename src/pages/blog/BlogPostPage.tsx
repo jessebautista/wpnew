@@ -12,10 +12,9 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../components/auth/AuthProvider'
 import { usePermissions } from '../../hooks/usePermissions'
-import { DataService } from '../../services/dataService'
+import { mockBlogPosts } from '../../data/mockData'
 import { CommentSection } from '../../components/comments/CommentSection'
 import { ShareButton } from '../../components/social/ShareButton'
-import { ReportModal } from '../../components/modals/ReportModal'
 import { SocialSharingService } from '../../services/socialSharingService'
 import type { BlogPost } from '../../types'
 
@@ -28,32 +27,19 @@ export function BlogPostPage() {
   const [isLiked, setIsLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(0)
   const [viewCount, setViewCount] = useState(0)
-  const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([])
-  const [showReportModal, setShowReportModal] = useState(false)
 
   useEffect(() => {
     const loadPost = async () => {
       if (!id) return
 
       try {
-        // Fetch from database
-        const foundPost = await DataService.getBlogPostById(id)
+        // In a real app, this would fetch from Supabase
+        const foundPost = mockBlogPosts.find(p => p.id === id)
         if (foundPost) {
           setPost(foundPost)
           setLikeCount(Math.floor(Math.random() * 100) + 10) // Mock like count
           setViewCount(Math.floor(Math.random() * 1000) + 50) // Mock view count
           
-          // Check if user has liked this post
-          const likeKey = `blog_post_${foundPost.id}_liked`
-          const isPostLiked = localStorage.getItem(likeKey) === 'true'
-          setIsLiked(isPostLiked)
-          
-          // Load related posts
-          const allPosts = await DataService.getBlogPosts()
-          const related = allPosts
-            .filter(p => p.id !== foundPost.id && p.category === foundPost.category)
-            .slice(0, 3)
-          setRelatedPosts(related)
         }
       } catch (error) {
         console.error('Error loading blog post:', error)
@@ -65,28 +51,9 @@ export function BlogPostPage() {
     loadPost()
   }, [id])
 
-  const handleLikeToggle = async () => {
-    try {
-      // For now, just update local state - in a real app, this would make an API call
-      const newLikedState = !isLiked
-      setIsLiked(newLikedState)
-      setLikeCount(prev => newLikedState ? prev + 1 : prev - 1)
-      
-      // Store like state in localStorage for persistence
-      if (post) {
-        const likeKey = `blog_post_${post.id}_liked`
-        if (newLikedState) {
-          localStorage.setItem(likeKey, 'true')
-        } else {
-          localStorage.removeItem(likeKey)
-        }
-      }
-    } catch (error) {
-      console.error('Error toggling like:', error)
-      // Revert on error
-      setIsLiked(!isLiked)
-      setLikeCount(prev => isLiked ? prev + 1 : prev - 1)
-    }
+  const handleLikeToggle = () => {
+    setIsLiked(!isLiked)
+    setLikeCount(prev => isLiked ? prev - 1 : prev + 1)
   }
 
   const getShareData = () => {
@@ -218,11 +185,7 @@ export function BlogPostPage() {
                   </button>
                 )}
                 
-                <button 
-                  onClick={() => setShowReportModal(true)}
-                  className="btn btn-ghost btn-sm"
-                  title="Report this post"
-                >
+                <button className="btn btn-ghost btn-sm">
                   <Flag className="w-4 h-4" />
                 </button>
               </div>
@@ -256,11 +219,10 @@ export function BlogPostPage() {
 
               {/* Content */}
               <div className="text-base-content/90 leading-relaxed">
-                {/* Render HTML content safely */}
-                <div 
-                  className="prose-content"
-                  dangerouslySetInnerHTML={{ __html: post.content }}
-                />
+                {/* In a real app, this would be rendered from markdown or rich text */}
+                <div className="whitespace-pre-line">
+                  {post.content}
+                </div>
               </div>
 
               {/* Tags */}
@@ -330,19 +292,22 @@ export function BlogPostPage() {
               <div className="card-body">
                 <h3 className="card-title">Related Posts</h3>
                 <div className="space-y-3">
-                  {relatedPosts.map((relatedPost) => (
-                    <Link
-                      key={relatedPost.id}
-                      to={`/blog/${relatedPost.id}`}
-                      className="block p-3 bg-base-200 rounded-lg hover:bg-base-300 transition-colors"
-                    >
-                      <h4 className="font-medium text-sm line-clamp-2">{relatedPost.title}</h4>
-                      <p className="text-xs text-base-content/70 mt-1">
-                        {new Date(relatedPost.created_at).toLocaleDateString()}
-                      </p>
-                    </Link>
-                  ))}
-                  {relatedPosts.length === 0 && (
+                  {mockBlogPosts
+                    .filter(p => p.id !== post.id && p.category === post.category)
+                    .slice(0, 3)
+                    .map((relatedPost) => (
+                      <Link
+                        key={relatedPost.id}
+                        to={`/blog/${relatedPost.id}`}
+                        className="block p-3 bg-base-200 rounded-lg hover:bg-base-300 transition-colors"
+                      >
+                        <h4 className="font-medium text-sm line-clamp-2">{relatedPost.title}</h4>
+                        <p className="text-xs text-base-content/70 mt-1">
+                          {new Date(relatedPost.created_at).toLocaleDateString()}
+                        </p>
+                      </Link>
+                    ))}
+                  {mockBlogPosts.filter(p => p.id !== post.id && p.category === post.category).length === 0 && (
                     <p className="text-sm text-base-content/70">No related posts found.</p>
                   )}
                 </div>
@@ -379,17 +344,6 @@ export function BlogPostPage() {
           </div>
         </div>
       </div>
-
-      {/* Report Modal */}
-      {post && (
-        <ReportModal
-          isOpen={showReportModal}
-          onClose={() => setShowReportModal(false)}
-          contentType="blog_post"
-          contentId={post.id}
-          contentTitle={post.title}
-        />
-      )}
     </div>
   )
 }

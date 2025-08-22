@@ -137,18 +137,25 @@ export interface EventAttendee {
 export interface BlogPost {
   id: string
   title: string
+  slug: string
   content: string
   excerpt: string | null
   featured_image: string | null
   category: string | null
   tags: string[] | null
+  author_id: string | null
   published: boolean
+  featured: boolean
   allow_comments: boolean
-  author_id: string
-  moderation_status?: 'pending' | 'approved' | 'rejected'
-  slug?: string
+  view_count: number
+  reading_time: number | null
+  meta_title: string | null
+  meta_description: string | null
+  moderation_status: 'pending' | 'approved' | 'rejected'
+  published_at: string | null
   created_at: string
   updated_at: string
+  legacy_id: string | null
   author?: User
 }
 

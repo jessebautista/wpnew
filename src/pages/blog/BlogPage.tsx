@@ -6,6 +6,13 @@ import { usePermissions } from '../../hooks/usePermissions'
 import type { BlogPost } from '../../types'
 
 
+// Helper function to strip HTML tags and get plain text
+const stripHtml = (html: string) => {
+  const tmp = document.createElement('div')
+  tmp.innerHTML = html
+  return tmp.textContent || tmp.innerText || ''
+}
+
 export function BlogPage() {
   const { canCreate } = usePermissions()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -42,7 +49,7 @@ export function BlogPage() {
     // Text search
     const matchesSearch = searchQuery === '' ||
       post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      stripHtml(post.content).toLowerCase().includes(searchQuery.toLowerCase()) ||
       post.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (post.tags && post.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())))
 
@@ -278,7 +285,7 @@ export function BlogPage() {
               <div className="lg:col-span-2">
                 <div className="space-y-4 md:space-y-6">
                   {currentPosts.map((post) => (
-                    <Link key={post.id} to={`/blog/${post.id}`} className="block">
+                    <Link key={post.id} to={`/blog/${post.slug}`} className="block">
                       <article className="card bg-base-100 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-[1.02] cursor-pointer">
                         {post.featured_image && (
                           <figure>
@@ -324,14 +331,14 @@ export function BlogPage() {
                           </h2>
                           
                           <p className="text-base-content/80 leading-relaxed mb-3 md:mb-4 text-sm md:text-base line-clamp-3">
-                            {post.excerpt || post.content.substring(0, 150) + '...'}
+                            {post.excerpt || stripHtml(post.content).substring(0, 150) + '...'}
                           </p>
                           
                           {/* Simplified metrics - fewer on mobile */}
                           <div className="flex items-center gap-3 md:gap-4 text-xs md:text-sm text-base-content/50 mb-3">
                             <div className="flex items-center">
                               <Clock className="w-3 h-3 md:w-4 md:h-4 mr-1" />
-                              {Math.ceil(post.content.split(' ').length / 200)} min read
+                              {Math.ceil(stripHtml(post.content).split(' ').length / 200)} min read
                             </div>
                             <div className="hidden sm:flex items-center">
                               <Eye className="w-3 h-3 md:w-4 md:h-4 mr-1" />
@@ -524,7 +531,7 @@ export function BlogPage() {
                           )}
                           <div className="flex-1 min-w-0">
                             <Link 
-                              to={`/blog/${post.id}`}
+                              to={`/blog/${post.slug}`}
                               className="font-medium text-sm hover:link line-clamp-2"
                             >
                               {post.title}

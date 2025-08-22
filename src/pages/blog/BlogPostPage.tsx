@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../components/auth/AuthProvider'
 import { usePermissions } from '../../hooks/usePermissions'
-import { mockBlogPosts } from '../../data/mockData'
+import { DataService } from '../../services/dataService'
 import { CommentSection } from '../../components/comments/CommentSection'
 import { ShareButton } from '../../components/social/ShareButton'
 import { SocialSharingService } from '../../services/socialSharingService'
@@ -33,13 +33,14 @@ export function BlogPostPage() {
       if (!id) return
 
       try {
-        // In a real app, this would fetch from Supabase
-        const foundPost = mockBlogPosts.find(p => p.id === id)
+        console.log('Loading blog post with ID:', id)
+        const foundPost = await DataService.getBlogPostById(id)
         if (foundPost) {
           setPost(foundPost)
-          setLikeCount(Math.floor(Math.random() * 100) + 10) // Mock like count
-          setViewCount(Math.floor(Math.random() * 1000) + 50) // Mock view count
-          
+          setLikeCount(Math.floor(Math.random() * 100) + 10) // Mock like count for now
+          setViewCount(foundPost.view_count || Math.floor(Math.random() * 1000) + 50) // Use real view count if available
+        } else {
+          console.warn('Blog post not found:', id)
         }
       } catch (error) {
         console.error('Error loading blog post:', error)
@@ -71,8 +72,12 @@ export function BlogPostPage() {
 
 
   const estimatedReadTime = (content: string) => {
+    // Strip HTML tags first, then calculate reading time
+    const tmp = document.createElement('div')
+    tmp.innerHTML = content
+    const plainText = tmp.textContent || tmp.innerText || ''
     const wordsPerMinute = 200
-    const wordCount = content.split(' ').length
+    const wordCount = plainText.split(' ').length
     return Math.ceil(wordCount / wordsPerMinute)
   }
 
@@ -219,10 +224,11 @@ export function BlogPostPage() {
 
               {/* Content */}
               <div className="text-base-content/90 leading-relaxed">
-                {/* In a real app, this would be rendered from markdown or rich text */}
-                <div className="whitespace-pre-line">
-                  {post.content}
-                </div>
+                {/* Render HTML content from database */}
+                <div 
+                  className="prose prose-lg max-w-none prose-headings:text-base-content prose-p:text-base-content/90 prose-a:text-primary prose-strong:text-base-content prose-ul:text-base-content prose-ol:text-base-content"
+                  dangerouslySetInnerHTML={{ __html: post.content }}
+                />
               </div>
 
               {/* Tags */}
@@ -287,29 +293,12 @@ export function BlogPostPage() {
               </div>
             )}
 
-            {/* Related Posts */}
+            {/* Related Posts - TODO: Implement with real data */}
             <div className="card bg-base-100 shadow-xl">
               <div className="card-body">
                 <h3 className="card-title">Related Posts</h3>
                 <div className="space-y-3">
-                  {mockBlogPosts
-                    .filter(p => p.id !== post.id && p.category === post.category)
-                    .slice(0, 3)
-                    .map((relatedPost) => (
-                      <Link
-                        key={relatedPost.id}
-                        to={`/blog/${relatedPost.id}`}
-                        className="block p-3 bg-base-200 rounded-lg hover:bg-base-300 transition-colors"
-                      >
-                        <h4 className="font-medium text-sm line-clamp-2">{relatedPost.title}</h4>
-                        <p className="text-xs text-base-content/70 mt-1">
-                          {new Date(relatedPost.created_at).toLocaleDateString()}
-                        </p>
-                      </Link>
-                    ))}
-                  {mockBlogPosts.filter(p => p.id !== post.id && p.category === post.category).length === 0 && (
-                    <p className="text-sm text-base-content/70">No related posts found.</p>
-                  )}
+                  <p className="text-sm text-base-content/70">Related posts coming soon...</p>
                 </div>
               </div>
             </div>

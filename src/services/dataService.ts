@@ -689,18 +689,25 @@ export class DataService {
   }
 
   /**
-   * Get blog post by ID
+   * Get blog post by ID or slug
    */
-  static async getBlogPostById(id: string): Promise<BlogPost | null> {
+  static async getBlogPostById(idOrSlug: string): Promise<BlogPost | null> {
     if (shouldUseMockData('supabase')) {
-      console.log(`[MOCK] Fetching blog post ${id} from mock data`)
-      return Promise.resolve(mockBlogPosts.find(p => p.id === id) || null)
+      console.log(`[MOCK] Fetching blog post ${idOrSlug} from mock data`)
+      return Promise.resolve(
+        mockBlogPosts.find(p => p.id === idOrSlug || p.slug === idOrSlug) || null
+      )
     }
     
     try {
       // Use direct fetch instead of Supabase client for public access
-      console.log(`[DIRECT] Fetching blog post ${id} via direct API call`)
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/blog_posts?select=*&id=eq.${id}&published=eq.true`, {
+      console.log(`[DIRECT] Fetching blog post ${idOrSlug} via direct API call`)
+      
+      // Try to determine if it's a UUID (36 characters with dashes) or a slug
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug)
+      const searchField = isUUID ? 'id' : 'slug'
+      
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/blog_posts?select=*&${searchField}=eq.${idOrSlug}&published=eq.true`, {
         headers: {
           'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
@@ -714,12 +721,12 @@ export class DataService {
       }
       
       const data = await response.json()
-      console.log(`[DIRECT] Successfully fetched blog post ${id}`)
+      console.log(`[DIRECT] Successfully fetched blog post ${idOrSlug}`)
       return data.length > 0 ? data[0] : null
     } catch (error) {
-      console.error(`Direct fetch error for blog post ${id}:`, error)
+      console.error(`Direct fetch error for blog post ${idOrSlug}:`, error)
       // Fallback to mock data on connection error
-      return mockBlogPosts.find(p => p.id === id) || null
+      return mockBlogPosts.find(p => p.id === idOrSlug) || null
     }
   }
 

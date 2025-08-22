@@ -168,16 +168,25 @@ export const mockBlogPosts: BlogPost[] = [
   {
     id: '1',
     title: 'The Magic of Public Pianos',
+    slug: 'the-magic-of-public-pianos',
     content: 'Public pianos have transformed urban spaces around the world...',
     excerpt: 'Exploring how public pianos bring communities together.',
     featured_image: null,
     category: 'Community',
     tags: ['public-pianos', 'community', 'music'],
-    published: true,
-    allow_comments: true,
     author_id: '1',
+    published: true,
+    featured: false,
+    allow_comments: true,
+    view_count: 245,
+    reading_time: 3,
+    meta_title: null,
+    meta_description: null,
+    moderation_status: 'approved',
+    published_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
+    legacy_id: null
   }
 ]
 

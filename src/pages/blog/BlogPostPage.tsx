@@ -118,7 +118,7 @@ export function BlogPostPage() {
               )}
               <div className="flex items-center text-sm opacity-90">
                 <Calendar className="w-4 h-4 mr-1" />
-                {new Date(post.created_at).toLocaleDateString('en-US', {
+                {new Date(post.published_at || post.created_at).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric'

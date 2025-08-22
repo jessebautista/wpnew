@@ -7,40 +7,42 @@ import { shouldUseMockData } from '../lib/supabase'
 import { supabase } from '../lib/supabase'
 import type { Piano, Event, BlogPost, EventAttendee } from '../types'
 
-// Mock data
+// Mock data in new Sing for Hope format
 const mockPianos: Piano[] = [
   {
-    id: '1',
-    name: 'Central Park Piano',
-    description: 'Beautiful grand piano located near the Bethesda Fountain',
-    location_name: 'Central Park, New York',
+    id: 1,
+    piano_title: 'Harmony in the Park',
+    piano_image: 'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=800&h=600&fit=crop',
+    piano_statement: 'A beautiful grand piano installation celebrating community music in the heart of Central Park. This piece invites people of all ages to share their musical talents.',
+    piano_url: 'harmony-in-the-park',
+    piano_year: '2024',
+    piano_artist: null,
+    artist_name: 'Maria Rodriguez',
+    piano_artist_bio: 'Maria Rodriguez is a renowned muralist and community artist based in New York. She specializes in large-scale public art that brings communities together through shared cultural experiences.',
+    artist_photo: 'https://images.unsplash.com/photo-1494790108755-2616b612b1e0?w=400&h=400&fit=crop',
+    artist_website_url: null,
+    artist_facebook_url: null,
+    artist_instagram_url: '@maria_art_nyc',
+    permanent_home_name: 'Central Park Conservancy',
+    public_location_name: 'Central Park - Bethesda Fountain Area',
+    perm_lat: '40.7829',
+    perm_lng: '-73.9654',
+    piano_program: 'NYC Street Pianos Initiative',
+    contributors_info: 'Sponsored by Central Park Conservancy and NYC Department of Cultural Affairs',
+    piano_site: 1,
+    notes: 'Weather-protected with custom cover. Available during park hours.',
+    piano_search: 'Harmony in the Park Maria Rodriguez Central Park piano community music',
+    search_vector: null,
+    created_at: '2024-03-15T10:30:00Z',
+    updated_at: '2024-03-15T10:30:00Z',
+    created_by: '00000000-0000-0000-0000-000000000000',
+    verified_by: '00000000-0000-0000-0000-000000000000',
+    moderation_status: 'approved',
+    verified: true,
+    piano_source: 'sing_for_hope',
     latitude: 40.7829,
     longitude: -73.9654,
-    category: 'Park',
-    condition: 'Good',
-    accessibility: 'Wheelchair accessible',
-    hours: '6AM - 10PM',
-    verified: true,
-    created_by: 'user123',
-    verified_by: 'admin',
-    created_at: '2023-01-15T10:30:00Z',
-    updated_at: '2023-01-15T10:30:00Z',
-    images: [
-      {
-        id: 'img1',
-        piano_id: '1',
-        image_url: 'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=800&h=600&fit=crop',
-        alt_text: 'Grand piano in Central Park with fountain in background',
-        created_at: '2023-01-15T10:30:00Z'
-      },
-      {
-        id: 'img2',
-        piano_id: '1',
-        image_url: 'https://images.unsplash.com/photo-1612225330812-01a9c6b355ec?w=800&h=600&fit=crop',
-        alt_text: 'Close-up view of the piano keys',
-        created_at: '2023-01-15T11:00:00Z'
-      }
-    ]
+    location_display_name: 'Central Park - Bethesda Fountain Area'
   },
   {
     id: '2',
@@ -113,7 +115,17 @@ const mockEvents: Event[] = [
     verified_by: 'admin',
     created_at: '2024-01-15T10:30:00Z',
     updated_at: '2024-01-15T10:30:00Z',
-    attendee_count: 0
+    attendee_count: 0,
+    // New piano-specific fields
+    piano_count: 2,
+    piano_type: 'Grand',
+    piano_condition: 'Excellent',
+    piano_special_features: ['Painted/Decorated', 'Bench Included', 'Weather Protected'],
+    piano_accessibility: 'Wheelchair accessible with ramp access and clear pathways',
+    piano_images: [
+      'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1612225330812-01a9c6b355ec?w=800&h=600&fit=crop'
+    ]
   }
 ]
 
@@ -147,33 +159,57 @@ export class DataService {
     }
 
     try {
-      // Use Supabase client to get pianos with images
-      console.log('[SUPABASE] Fetching pianos with images via Supabase client')
+      // Use Supabase view to get pianos with computed coordinates
+      console.log('[SUPABASE] Fetching pianos via pianos_with_coordinates view')
       const { data, error } = await supabase
-        .from('pianos')
-        .select(`
-          *,
-          piano_images (
-            id,
-            image_url,
-            alt_text,
-            created_at
-          )
-        `)
+        .from('pianos_with_coordinates')
+        .select('*')
         .eq('moderation_status', 'approved')
+        .order('created_at', { ascending: false })
 
       if (error) {
         console.error('Supabase error:', error)
         throw error
       }
 
-      // Map piano_images to images field for consistency with our types
-      const pianos = data?.map((piano: any) => ({
-        ...piano,
-        images: piano.piano_images || []
-      })) || []
+      // Ensure computed fields are set
+      const pianos = data?.map((piano: any) => {
+        // Handle "null" strings and actual null values
+        const latStr = piano.perm_lat
+        const lngStr = piano.perm_lng
+        const lat = (latStr && latStr !== 'null' && latStr !== '') ? parseFloat(latStr) : null
+        const lng = (lngStr && lngStr !== 'null' && lngStr !== '') ? parseFloat(lngStr) : null
+        
+        return {
+          ...piano,
+          location_display_name: piano.location_display_name || piano.public_location_name || piano.permanent_home_name || 'Unknown Location',
+          // Convert string coordinates to numbers for map display
+          latitude: lat,
+          longitude: lng
+        }
+      }) || []
+      
+      // Debug: Log sample coordinate conversion
+      const samplePianos = pianos.slice(0, 3)
+      const debugData = samplePianos.map(p => ({
+        id: p.id,
+        title: p.piano_title,
+        perm_lat: p.perm_lat,
+        perm_lng: p.perm_lng,
+        latitude: p.latitude,
+        longitude: p.longitude,
+        hasValidCoords: p.latitude != null && p.longitude != null && !isNaN(p.latitude) && !isNaN(p.longitude)
+      }))
+      console.log('[COORDINATE DEBUG] Sample piano coordinates after conversion:')
+      debugData.forEach((p, i) => {
+        console.log(`  Piano ${i + 1}: ID=${p.id}, Title="${p.title}", perm_lat="${p.perm_lat}", perm_lng="${p.perm_lng}", lat=${p.latitude}, lng=${p.longitude}, valid=${p.hasValidCoords}`)
+      })
+      
+      // Count total valid coordinates
+      const validCoordCount = pianos.filter(p => p.latitude != null && p.longitude != null && !isNaN(p.latitude) && !isNaN(p.longitude)).length
+      console.log(`[COORDINATE DEBUG] Total pianos with valid coordinates: ${validCoordCount} out of ${pianos.length} (${Math.round((validCoordCount / pianos.length) * 100)}%)`)
 
-      console.log(`[SUPABASE] Successfully fetched ${pianos.length} pianos with images`)
+      console.log(`[SUPABASE] Successfully fetched ${pianos.length} pianos`)
       return pianos
     } catch (error) {
       console.error('Supabase fetch error:', error)
@@ -196,7 +232,23 @@ export class DataService {
 
         const data = await response.json()
         console.log(`[DIRECT FALLBACK] Successfully fetched ${data.length} pianos`)
-        return data
+        
+        // Apply same coordinate conversion as main fetch
+        const pianosWithCoords = data.map((piano: any) => {
+          const latStr = piano.perm_lat
+          const lngStr = piano.perm_lng
+          const lat = (latStr && latStr !== 'null' && latStr !== '') ? parseFloat(latStr) : null
+          const lng = (lngStr && lngStr !== 'null' && lngStr !== '') ? parseFloat(lngStr) : null
+          
+          return {
+            ...piano,
+            location_display_name: piano.location_display_name || piano.public_location_name || piano.permanent_home_name || 'Unknown Location',
+            latitude: lat,
+            longitude: lng
+          }
+        })
+        
+        return pianosWithCoords
       } catch (directError) {
         console.error('Direct fetch fallback error:', directError)
         // Final fallback to mock data
@@ -437,7 +489,7 @@ export class DataService {
             created_at
           )
         `)
-        .eq('submitted_by', userId)
+        .eq('created_by', userId)
         .eq('moderation_status', 'pending')
 
       if (error) {
@@ -541,7 +593,7 @@ export class DataService {
     try {
       // Use direct fetch instead of Supabase client
       console.log('[DIRECT] Fetching events via direct API call')
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/events?select=*&moderation_status=eq.approved`, {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/events?select=*&moderation_status=eq.approved&order=date.desc`, {
         headers: {
           'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,

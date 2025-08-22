@@ -112,10 +112,12 @@ export class ImageUploadService {
         .from('piano_images')
         .insert([{
           piano_id: pianoId,
-          uploaded_by: user.id,
+          user_id: user.id,
           image_url: imageUrl,
+          image_path: imageUrl, // Required field according to schema
           caption: caption || null,
-          alt_text: altText || `Piano image for ${pianoId}`
+          is_primary: false,
+          moderation_status: 'approved'
         }])
         .select()
         .single()

@@ -265,7 +265,7 @@ export class AdminService {
 
       // Get recent content submissions
       const [recentPianos, recentEvents, recentBlogs] = await Promise.all([
-        supabase.from('pianos').select('id, name, created_at, moderation_status').order('created_at', { ascending: false }).limit(3),
+        supabase.from('pianos').select('id, piano_title, created_at, moderation_status').order('created_at', { ascending: false }).limit(3),
         supabase.from('events').select('id, title, created_at, moderation_status').order('created_at', { ascending: false }).limit(3),
         supabase.from('blog_posts').select('id, title, created_at, moderation_status').order('created_at', { ascending: false }).limit(3)
       ])
@@ -276,7 +276,7 @@ export class AdminService {
           id: `piano-${piano.id}`,
           type: 'content_submit',
           title: 'Piano submission',
-          description: `${piano.name} submitted for review`,
+          description: `${piano.piano_title} submitted for review`,
           timestamp: piano.created_at,
           status: piano.moderation_status === 'pending' ? 'warning' : 'success',
           contentId: piano.id

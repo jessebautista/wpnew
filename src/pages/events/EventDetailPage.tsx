@@ -11,7 +11,11 @@ import {
   Users,
   ChevronLeft,
   Share2,
-  LogIn
+  LogIn,
+  Piano,
+  Music,
+  Zap,
+  Eye
 } from 'lucide-react'
 import { useAuth } from '../../components/auth/AuthProvider'
 import { usePermissions } from '../../hooks/usePermissions'
@@ -324,6 +328,110 @@ export function EventDetailPage() {
                 </div>
               </div>
             </div>
+
+            {/* Piano Information */}
+            {(event.piano_count || event.piano_type || event.piano_condition || event.piano_special_features || event.piano_accessibility || event.piano_images) && (
+              <div className="card bg-base-100 shadow-xl">
+                <div className="card-body">
+                  <h2 className="card-title">
+                    <Piano className="w-5 h-5" />
+                    Piano Information
+                  </h2>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    {event.piano_count && (
+                      <div className="flex items-center gap-3">
+                        <div className="bg-primary/10 p-2 rounded-lg">
+                          <Music className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium">Number of Pianos</p>
+                          <p className="text-base-content/70">{event.piano_count}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {event.piano_type && (
+                      <div className="flex items-center gap-3">
+                        <div className="bg-secondary/10 p-2 rounded-lg">
+                          <Piano className="w-5 h-5 text-secondary" />
+                        </div>
+                        <div>
+                          <p className="font-medium">Piano Type</p>
+                          <p className="text-base-content/70">{event.piano_type}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {event.piano_condition && (
+                      <div className="flex items-center gap-3">
+                        <div className="bg-accent/10 p-2 rounded-lg">
+                          <CheckCircle className="w-5 h-5 text-accent" />
+                        </div>
+                        <div>
+                          <p className="font-medium">Condition</p>
+                          <p className="text-base-content/70">{event.piano_condition}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {event.piano_accessibility && (
+                      <div className="flex items-start gap-3">
+                        <div className="bg-info/10 p-2 rounded-lg">
+                          <Users className="w-5 h-5 text-info" />
+                        </div>
+                        <div>
+                          <p className="font-medium">Accessibility</p>
+                          <p className="text-base-content/70 text-sm">{event.piano_accessibility}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {event.piano_special_features && event.piano_special_features.length > 0 && (
+                    <div className="mt-4">
+                      <p className="font-medium mb-2 flex items-center gap-2">
+                        <Zap className="w-4 h-4" />
+                        Special Features
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {event.piano_special_features.map((feature, index) => (
+                          <span key={index} className="badge badge-outline">{feature}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Piano Gallery */}
+            {event.piano_images && event.piano_images.length > 0 && (
+              <div className="card bg-base-100 shadow-xl">
+                <div className="card-body">
+                  <h2 className="card-title">
+                    <Eye className="w-5 h-5" />
+                    Piano Gallery
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                    {event.piano_images.map((imageUrl, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={imageUrl}
+                          alt={`Piano ${index + 1} at ${event.title}`}
+                          className="w-full h-48 object-cover rounded-lg hover:scale-105 transition-transform duration-200"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Map */}
             {event.latitude && event.longitude && (

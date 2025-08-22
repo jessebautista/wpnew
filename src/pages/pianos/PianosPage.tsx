@@ -7,7 +7,7 @@ import type { Piano as PianoType } from '../../types'
 
 interface Filters {
   location: string
-  category: string
+  source: string
 }
 
 export function PianosPage() {
@@ -22,7 +22,7 @@ export function PianosPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [filters, setFilters] = useState<Filters>({
     location: '',
-    category: ''
+    source: ''
   })
   const pianosPerPage = 12
 
@@ -42,20 +42,22 @@ export function PianosPage() {
   }, [])
 
   const filteredPianos = pianos.filter(piano => {
-    // Search filter
+    // Search filter - updated for new schema
     const matchesSearch = searchQuery === '' || (
-      piano.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      piano.location_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      piano.category.toLowerCase().includes(searchQuery.toLowerCase())
+      piano.piano_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (piano.location_display_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (piano.artist_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (piano.piano_statement || '').toLowerCase().includes(searchQuery.toLowerCase())
     )
 
-    // Location filter  
+    // Location filter - updated for new schema
     const matchesLocation = filters.location === '' || 
-      piano.location_name.toLowerCase().includes(filters.location.toLowerCase())
+      (piano.location_display_name || '').toLowerCase().includes(filters.location.toLowerCase()) ||
+      (piano.public_location_name || '').toLowerCase().includes(filters.location.toLowerCase()) ||
+      (piano.permanent_home_name || '').toLowerCase().includes(filters.location.toLowerCase())
 
-    // Category filter
-    const matchesCategory = filters.category === '' || 
-      piano.category === filters.category
+    // Source filter (source filter now filters by source: SFH vs user-submitted)
+    const matchesCategory = filters.source === '' || piano.piano_source === filters.source
 
     return matchesSearch && matchesLocation && matchesCategory
   })
@@ -79,18 +81,21 @@ export function PianosPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  // Get unique locations and categories for filter options
-  const uniqueLocations = Array.from(new Set(pianos.map(p => p.location_name))).sort()
-  const uniqueCategories = Array.from(new Set(pianos.map(p => p.category))).sort()
+  // Get unique locations and sources for filter options
+  const uniqueLocations = Array.from(new Set(pianos.map(p => p.location_display_name || 'Unknown'))).sort()
+  const uniqueSources = [
+    { value: 'sing_for_hope', label: 'Sing for Hope' },
+    { value: 'user_submitted', label: 'Community Submitted' }
+  ]
 
   // Clear all filters
   const clearFilters = () => {
-    setFilters({ location: '', category: '' })
+    setFilters({ location: '', source: '' })
     setSearchQuery('')
   }
 
   // Check if any filters are active
-  const hasActiveFilters = filters.location !== '' || filters.category !== '' || searchQuery !== ''
+  const hasActiveFilters = filters.location !== '' || filters.source !== '' || searchQuery !== ''
 
   return (
     <div className="min-h-screen bg-base-100">
@@ -139,7 +144,7 @@ export function PianosPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-base-content/50" />
               <input
                 type="text"
-                placeholder="Search pianos by name, location, or category..."
+                placeholder="Search pianos by name, location, or source..."
                 className="input input-bordered w-full pl-10"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -172,7 +177,7 @@ export function PianosPage() {
               Filters
               {hasActiveFilters && (
                 <span className="badge badge-neutral badge-sm ml-2">
-                  {[filters.location, filters.category, searchQuery].filter(f => f !== '').length}
+                  {[filters.location, filters.source, searchQuery].filter(f => f !== '').length}
                 </span>
               )}
             </button>
@@ -325,12 +330,12 @@ export function PianosPage() {
                 </label>
                 <select 
                   className="select select-bordered w-full"
-                  value={filters.category}
-                  onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
+                  value={filters.source}
+                  onChange={(e) => setFilters(prev => ({ ...prev, source: e.target.value }))}
                 >
                   <option value="">All Categories</option>
-                  {uniqueCategories.map(category => (
-                    <option key={category} value={category}>{category}</option>
+                  {uniqueSources.map(source => (
+                    <option key={source.value} value={source.value}>{source.label}</option>
                   ))}
                 </select>
               </div>
@@ -352,10 +357,12 @@ export function PianosPage() {
                         <span className="badge badge-outline">{filters.location}</span>
                       </div>
                     )}
-                    {filters.category && (
+                    {filters.source && (
                       <div className="flex items-center gap-2">
                         <span className="text-base-content/70">Category:</span>
-                        <span className="badge badge-outline">{filters.category}</span>
+                        <span className="badge badge-outline">
+                          {uniqueSources.find(s => s.value === filters.source)?.label || filters.source}
+                        </span>
                       </div>
                     )}
                   </div>

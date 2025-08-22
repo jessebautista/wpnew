@@ -13,21 +13,25 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../components/auth/AuthProvider'
 import { usePermissions } from '../../hooks/usePermissions'
-import { PIANO_CATEGORIES, PIANO_CONDITIONS } from '../../types'
 import { DataService } from '../../services/dataService'
 import { GeocodingService, type LocationSuggestion } from '../../services/geocodingService'
 import { ImageUploadService } from '../../services/imageUploadService'
 
 interface PianoFormData {
-  name: string
-  description: string
+  piano_title: string
+  piano_statement: string
   location_name: string
   latitude: number | null
   longitude: number | null
-  category: string
-  condition: string
-  accessibility: string
-  hours: string
+  piano_year: string
+  artist_name: string
+  piano_artist_bio: string
+  artist_website_url: string
+  permanent_home_name: string
+  public_location_name: string
+  piano_program: string
+  contributors_info: string
+  notes: string
   images: File[]
 }
 
@@ -39,18 +43,22 @@ export function AddPianoPage() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [locationLoading, setLocationLoading] = useState(false)
   const [formData, setFormData] = useState<PianoFormData>({
-    name: '',
-    description: '',
+    piano_title: '',
+    piano_statement: '',
     location_name: '',
     latitude: null,
     longitude: null,
-    category: '',
-    condition: '',
-    accessibility: '',
-    hours: '',
+    piano_year: '',
+    artist_name: '',
+    piano_artist_bio: '',
+    artist_website_url: '',
+    permanent_home_name: '',
+    public_location_name: '',
+    piano_program: '',
+    contributors_info: '',
+    notes: '',
     images: []
   })
-  const [hoursType, setHoursType] = useState<'custom' | 'preset'>('preset')
   const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null)
@@ -239,28 +247,18 @@ export function AddPianoPage() {
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {}
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Piano name is required'
+    // Only require piano title
+    if (!formData.piano_title.trim()) {
+      newErrors.piano_title = 'Piano title is required'
     }
 
-    if (!formData.location_name.trim()) {
-      newErrors.location_name = 'Location is required'
+    // Optional length validations
+    if (formData.piano_statement && formData.piano_statement.length > 1000) {
+      newErrors.piano_statement = 'Statement must be less than 1000 characters'
     }
 
-    if (!formData.latitude || !formData.longitude) {
-      newErrors.coordinates = 'Please use "Use My Location" button or enter a valid address to get coordinates'
-    }
-
-    if (!formData.category) {
-      newErrors.category = 'Category is required'
-    }
-
-    if (!formData.condition) {
-      newErrors.condition = 'Condition is required'
-    }
-
-    if (formData.description.length > 1000) {
-      newErrors.description = 'Description must be less than 1000 characters'
+    if (formData.piano_artist_bio && formData.piano_artist_bio.length > 500) {
+      newErrors.piano_artist_bio = 'Artist bio must be less than 500 characters'
     }
 
     setErrors(newErrors)
@@ -274,11 +272,6 @@ export function AddPianoPage() {
       return
     }
 
-    if (!formData.latitude || !formData.longitude) {
-      setErrors({ location: 'Please provide coordinates for the piano location.' })
-      return
-    }
-
     setLoading(true)
     
     try {
@@ -286,22 +279,25 @@ export function AddPianoPage() {
       
       // Prepare piano data for submission
       const pianoData = {
-        name: formData.name.trim(),
-        description: formData.description.trim() || null,
-        location_name: formData.location_name.trim(),
-        latitude: formData.latitude,
-        longitude: formData.longitude,
-        category: formData.category,
-        condition: formData.condition.toLowerCase() as any,
-        accessibility: formData.accessibility.trim() || null,
-        hours: formData.hours.trim() || null,
-        hours_available: formData.hours.trim() || null,
+        piano_title: formData.piano_title.trim(),
+        piano_statement: formData.piano_statement.trim() || null,
+        piano_year: formData.piano_year.trim() || null,
+        artist_name: formData.artist_name.trim() || null,
+        piano_artist_bio: formData.piano_artist_bio.trim() || null,
+        artist_website_url: formData.artist_website_url.trim() || null,
+        permanent_home_name: formData.permanent_home_name.trim() || null,
+        public_location_name: formData.public_location_name.trim() || null,
+        perm_lat: formData.latitude?.toString() || null,
+        perm_lng: formData.longitude?.toString() || null,
+        piano_program: formData.piano_program.trim() || null,
+        contributors_info: formData.contributors_info.trim() || null,
+        notes: formData.notes.trim() || null,
+        piano_source: 'user_submitted' as const,
+        source: 'WorldPianos' as const, // New source field
         verified: false,
         created_by: user?.id || '',
         verified_by: null,
-        submitted_by: user?.id,
-        moderation_status: 'pending' as any,
-        updated_at: new Date().toISOString()
+        moderation_status: 'pending' as const
       }
       
       // Create piano in database
@@ -370,20 +366,20 @@ export function AddPianoPage() {
                 
                 <div className="form-control w-full">
                   <label className="label">
-                    <span className="label-text font-medium">Piano Name *</span>
+                    <span className="label-text font-medium">Piano Title *</span>
                   </label>
                   <input
                     type="text"
                     placeholder="e.g. Central Park Piano, JFK Terminal 4 Piano"
-                    className={`input input-bordered w-full ${errors.name ? 'input-error' : ''}`}
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    className={`input input-bordered w-full ${errors.piano_title ? 'input-error' : ''}`}
+                    value={formData.piano_title}
+                    onChange={(e) => handleInputChange('piano_title', e.target.value)}
                   />
-                  {errors.name && (
+                  {errors.piano_title && (
                     <label className="label">
                       <span className="label-text-alt text-error flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" />
-                        {errors.name}
+                        {errors.piano_title}
                       </span>
                     </label>
                   )}
@@ -391,21 +387,21 @@ export function AddPianoPage() {
 
                 <div className="form-control w-full">
                   <label className="label">
-                    <span className="label-text font-medium">Description</span>
-                    <span className="label-text-alt">{formData.description.length}/1000</span>
+                    <span className="label-text font-medium">Piano Statement</span>
+                    <span className="label-text-alt">{formData.piano_statement.length}/1000</span>
                   </label>
                   <textarea
-                    className={`textarea textarea-bordered w-full h-24 ${errors.description ? 'textarea-error' : ''}`}
+                    className={`textarea textarea-bordered w-full h-24 ${errors.piano_statement ? 'textarea-error' : ''}`}
                     placeholder="Describe the piano, its condition, and what makes it special..."
-                    value={formData.description}
-                    onChange={(e) => handleInputChange('description', e.target.value)}
+                    value={formData.piano_statement}
+                    onChange={(e) => handleInputChange('piano_statement', e.target.value)}
                     maxLength={1000}
                   />
-                  {errors.description && (
+                  {errors.piano_statement && (
                     <label className="label">
                       <span className="label-text-alt text-error flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" />
-                        {errors.description}
+                        {errors.piano_statement}
                       </span>
                     </label>
                   )}
@@ -414,51 +410,64 @@ export function AddPianoPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="form-control w-full">
                     <label className="label">
-                      <span className="label-text font-medium">Category *</span>
+                      <span className="label-text font-medium">Piano Year</span>
                     </label>
-                    <select
-                      className={`select select-bordered w-full ${errors.category ? 'select-error' : ''}`}
-                      value={formData.category}
-                      onChange={(e) => handleInputChange('category', e.target.value)}
-                    >
-                      <option value="">Select category</option>
-                      {PIANO_CATEGORIES.map(category => (
-                        <option key={category} value={category}>{category}</option>
-                      ))}
-                    </select>
-                    {errors.category && (
-                      <label className="label">
-                        <span className="label-text-alt text-error flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3" />
-                          {errors.category}
-                        </span>
-                      </label>
-                    )}
+                    <input
+                      type="text"
+                      placeholder="e.g. 2023, 2022"
+                      className="input input-bordered w-full"
+                      value={formData.piano_year}
+                      onChange={(e) => handleInputChange('piano_year', e.target.value)}
+                    />
                   </div>
 
                   <div className="form-control w-full">
                     <label className="label">
-                      <span className="label-text font-medium">Condition *</span>
+                      <span className="label-text font-medium">Artist Name</span>
                     </label>
-                    <select
-                      className={`select select-bordered w-full ${errors.condition ? 'select-error' : ''}`}
-                      value={formData.condition}
-                      onChange={(e) => handleInputChange('condition', e.target.value)}
-                    >
-                      <option value="">Select condition</option>
-                      {PIANO_CONDITIONS.map(condition => (
-                        <option key={condition} value={condition}>{condition}</option>
-                      ))}
-                    </select>
-                    {errors.condition && (
-                      <label className="label">
-                        <span className="label-text-alt text-error flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3" />
-                          {errors.condition}
-                        </span>
-                      </label>
-                    )}
+                    <input
+                      type="text"
+                      placeholder="Artist or designer name"
+                      className="input input-bordered w-full"
+                      value={formData.artist_name}
+                      onChange={(e) => handleInputChange('artist_name', e.target.value)}
+                    />
                   </div>
+                </div>
+
+                <div className="form-control w-full">
+                  <label className="label">
+                    <span className="label-text font-medium">Artist Bio</span>
+                    <span className="label-text-alt">{formData.piano_artist_bio.length}/500</span>
+                  </label>
+                  <textarea
+                    className={`textarea textarea-bordered w-full h-20 ${errors.piano_artist_bio ? 'textarea-error' : ''}`}
+                    placeholder="Brief description of the artist or designer..."
+                    value={formData.piano_artist_bio}
+                    onChange={(e) => handleInputChange('piano_artist_bio', e.target.value)}
+                    maxLength={500}
+                  />
+                  {errors.piano_artist_bio && (
+                    <label className="label">
+                      <span className="label-text-alt text-error flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {errors.piano_artist_bio}
+                      </span>
+                    </label>
+                  )}
+                </div>
+
+                <div className="form-control w-full">
+                  <label className="label">
+                    <span className="label-text font-medium">Artist Website</span>
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://artist-website.com"
+                    className="input input-bordered w-full"
+                    value={formData.artist_website_url}
+                    onChange={(e) => handleInputChange('artist_website_url', e.target.value)}
+                  />
                 </div>
               </div>
             </div>
@@ -473,7 +482,7 @@ export function AddPianoPage() {
                 
                 <div className="form-control w-full">
                   <label className="label">
-                    <span className="label-text font-medium">Address/Location *</span>
+                    <span className="label-text font-medium">Address/Location</span>
                   </label>
                   <div className="flex flex-col sm:flex-row gap-2">
                     <div className="relative flex-1">
@@ -569,80 +578,74 @@ export function AddPianoPage() {
             {/* Additional Details */}
             <div className="card bg-base-100 shadow-xl">
               <div className="card-body">
-                <h2 className="card-title mb-4">Additional Details</h2>
+                <h2 className="card-title mb-4">Location Details</h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="form-control w-full">
                     <label className="label">
-                      <span className="label-text font-medium">Accessibility</span>
+                      <span className="label-text font-medium">Permanent Home</span>
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. Wheelchair accessible, Ground level"
+                      placeholder="e.g. Central Park, Museum, Gallery"
                       className="input input-bordered w-full"
-                      value={formData.accessibility}
-                      onChange={(e) => handleInputChange('accessibility', e.target.value)}
+                      value={formData.permanent_home_name}
+                      onChange={(e) => handleInputChange('permanent_home_name', e.target.value)}
                     />
                   </div>
 
                   <div className="form-control w-full">
                     <label className="label">
-                      <span className="label-text font-medium">Operating Hours</span>
+                      <span className="label-text font-medium">Public Location</span>
                     </label>
-                    
-                    <div className="flex flex-col gap-3">
-                      <div className="flex gap-2">
-                        <label className="cursor-pointer label flex-1">
-                          <span className="label-text">Preset Hours</span>
-                          <input
-                            type="radio"
-                            name="hoursType"
-                            value="preset"
-                            checked={hoursType === 'preset'}
-                            onChange={(e) => setHoursType(e.target.value as 'preset')}
-                            className="radio radio-primary"
-                          />
-                        </label>
-                        <label className="cursor-pointer label flex-1">
-                          <span className="label-text">Custom Hours</span>
-                          <input
-                            type="radio"
-                            name="hoursType"
-                            value="custom"
-                            checked={hoursType === 'custom'}
-                            onChange={(e) => setHoursType(e.target.value as 'custom')}
-                            className="radio radio-primary"
-                          />
-                        </label>
-                      </div>
-
-                      {hoursType === 'preset' ? (
-                        <select
-                          className="select select-bordered w-full"
-                          value={formData.hours}
-                          onChange={(e) => handleInputChange('hours', e.target.value)}
-                        >
-                          <option value="">Select operating hours</option>
-                          <option value="24/7">24/7 (Always Available)</option>
-                          <option value="6:00 AM - 10:00 PM">6:00 AM - 10:00 PM</option>
-                          <option value="7:00 AM - 11:00 PM">7:00 AM - 11:00 PM</option>
-                          <option value="8:00 AM - 8:00 PM">8:00 AM - 8:00 PM</option>
-                          <option value="9:00 AM - 5:00 PM">9:00 AM - 5:00 PM (Business Hours)</option>
-                          <option value="10:00 AM - 6:00 PM">10:00 AM - 6:00 PM</option>
-                          <option value="Varies">Varies by Day</option>
-                          <option value="Unknown">Unknown</option>
-                        </select>
-                      ) : (
-                        <input
-                          type="text"
-                          placeholder="e.g. Mon-Fri 9AM-5PM, Sat 10AM-4PM, Sun Closed"
-                          className="input input-bordered w-full"
-                          value={formData.hours}
-                          onChange={(e) => handleInputChange('hours', e.target.value)}
-                        />
-                      )}
-                    </div>
+                    <input
+                      type="text"
+                      placeholder="Public area or space description"
+                      className="input input-bordered w-full"
+                      value={formData.public_location_name}
+                      onChange={(e) => handleInputChange('public_location_name', e.target.value)}
+                    />
                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="form-control w-full">
+                    <label className="label">
+                      <span className="label-text font-medium">Piano Program</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Sing for Hope, Play Me I'm Yours"
+                      className="input input-bordered w-full"
+                      value={formData.piano_program}
+                      onChange={(e) => handleInputChange('piano_program', e.target.value)}
+                    />
+                  </div>
+
+                  <div className="form-control w-full">
+                    <label className="label">
+                      <span className="label-text font-medium">Contributors</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Contributors or sponsors"
+                      className="input input-bordered w-full"
+                      value={formData.contributors_info}
+                      onChange={(e) => handleInputChange('contributors_info', e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-control w-full">
+                  <label className="label">
+                    <span className="label-text font-medium">Additional Notes</span>
+                  </label>
+                  <textarea
+                    className="textarea textarea-bordered w-full h-20"
+                    placeholder="Any additional information about the piano..."
+                    value={formData.notes}
+                    onChange={(e) => handleInputChange('notes', e.target.value)}
+                  />
                 </div>
               </div>
             </div>

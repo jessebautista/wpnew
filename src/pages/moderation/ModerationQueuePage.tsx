@@ -68,7 +68,7 @@ export function ModerationQueuePage() {
           title: piano.name,
           content: piano,
           author: {
-            id: piano.submitted_by || piano.created_by || 'unknown',
+            id: piano.created_by || 'unknown',
             name: 'Piano Enthusiast', // We'll need to join with users table to get real names
             email: 'user@example.com' // Placeholder - would need user data
           },

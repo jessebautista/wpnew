@@ -613,7 +613,7 @@ function ContentTab() {
 
       if (searchQuery) {
         if (contentType === 'pianos') {
-          query = query.ilike('name', `%${searchQuery}%`)
+          query = query.ilike('piano_title', `%${searchQuery}%`)
         } else {
           query = query.ilike('title', `%${searchQuery}%`)
         }
@@ -697,7 +697,7 @@ function ContentTab() {
           <div key={item.id} className="card bg-base-100 shadow-xl">
             <div className="card-body">
               <h3 className="card-title text-lg">
-                {item.name || item.title}
+                {item.piano_title || item.name || item.title}
                 <div className={`badge badge-sm ${
                   item.moderation_status === 'approved' ? 'badge-success' :
                   item.moderation_status === 'pending' ? 'badge-warning' :
@@ -711,9 +711,10 @@ function ContentTab() {
               <div className="text-sm text-base-content/70 space-y-1">
                 {contentType === 'pianos' && (
                   <>
-                    <div><strong>Category:</strong> {item.category}</div>
-                    <div><strong>Condition:</strong> {item.condition}</div>
-                    <div><strong>Location:</strong> {item.location_name}</div>
+                    <div><strong>Artist:</strong> {item.artist_name || 'Unknown'}</div>
+                    <div><strong>Program:</strong> {item.piano_program || 'N/A'}</div>
+                    <div><strong>Location:</strong> {item.location_display_name || item.permanent_home_name || 'Unknown'}</div>
+                    <div><strong>Source:</strong> {item.source || item.piano_source || 'N/A'}</div>
                   </>
                 )}
                 {contentType === 'events' && (

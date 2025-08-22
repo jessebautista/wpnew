@@ -66,8 +66,8 @@ export function DashboardPage() {
         // Get real stats from database
         const [pianoVisits, userImages, userPianos, userEvents] = await Promise.all([
           supabase.from('piano_visits').select('*').eq('user_id', user.id),
-          supabase.from('piano_images').select('*').eq('uploaded_by', user.id),
-          supabase.from('pianos').select('*').eq('submitted_by', user.id),
+          supabase.from('piano_images').select('*').eq('user_id', user.id),
+          supabase.from('pianos').select('*').eq('created_by', user.id),
           supabase.from('events').select('*').eq('created_by', user.id)
         ])
         
@@ -137,7 +137,7 @@ export function DashboardPage() {
             activity.push({
               type: 'piano_added',
               title: 'Piano Added',
-              description: `Added "${piano.name}" to the map`,
+              description: `Added "${piano.piano_title}" to the map`,
               timestamp: piano.created_at,
               status: piano.moderation_status || 'pending',
               id: `piano-${piano.id}`

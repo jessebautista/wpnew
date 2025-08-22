@@ -64,13 +64,13 @@ export function PianoPassportPage() {
       const { data: userImages } = await supabase
         .from('piano_images')
         .select('*')
-        .eq('uploaded_by', user.id)
+        .eq('user_id', user.id)
       
       // Get user's created pianos
       const { data: userPianos } = await supabase
         .from('pianos')
         .select('*')
-        .eq('submitted_by', user.id)
+        .eq('created_by', user.id)
       
       
       // Calculate stats from real data

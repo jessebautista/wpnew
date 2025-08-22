@@ -10,11 +10,13 @@ import {
   Clock,
   Users,
   Check,
-  X
+  X,
+  Piano,
+  ImagePlus
 } from 'lucide-react'
 import { useAuth } from '../../components/auth/AuthProvider'
 import { usePermissions } from '../../hooks/usePermissions'
-import { EVENT_CATEGORIES } from '../../types'
+import { EVENT_CATEGORIES, PIANO_TYPES, PIANO_CONDITIONS, PIANO_SPECIAL_FEATURES } from '../../types'
 import { DataService } from '../../services/dataService'
 
 interface EventFormData {
@@ -32,6 +34,13 @@ interface EventFormData {
   website_url: string
   ticket_price: string
   capacity: string
+  // New piano-specific fields
+  piano_count: string
+  piano_type: string
+  piano_condition: string
+  piano_special_features: string[]
+  piano_accessibility: string
+  piano_images: string[]
 }
 
 export function AddEventPage() {
@@ -55,7 +64,14 @@ export function AddEventPage() {
     contact_phone: '',
     website_url: '',
     ticket_price: '',
-    capacity: ''
+    capacity: '',
+    // New piano-specific fields
+    piano_count: '',
+    piano_type: '',
+    piano_condition: '',
+    piano_special_features: [],
+    piano_accessibility: '',
+    piano_images: []
   })
 
   if (!user || !canCreate()) {
@@ -70,12 +86,37 @@ export function AddEventPage() {
     )
   }
 
-  const handleInputChange = (field: keyof EventFormData, value: string | number | null) => {
+  const handleInputChange = (field: keyof EventFormData, value: string | number | null | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }))
     }
+  }
+
+  const handleFeatureToggle = (feature: string) => {
+    setFormData(prev => ({
+      ...prev,
+      piano_special_features: prev.piano_special_features.includes(feature)
+        ? prev.piano_special_features.filter(f => f !== feature)
+        : [...prev.piano_special_features, feature]
+    }))
+  }
+
+  const handleImageAdd = (imageUrl: string) => {
+    if (imageUrl && !formData.piano_images.includes(imageUrl)) {
+      setFormData(prev => ({
+        ...prev,
+        piano_images: [...prev.piano_images, imageUrl]
+      }))
+    }
+  }
+
+  const handleImageRemove = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      piano_images: prev.piano_images.filter((_, i) => i !== index)
+    }))
   }
 
   const getCurrentLocation = () => {
@@ -174,6 +215,10 @@ export function AddEventPage() {
       newErrors.capacity = 'Capacity must be a positive number'
     }
 
+    if (formData.piano_count && (isNaN(Number(formData.piano_count)) || Number(formData.piano_count) < 1)) {
+      newErrors.piano_count = 'Piano count must be a positive number'
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -216,7 +261,14 @@ export function AddEventPage() {
         attendee_count: 0,
         created_by: user.id,
         verified_by: null,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        // New piano-specific fields
+        piano_count: formData.piano_count ? parseInt(formData.piano_count) : null,
+        piano_type: formData.piano_type || null,
+        piano_condition: formData.piano_condition || null,
+        piano_special_features: formData.piano_special_features.length > 0 ? formData.piano_special_features : null,
+        piano_accessibility: formData.piano_accessibility.trim() || null,
+        piano_images: formData.piano_images.length > 0 ? formData.piano_images : null
       }
       
       console.log('Submitting event:', eventData)
@@ -516,6 +568,146 @@ export function AddEventPage() {
                       value={formData.contact_phone}
                       onChange={(e) => handleInputChange('contact_phone', e.target.value)}
                     />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Piano Information */}
+            <div className="card bg-base-100 shadow-xl">
+              <div className="card-body">
+                <h2 className="card-title mb-4">
+                  <Piano className="w-5 h-5" />
+                  Piano Information
+                </h2>
+                <p className="text-sm text-base-content/70 mb-4">
+                  Provide details about the pianos available at this event. This information helps attendees know what to expect.
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="form-control w-full">
+                    <label className="label">
+                      <span className="label-text font-medium">Number of Pianos</span>
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="1"
+                      className={`input input-bordered w-full ${errors.piano_count ? 'input-error' : ''}`}
+                      value={formData.piano_count}
+                      onChange={(e) => handleInputChange('piano_count', e.target.value)}
+                    />
+                    {errors.piano_count && (
+                      <label className="label">
+                        <span className="label-text-alt text-error flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          {errors.piano_count}
+                        </span>
+                      </label>
+                    )}
+                  </div>
+
+                  <div className="form-control w-full">
+                    <label className="label">
+                      <span className="label-text font-medium">Piano Type</span>
+                    </label>
+                    <select
+                      className="select select-bordered w-full"
+                      value={formData.piano_type}
+                      onChange={(e) => handleInputChange('piano_type', e.target.value)}
+                    >
+                      <option value="">Select type</option>
+                      {PIANO_TYPES.map(type => (
+                        <option key={type} value={type}>{type}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-control w-full">
+                  <label className="label">
+                    <span className="label-text font-medium">Piano Condition</span>
+                  </label>
+                  <select
+                    className="select select-bordered w-full"
+                    value={formData.piano_condition}
+                    onChange={(e) => handleInputChange('piano_condition', e.target.value)}
+                  >
+                    <option value="">Select condition</option>
+                    {PIANO_CONDITIONS.map(condition => (
+                      <option key={condition} value={condition}>{condition}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-control w-full">
+                  <label className="label">
+                    <span className="label-text font-medium">Special Features</span>
+                  </label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                    {PIANO_SPECIAL_FEATURES.map(feature => (
+                      <label key={feature} className="label cursor-pointer justify-start gap-2">
+                        <input
+                          type="checkbox"
+                          className="checkbox checkbox-sm"
+                          checked={formData.piano_special_features.includes(feature)}
+                          onChange={() => handleFeatureToggle(feature)}
+                        />
+                        <span className="label-text text-sm">{feature}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="form-control w-full">
+                  <label className="label">
+                    <span className="label-text font-medium">Accessibility Information</span>
+                  </label>
+                  <textarea
+                    className="textarea textarea-bordered w-full"
+                    placeholder="Describe accessibility features, ramp access, seating availability, etc."
+                    value={formData.piano_accessibility}
+                    onChange={(e) => handleInputChange('piano_accessibility', e.target.value)}
+                    rows={3}
+                  />
+                </div>
+
+                <div className="form-control w-full">
+                  <label className="label">
+                    <span className="label-text font-medium">Piano Images</span>
+                    <span className="label-text-alt">Add image URLs</span>
+                  </label>
+                  <div className="space-y-2">
+                    {formData.piano_images.map((image, index) => (
+                      <div key={index} className="flex gap-2 items-center">
+                        <input
+                          type="url"
+                          className="input input-bordered flex-1"
+                          value={image}
+                          onChange={(e) => {
+                            const newImages = [...formData.piano_images]
+                            newImages[index] = e.target.value
+                            handleInputChange('piano_images', newImages)
+                          }}
+                          placeholder="https://example.com/image.jpg"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleImageRemove(index)}
+                          className="btn btn-ghost btn-sm"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => handleImageAdd('')}
+                      className="btn btn-ghost btn-sm"
+                    >
+                      <ImagePlus className="w-4 h-4 mr-2" />
+                      Add Image URL
+                    </button>
                   </div>
                 </div>
               </div>

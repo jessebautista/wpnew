@@ -12,8 +12,8 @@ export function MapPage() {
   const [, setSelectedPiano] = useState<Piano | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filters, setFilters] = useState({
-    category: '',
-    condition: '',
+    source: '',
+    year: '',
     verified: false
   })
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null)
@@ -43,20 +43,21 @@ export function MapPage() {
     // Search filter
     if (searchQuery) {
       filtered = filtered.filter(piano =>
-        piano.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        piano.location_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        piano.category.toLowerCase().includes(searchQuery.toLowerCase())
+        piano.piano_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (piano.location_display_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (piano.artist_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (piano.piano_statement || '').toLowerCase().includes(searchQuery.toLowerCase())
       )
     }
 
-    // Category filter
-    if (filters.category) {
-      filtered = filtered.filter(piano => piano.category === filters.category)
+    // Source filter
+    if (filters.source) {
+      filtered = filtered.filter(piano => piano.piano_source === filters.source)
     }
 
-    // Condition filter
-    if (filters.condition) {
-      filtered = filtered.filter(piano => piano.condition === filters.condition)
+    // Year filter
+    if (filters.year) {
+      filtered = filtered.filter(piano => piano.piano_year === filters.year)
     }
 
     // Verified filter
@@ -93,15 +94,16 @@ export function MapPage() {
     })
   }
 
-  const categories = Array.from(new Set(pianos.map(p => p.category))).sort()
-  const conditions = Array.from(new Set(pianos.map(p => p.condition))).sort()
+  const sources = Array.from(new Set(pianos.map(p => p.piano_source))).sort()
+  const years = Array.from(new Set(pianos.map(p => p.piano_year).filter(year => year))).sort()
 
   // Calculate real statistics from filtered pianos
   const totalPianos = filteredPianos.length
   const verifiedPianos = filteredPianos.filter(p => p.verified).length
-  const countries = new Set(filteredPianos.map(p => {
-    const parts = p.location_name.split(', ')
-    return parts[parts.length - 1] // Get the last part which should be the country
+  const locations = new Set(filteredPianos.map(p => {
+    const locationName = p.location_display_name || p.public_location_name || p.permanent_home_name || 'Unknown'
+    const parts = locationName.split(', ')
+    return parts[parts.length - 1] // Get the last part which should be the location
   })).size
 
   if (loading) {
@@ -160,23 +162,22 @@ export function MapPage() {
             <div className="flex flex-wrap gap-2">
               <select 
                 className="select select-bordered select-sm"
-                value={filters.category}
-                onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
+                value={filters.source}
+                onChange={(e) => setFilters(prev => ({ ...prev, source: e.target.value }))}
               >
-                <option value="">All Categories</option>
-                {categories.map(category => (
-                  <option key={category} value={category}>{category}</option>
-                ))}
+                <option value="">All Sources</option>
+                <option value="sing_for_hope">Sing for Hope</option>
+                <option value="user_submitted">Community Submitted</option>
               </select>
 
               <select 
                 className="select select-bordered select-sm"
-                value={filters.condition}
-                onChange={(e) => setFilters(prev => ({ ...prev, condition: e.target.value }))}
+                value={filters.year}
+                onChange={(e) => setFilters(prev => ({ ...prev, year: e.target.value }))}
               >
-                <option value="">All Conditions</option>
-                {conditions.map(condition => (
-                  <option key={condition} value={condition}>{condition}</option>
+                <option value="">All Years</option>
+                {years.map(year => (
+                  <option key={year} value={year}>{year}</option>
                 ))}
               </select>
 
@@ -250,10 +251,10 @@ export function MapPage() {
                     </div>
                   </div>
                   <div className="stat">
-                    <div className="stat-title">Countries</div>
-                    <div className="stat-value text-accent">{countries}</div>
+                    <div className="stat-title">Locations</div>
+                    <div className="stat-value text-accent">{locations}</div>
                     <div className="stat-desc">
-                      {totalPianos > 0 && `${Math.round(totalPianos / countries)} avg per country`}
+                      {totalPianos > 0 && `${Math.round(totalPianos / locations)} avg per location`}
                     </div>
                   </div>
                 </div>

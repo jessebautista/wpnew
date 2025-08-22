@@ -31,110 +31,112 @@ export const mockUsers: User[] = [
 // Mock pianos
 export const mockPianos: Piano[] = [
   {
-    id: '1',
-    name: 'Central Park Piano',
-    description: 'Beautiful piano in the heart of Central Park, perfect for afternoon sessions.',
-    location_name: 'Central Park, New York, NY',
+    id: 1,
+    piano_title: 'Central Park Piano',
+    piano_image: null,
+    piano_statement: 'Beautiful piano in the heart of Central Park, perfect for afternoon sessions.',
+    piano_url: null,
+    piano_year: '2023',
+    piano_artist: null,
+    artist_name: 'Street Art Collective',
+    piano_artist_bio: 'Local artists collective dedicated to bringing music to public spaces.',
+    artist_photo: null,
+    artist_website_url: null,
+    artist_facebook_url: null,
+    artist_instagram_url: null,
+    permanent_home_name: 'Central Park',
+    public_location_name: 'Near Bethesda Fountain',
+    perm_lat: '40.7829',
+    perm_lng: '-73.9654',
+    piano_program: 'Sing for Hope',
+    contributors_info: 'NYC Parks Department',
+    piano_site: null,
+    notes: null,
+    piano_search: null,
+    search_vector: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    created_by: '1',
+    verified_by: '1',
+    moderation_status: 'approved',
+    verified: true,
+    piano_source: 'sing_for_hope',
+    source: 'Sing for Hope',
     latitude: 40.7829,
     longitude: -73.9654,
-    category: 'Park',
-    condition: 'Good',
-    accessibility: 'Wheelchair accessible',
-    hours: '6:00 AM - 10:00 PM',
-    verified: true,
-    created_by: '2',
-    verified_by: '1',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    author: mockUsers[1],
-    images: [
-      {
-        id: '1-1',
-        piano_id: '1',
-        image_url: 'https://images.unsplash.com/photo-1507838153414-b4b713384a76?w=500&h=300&fit=crop',
-        alt_text: 'Central Park Piano in beautiful setting',
-        created_at: new Date().toISOString()
-      },
-      {
-        id: '1-2', 
-        piano_id: '1',
-        image_url: 'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=500&h=300&fit=crop',
-        alt_text: 'Close-up of piano keys',
-        created_at: new Date().toISOString()
-      }
-    ]
+    location_display_name: 'Central Park, New York, NY'
   },
   {
-    id: '2',
-    name: 'JFK Airport Terminal 4',
-    description: 'Piano available for travelers at JFK Airport Terminal 4.',
-    location_name: 'JFK Airport Terminal 4, Queens, NY',
-    latitude: 40.6413,
-    longitude: -73.7781,
-    category: 'Airport',
-    condition: 'Excellent',
-    accessibility: 'Wheelchair accessible',
-    hours: '24/7',
-    verified: true,
-    created_by: '2',
-    verified_by: '1',
+    id: 2,
+    piano_title: 'Times Square Piano',
+    piano_image: null,
+    piano_statement: 'A vibrant piano in the bustling heart of NYC.',
+    piano_url: null,
+    piano_year: '2023',
+    piano_artist: null,
+    artist_name: 'Urban Musicians',
+    piano_artist_bio: null,
+    artist_photo: null,
+    artist_website_url: null,
+    artist_facebook_url: null,
+    artist_instagram_url: null,
+    permanent_home_name: 'Times Square',
+    public_location_name: 'Red Steps',
+    perm_lat: '40.7580',
+    perm_lng: '-73.9855',
+    piano_program: 'Sing for Hope',
+    contributors_info: null,
+    piano_site: null,
+    notes: null,
+    piano_search: null,
+    search_vector: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-    author: mockUsers[1]
-  },
-  {
-    id: '3',
-    name: 'Times Square Piano',
-    description: 'Street piano in the bustling Times Square area.',
-    location_name: 'Times Square, New York, NY',
+    created_by: '1',
+    verified_by: '1',
+    moderation_status: 'approved',
+    verified: true,
+    piano_source: 'sing_for_hope',
+    source: 'Sing for Hope',
     latitude: 40.7580,
     longitude: -73.9855,
-    category: 'Street',
-    condition: 'Fair',
-    accessibility: 'Street level',
-    hours: 'Daylight hours',
-    verified: false,
+    location_display_name: 'Times Square, New York, NY'
+  },
+  {
+    id: 3,
+    piano_title: 'Brooklyn Bridge Piano',
+    piano_image: null,
+    piano_statement: 'Community submitted piano with amazing bridge views.',
+    piano_url: null,
+    piano_year: null,
+    piano_artist: null,
+    artist_name: null,
+    piano_artist_bio: null,
+    artist_photo: null,
+    artist_website_url: null,
+    artist_facebook_url: null,
+    artist_instagram_url: null,
+    permanent_home_name: 'Brooklyn Bridge Park',
+    public_location_name: 'Main Street Park',
+    perm_lat: '40.7061',
+    perm_lng: '-73.9969',
+    piano_program: null,
+    contributors_info: null,
+    piano_site: null,
+    notes: 'Great for sunset sessions',
+    piano_search: null,
+    search_vector: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
     created_by: '2',
     verified_by: null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    author: mockUsers[1]
-  },
-  {
-    id: '4',
-    name: 'Hyde Park Corner Piano',
-    description: 'Charming piano near Hyde Park Corner in London.',
-    location_name: 'Hyde Park Corner, London, UK',
-    latitude: 51.5074,
-    longitude: -0.1278,
-    category: 'Park',
-    condition: 'Good',
-    accessibility: 'Wheelchair accessible',
-    hours: '8:00 AM - 8:00 PM',
-    verified: true,
-    created_by: '2',
-    verified_by: '1',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    author: mockUsers[1]
-  },
-  {
-    id: '5',
-    name: 'St. Pancras Station Piano',
-    description: 'Historic piano at the beautiful St. Pancras International station.',
-    location_name: 'St. Pancras International, London, UK',
-    latitude: 51.5308,
-    longitude: -0.1261,
-    category: 'Train Station',
-    condition: 'Excellent',
-    accessibility: 'Wheelchair accessible',
-    hours: '5:00 AM - 1:00 AM',
-    verified: true,
-    created_by: '2',
-    verified_by: '1',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    author: mockUsers[1]
+    moderation_status: 'pending',
+    verified: false,
+    piano_source: 'user_submitted',
+    source: 'WorldPianos',
+    latitude: 40.7061,
+    longitude: -73.9969,
+    location_display_name: 'Brooklyn Bridge Park, New York, NY'
   }
 ]
 
@@ -142,43 +144,22 @@ export const mockPianos: Piano[] = [
 export const mockEvents: Event[] = [
   {
     id: '1',
-    title: 'Central Park Piano Meetup',
-    description: 'Join us for a friendly piano meetup in Central Park. All skill levels welcome!',
-    date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // Next week
+    title: 'Community Piano Jam',
+    description: 'Join us for an evening of collaborative piano music in Central Park.',
+    date: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
     location_name: 'Central Park, New York, NY',
     latitude: 40.7829,
     longitude: -73.9654,
     category: 'Meetup',
-    organizer: 'NYC Piano Group',
-    verified: true,
-    created_by: '2',
+    organizer: 'Piano Community NYC',
     moderation_status: 'approved',
     status: 'upcoming',
-    attendee_count: 5,
+    verified: true,
+    attendee_count: 15,
+    created_by: '1',
     verified_by: '1',
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    author: mockUsers[1]
-  },
-  {
-    id: '2',
-    title: 'Airport Piano Concert',
-    description: 'Special concert performance at JFK Airport Terminal 4.',
-    date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // Two weeks from now
-    location_name: 'JFK Airport Terminal 4, Queens, NY',
-    latitude: 40.6413,
-    longitude: -73.7781,
-    category: 'Concert',
-    organizer: 'JFK Cultural Events',
-    verified: false,
-    created_by: '2',
-    moderation_status: 'pending',
-    status: 'upcoming',
-    attendee_count: 2,
-    verified_by: null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    author: mockUsers[1]
+    updated_at: new Date().toISOString()
   }
 ]
 
@@ -186,98 +167,40 @@ export const mockEvents: Event[] = [
 export const mockBlogPosts: BlogPost[] = [
   {
     id: '1',
-    title: 'The Magic of Public Pianos: Connecting Communities Through Music',
-    content: 'Public pianos have become a beautiful phenomenon in cities worldwide, creating unexpected moments of joy and connection...',
-    excerpt: 'Discover how public pianos are transforming urban spaces and bringing people together through the universal language of music.',
+    title: 'The Magic of Public Pianos',
+    content: 'Public pianos have transformed urban spaces around the world...',
+    excerpt: 'Exploring how public pianos bring communities together.',
     featured_image: null,
-    category: 'Community Stories',
-    tags: ['community', 'public art', 'music'],
+    category: 'Community',
+    tags: ['public-pianos', 'community', 'music'],
     published: true,
     allow_comments: true,
     author_id: '1',
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    author: mockUsers[0]
-  },
-  {
-    id: '2',
-    title: 'Piano Care: How to Maintain Public Pianos',
-    content: 'Maintaining public pianos requires special attention to weather conditions, security, and regular tuning...',
-    excerpt: 'Learn about the challenges and best practices for keeping public pianos in great condition for everyone to enjoy.',
-    featured_image: null,
-    category: 'Maintenance',
-    tags: ['maintenance', 'piano care', 'community'],
-    published: true,
-    allow_comments: true,
-    author_id: '1',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    author: mockUsers[0]
+    updated_at: new Date().toISOString()
   }
 ]
 
-// Mock data service to simulate API calls when external services are unavailable
-export class MockDataService {
-  static isUsingMockData(): boolean {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-    return !supabaseUrl || supabaseUrl === 'https://your-project.supabase.co'
-  }
-
-  static async getPianos(): Promise<Piano[]> {
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 500))
-    return mockPianos
-  }
-
-  static async getEvents(): Promise<Event[]> {
-    await new Promise(resolve => setTimeout(resolve, 500))
-    return mockEvents
-  }
-
-  static async getBlogPosts(): Promise<BlogPost[]> {
-    await new Promise(resolve => setTimeout(resolve, 500))
-    return mockBlogPosts
-  }
-
-  static async getUsers(): Promise<User[]> {
-    await new Promise(resolve => setTimeout(resolve, 500))
-    return mockUsers
-  }
-
-  static async getCurrentUser(): Promise<User | null> {
-    await new Promise(resolve => setTimeout(resolve, 300))
-    // Return admin user for demo purposes
+// Mock Data Service
+export const MockDataService = {
+  async getCurrentUser(): Promise<User> {
+    // Return the admin user for demo purposes
     return mockUsers[0]
-  }
-}
-
-// Mock geocoding service for when Google API is not available
-export class MockGeocodingService {
-  static isUsingMockData(): boolean {
-    const apiKey = import.meta.env.VITE_GEOCODING_API_KEY
-    return !apiKey
-  }
-
-  static async geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
-    await new Promise(resolve => setTimeout(resolve, 300))
-    
-    // Return mock coordinates based on common location names
-    const mockLocations: Record<string, { lat: number; lng: number }> = {
-      'new york': { lat: 40.7128, lng: -74.0060 },
-      'london': { lat: 51.5074, lng: -0.1278 },
-      'paris': { lat: 48.8566, lng: 2.3522 },
-      'tokyo': { lat: 35.6762, lng: 139.6503 },
-      'sydney': { lat: -33.8688, lng: 151.2093 }
-    }
-
-    const key = address.toLowerCase()
-    for (const location in mockLocations) {
-      if (key.includes(location)) {
-        return mockLocations[location]
-      }
-    }
-
-    // Default to New York if no match found
-    return mockLocations['new york']
+  },
+  
+  async getUser(id: string): Promise<User | null> {
+    return mockUsers.find(user => user.id === id) || null
+  },
+  
+  async getPianos(): Promise<Piano[]> {
+    return mockPianos
+  },
+  
+  async getEvents(): Promise<Event[]> {
+    return mockEvents
+  },
+  
+  async getBlogPosts(): Promise<BlogPost[]> {
+    return mockBlogPosts
   }
 }

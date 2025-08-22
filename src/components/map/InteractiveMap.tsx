@@ -1,0 +1,493 @@
+import { useEffect } from 'react'
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import MarkerClusterGroup from 'react-leaflet-cluster'
+import { Icon, divIcon, point } from 'leaflet'
+import { Calendar, MapPin, Star, Clock, Piano as PianoIcon, Users, CheckCircle } from 'lucide-react'
+import type { Piano, Event } from '../../types'
+import 'leaflet/dist/leaflet.css'
+
+// Fix for default markers in react-leaflet
+delete (Icon.Default.prototype as any)._getIconUrl
+Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+})
+
+// Type for map item (either Piano or Event)
+type MapItem = Piano | Event
+
+// Type guard to check if item is a Piano
+const isPiano = (item: MapItem): item is Piano => {
+  return 'piano_title' in item
+}
+
+// Type guard to check if item is an Event
+const isEvent = (item: MapItem): item is Event => {
+  return 'title' in item && 'date' in item && 'organizer' in item
+}
+
+// Custom piano marker icon
+const createPianoIcon = (category: string, verified: boolean) => {
+  const categoryColors: Record<string, string> = {
+    'Airport': '#3b82f6',
+    'Street': '#ef4444', 
+    'Park': '#10b981',
+    'Train Station': '#8b5cf6',
+    'Shopping Center': '#f59e0b',
+    'University': '#06b6d4',
+    'Hospital': '#ec4899',
+    'Hotel': '#84cc16',
+    'Restaurant': '#f97316',
+    'Other': '#6b7280'
+  }
+  
+  const categoryColor = categoryColors[category] || categoryColors['Other']
+  
+  return new Icon({
+    iconUrl: `data:image/svg+xml;base64,${btoa(`
+      <svg width="25" height="35" viewBox="0 0 25 35" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12.5 0C5.596 0 0 5.596 0 12.5C0 19.404 12.5 35 12.5 35C12.5 35 25 19.404 25 12.5C25 5.596 19.404 0 12.5 0Z" fill="${categoryColor}"/>
+        <circle cx="12.5" cy="12.5" r="8" fill="white"/>
+        <path d="M8 9h8v6h-8z" fill="${categoryColor}"/>
+        <rect x="9" y="10" width="2" height="4" fill="white"/>
+        <rect x="11" y="10" width="2" height="4" fill="white"/>
+        <rect x="13" y="10" width="2" height="4" fill="white"/>
+        ${verified ? `<circle cx="20" cy="5" r="4" fill="#10b981"/><path d="M18 5l1 1 2-2" stroke="white" stroke-width="1" fill="none"/>` : ''}
+      </svg>
+    `)}`,
+    iconSize: [25, 35],
+    iconAnchor: [12, 35],
+    popupAnchor: [0, -35],
+  })
+}
+
+// Custom event marker icon
+const createEventIcon = (category: string, verified: boolean, isPastEvent: boolean = false) => {
+  const categoryColors: Record<string, string> = {
+    'Concert': '#8b5cf6',
+    'Meetup': '#f59e0b',
+    'Workshop': '#06b6d4',
+    'Installation': '#10b981',
+    'Festival': '#ec4899',
+    'Community Event': '#84cc16',
+    'Other': '#6b7280'
+  }
+  
+  const categoryColor = categoryColors[category] || categoryColors['Other']
+  const opacity = isPastEvent ? '0.6' : '1'
+  
+  return new Icon({
+    iconUrl: `data:image/svg+xml;base64,${btoa(`
+      <svg width="25" height="35" viewBox="0 0 25 35" fill="none" xmlns="http://www.w3.org/2000/svg" opacity="${opacity}">
+        <path d="M12.5 0C5.596 0 0 5.596 0 12.5C0 19.404 12.5 35 12.5 35C12.5 35 25 19.404 25 12.5C25 5.596 19.404 0 12.5 0Z" fill="${categoryColor}"/>
+        <circle cx="12.5" cy="12.5" r="8" fill="white"/>
+        <rect x="8" y="8" width="8" height="8" fill="${categoryColor}" rx="1"/>
+        <rect x="8" y="6" width="2" height="4" fill="${categoryColor}"/>
+        <rect x="14" y="6" width="2" height="4" fill="${categoryColor}"/>
+        <rect x="10" y="10" width="4" height="1" fill="white"/>
+        <rect x="10" y="12" width="4" height="1" fill="white"/>
+        <rect x="10" y="14" width="2" height="1" fill="white"/>
+        ${verified ? `<circle cx="20" cy="5" r="4" fill="#10b981"/><path d="M18 5l1 1 2-2" stroke="white" stroke-width="1" fill="none"/>` : ''}
+      </svg>
+    `)}`,
+    iconSize: [25, 35],
+    iconAnchor: [12, 35],
+    popupAnchor: [0, -35],
+  })
+}
+
+// Simple cluster icon for better popup compatibility
+const createClusterCustomIcon = (cluster: any) => {
+  const count = cluster.getChildCount()
+  return divIcon({
+    html: `<div class="bg-primary text-primary-content rounded-full flex items-center justify-center font-bold shadow-lg w-10 h-10 text-sm">${count}</div>`,
+    className: 'custom-div-icon',
+    iconSize: point(40, 40, true),
+  })
+}
+
+interface InteractiveMapProps {
+  items: MapItem[]
+  onItemSelect?: (item: MapItem) => void
+  height?: string
+  center?: [number, number]
+  zoom?: number
+  itemType: 'pianos' | 'events'
+}
+
+// Component to fit map bounds to items
+function FitBounds({ items }: { items: MapItem[] }) {
+  const map = useMap()
+  
+  useEffect(() => {
+    if (items.length === 0) return
+    
+    const bounds = items.map(item => [item.latitude!, item.longitude!] as [number, number])
+      .filter(([lat, lng]) => lat != null && lng != null)
+    
+    if (bounds.length > 0) {
+      map.fitBounds(bounds, { padding: [20, 20] })
+    }
+  }, [items, map])
+  
+  return null
+}
+
+// Piano popup component
+function PianoPopup({ piano }: { piano: Piano }) {
+  return (
+    <div className="p-2 min-w-[200px]">
+      <div className="flex items-start justify-between mb-2">
+        <h3 className="font-bold text-lg">{piano.piano_title}</h3>
+        {piano.verified && (
+          <div className="badge badge-success badge-sm">
+            <Star className="w-3 h-3 mr-1" />
+            Verified
+          </div>
+        )}
+      </div>
+      
+      <div className="flex items-center text-sm text-gray-600 mb-2">
+        <MapPin className="w-4 h-4 mr-1" />
+        {piano.location_display_name || piano.public_location_name || piano.permanent_home_name}
+      </div>
+      
+      <div className="flex items-center text-sm text-gray-600 mb-2">
+        <PianoIcon className="w-4 h-4 mr-1" />
+        {piano.piano_source === 'sing_for_hope' ? 'Sing for Hope' : 'Community'} {piano.piano_year ? `• ${piano.piano_year}` : ''}
+      </div>
+      
+      {piano.piano_program && (
+        <div className="flex items-center text-sm text-gray-600 mb-3">
+          <Clock className="w-4 h-4 mr-1" />
+          {piano.piano_program}
+        </div>
+      )}
+      
+      {piano.piano_statement && (
+        <p className="text-sm text-gray-700 mb-3">
+          {piano.piano_statement.length > 100 
+            ? `${piano.piano_statement.substring(0, 100)}...`
+            : piano.piano_statement
+          }
+        </p>
+      )}
+      
+      <div className="flex space-x-2">
+        <a href={`/pianos/${piano.id}`} className="btn btn-primary btn-xs">
+          View Details
+        </a>
+        <button className="btn btn-outline btn-xs">
+          Mark Visited
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// Event popup component
+function EventPopup({ event }: { event: Event }) {
+  const eventDate = new Date(event.date)
+  const isPastEvent = eventDate < new Date()
+  const isUpcoming = eventDate > new Date()
+
+  return (
+    <div className="p-2 min-w-[200px]">
+      <div className="flex items-start justify-between mb-2">
+        <h3 className="font-bold text-lg">{event.title}</h3>
+        {event.verified && (
+          <div className="badge badge-success badge-sm">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            Verified
+          </div>
+        )}
+      </div>
+      
+      <div className="flex items-center text-sm text-gray-600 mb-2">
+        <Calendar className="w-4 h-4 mr-1" />
+        {eventDate.toLocaleDateString('en-US', { 
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })}
+      </div>
+      
+      <div className="flex items-center text-sm text-gray-600 mb-2">
+        <MapPin className="w-4 h-4 mr-1" />
+        {event.location_name}
+      </div>
+      
+      <div className="flex items-center text-sm text-gray-600 mb-2">
+        <Users className="w-4 h-4 mr-1" />
+        {event.category}
+        {event.attendee_count > 0 && ` • ${event.attendee_count} interested`}
+      </div>
+
+      {/* Piano Information */}
+      {event.piano_count && (
+        <div className="flex items-center text-sm text-gray-600 mb-2">
+          <PianoIcon className="w-4 h-4 mr-1" />
+          {event.piano_count} piano{event.piano_count > 1 ? 's' : ''}
+          {event.piano_type && ` • ${event.piano_type}`}
+        </div>
+      )}
+      
+      {event.description && (
+        <p className="text-sm text-gray-700 mb-3">
+          {event.description.length > 100 
+            ? `${event.description.substring(0, 100)}...`
+            : event.description
+          }
+        </p>
+      )}
+
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex gap-1">
+          <div className={`badge badge-sm ${isUpcoming ? 'badge-success' : 'badge-neutral'}`}>
+            {isUpcoming ? 'Upcoming' : isPastEvent ? 'Past Event' : 'Today'}
+          </div>
+          <div className="badge badge-outline badge-sm">{event.category}</div>
+        </div>
+      </div>
+      
+      <div className="flex space-x-2">
+        <a href={`/events/${event.id}`} className="btn btn-primary btn-xs">
+          View Details
+        </a>
+        <button className="btn btn-outline btn-xs">
+          I'm Interested
+        </button>
+      </div>
+    </div>
+  )
+}
+
+export function InteractiveMap({ 
+  items, 
+  onItemSelect, 
+  height = '500px',
+  center = [40.7128, -74.0060], // Default to NYC
+  zoom = 2,
+  itemType
+}: InteractiveMapProps) {
+  const handleItemClick = (item: MapItem) => {
+    onItemSelect?.(item)
+  }
+
+  // Filter out items without valid coordinates
+  const validItems = items.filter(item => 
+    item.latitude != null && item.longitude != null
+  )
+
+
+  return (
+    <div className="relative">
+      <style>{`
+        .custom-popup .leaflet-popup-content-wrapper {
+          touch-action: auto !important;
+          pointer-events: auto !important;
+          user-select: auto !important;
+          z-index: 1500 !important;
+        }
+        .custom-popup .leaflet-popup-content {
+          margin: 8px 12px !important;
+          touch-action: auto !important;
+          pointer-events: auto !important;
+        }
+        .custom-popup .leaflet-popup-close-button {
+          touch-action: auto !important;
+          pointer-events: auto !important;
+          z-index: 1501 !important;
+        }
+        /* Prevent map from interfering with popup on mobile */
+        .leaflet-container {
+          touch-action: pan-x pan-y !important;
+        }
+        .leaflet-popup {
+          z-index: 1500 !important;
+          touch-action: auto !important;
+          pointer-events: auto !important;
+        }
+        /* Ensure popup appears above all map controls and legend */
+        .leaflet-popup-pane {
+          z-index: 1500 !important;
+        }
+        .leaflet-popup-pane .leaflet-popup {
+          z-index: 1500 !important;
+        }
+        @media (max-width: 768px) {
+          .custom-popup .leaflet-popup-content-wrapper {
+            max-width: 280px !important;
+            min-height: 150px !important;
+          }
+          .leaflet-popup {
+            pointer-events: auto !important;
+            touch-action: auto !important;
+          }
+        }
+      `}</style>
+      <MapContainer
+        center={center}
+        zoom={zoom}
+        style={{ height, width: '100%' }}
+        className="rounded-lg z-0"
+        closePopupOnClick={false}
+        touchZoom={true}
+        doubleClickZoom={false}
+        scrollWheelZoom={true}
+        boxZoom={false}
+        keyboard={true}
+        dragging={true}
+        zoomControl={true}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        
+        <MarkerClusterGroup
+          chunkedLoading
+          iconCreateFunction={createClusterCustomIcon}
+          disableClusteringAtZoom={15}
+          spiderfyOnMaxZoom={true}
+          showCoverageOnHover={false}
+          maxClusterRadius={50}
+        >
+          {validItems.map((item) => {            
+            const isPianoItem = isPiano(item)
+            const isEventItem = isEvent(item)
+            
+            if (!isPianoItem && !isEventItem) {
+              return null
+            }
+            
+            let icon: Icon
+            if (isPianoItem) {
+              const source = (item as Piano).piano_source || 'user_submitted'
+              icon = createPianoIcon(source === 'sing_for_hope' ? 'Sing for Hope' : 'Community', (item as Piano).verified || false)
+            } else {
+              const eventDate = new Date((item as Event).date)
+              const isPastEvent = eventDate < new Date()
+              icon = createEventIcon(item.category, item.verified || false, isPastEvent)
+            }
+
+            return (
+              <Marker
+                key={item.id}
+                position={[item.latitude!, item.longitude!]}
+                icon={icon}
+                eventHandlers={{
+                  click: (e) => {
+                    handleItemClick(item)
+                    // Prevent event from bubbling to map
+                    e.originalEvent?.stopPropagation?.()
+                    // Multiple attempts to keep popup open on mobile
+                    setTimeout(() => {
+                      const popup = document.querySelector('.leaflet-popup') as HTMLElement;
+                      const popupPane = document.querySelector('.leaflet-popup-pane') as HTMLElement;
+                      if (popup) {
+                        popup.style.pointerEvents = 'auto';
+                        popup.style.touchAction = 'auto';
+                        popup.style.zIndex = '1500';
+                        popup.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: false });
+                        popup.addEventListener('touchend', (e) => e.stopPropagation(), { passive: false });
+                      }
+                      if (popupPane) {
+                        popupPane.style.zIndex = '1500';
+                      }
+                    }, 50);
+                    // Double check after longer delay
+                    setTimeout(() => {
+                      const popup = document.querySelector('.leaflet-popup') as HTMLElement;
+                      if (popup && popup.style.display === 'none') {
+                        popup.style.display = 'block';
+                      }
+                    }, 200);
+                  }
+                }}
+              >
+                <Popup
+                  closeOnEscapeKey={false}
+                  closeOnClick={false}
+                  autoClose={false}
+                  className="custom-popup"
+                >
+                  {isPianoItem ? (
+                    <PianoPopup piano={item} />
+                  ) : (
+                    <EventPopup event={item as Event} />
+                  )}
+                </Popup>
+              </Marker>
+            )
+          })}
+        </MarkerClusterGroup>
+        
+        <FitBounds items={validItems} />
+      </MapContainer>
+      
+      {/* Map Legend */}
+      <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-3 z-10" style={{zIndex: 400}}>
+        <h4 className="font-semibold text-sm mb-2">
+          {itemType === 'pianos' ? 'Piano Types' : 'Event Types'}
+        </h4>
+        <div className="space-y-1 text-xs">
+          {itemType === 'pianos' ? (
+            <>
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-blue-500 rounded mr-2"></div>
+                <span>Airport</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-red-500 rounded mr-2"></div>
+                <span>Street</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-green-500 rounded mr-2"></div>
+                <span>Park</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-purple-500 rounded mr-2"></div>
+                <span>Train Station</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-purple-500 rounded mr-2"></div>
+                <span>Concert</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-amber-500 rounded mr-2"></div>
+                <span>Meetup</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-cyan-500 rounded mr-2"></div>
+                <span>Workshop</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-green-500 rounded mr-2"></div>
+                <span>Installation</span>
+              </div>
+            </>
+          )}
+        </div>
+        <div className="mt-2 pt-2 border-t text-xs">
+          <div className="flex items-center">
+            <CheckCircle className="w-3 h-3 text-green-500 mr-1" />
+            <span>Verified</span>
+          </div>
+          {itemType === 'events' && (
+            <div className="flex items-center mt-1">
+              <div className="w-3 h-3 bg-gray-400 rounded mr-1 opacity-60"></div>
+              <span>Past Event</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}

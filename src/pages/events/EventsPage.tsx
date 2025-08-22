@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Calendar, MapPin, Search, User, Filter, Grid, List, CheckCircle, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Calendar, MapPin, Search, User, Filter, Grid, List, CheckCircle, X, ChevronLeft, ChevronRight, Map } from 'lucide-react'
 import { DataService } from '../../services/dataService'
 import { EventCalendar } from '../../components/events/EventCalendar'
 import { useAuth } from '../../hooks/useAuth'
@@ -184,6 +184,13 @@ export function EventsPage() {
                   <Grid className="w-4 h-4" />
                 </button>
               </div>
+              <Link 
+                to="/events/map"
+                className="btn btn-sm btn-outline"
+              >
+                <Map className="w-4 h-4 mr-2" />
+                Map
+              </Link>
             </div>
           </div>
 

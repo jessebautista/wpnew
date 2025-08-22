@@ -7,17 +7,17 @@ interface PianoCardProps {
 }
 
 export function PianoCard({ piano }: PianoCardProps) {
-  // Get the primary image or the first image
-  const primaryImage = piano.images?.find(img => img.alt_text?.includes('primary')) || piano.images?.[0]
+  // For new schema, use piano_image field directly
+  const hasImage = piano.piano_image && piano.piano_image.trim() !== ''
   
   return (
     <Link to={`/pianos/${piano.id}`} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-300 cursor-pointer">
       {/* Image Section */}
       <figure className="h-48 bg-base-200 relative overflow-hidden">
-        {primaryImage ? (
+        {hasImage ? (
           <img
-            src={primaryImage.image_url}
-            alt={primaryImage.alt_text || `Photo of ${piano.name}`}
+            src={piano.piano_image!}
+            alt={`Photo of ${piano.piano_title}`}
             className="w-full h-full object-cover"
             onError={(e) => {
               // Fallback to default image on error
@@ -31,9 +31,9 @@ export function PianoCard({ piano }: PianoCardProps) {
         {/* Fallback UI - always rendered but hidden by default */}
         <div 
           className={`absolute inset-0 flex flex-col items-center justify-center bg-base-200 text-base-content/60 ${
-            primaryImage ? 'hidden' : 'flex'
+            hasImage ? 'hidden' : 'flex'
           }`}
-          style={{ display: primaryImage ? 'none' : 'flex' }}
+          style={{ display: hasImage ? 'none' : 'flex' }}
         >
           <PianoIcon className="w-12 h-12 mb-2" />
           <span className="text-sm text-center px-4">
@@ -41,51 +41,61 @@ export function PianoCard({ piano }: PianoCardProps) {
           </span>
         </div>
 
-        {/* Verified Badge */}
-        {piano.verified && (
-          <div className="absolute top-2 right-2">
+        {/* Badges Container */}
+        <div className="absolute top-2 right-2 flex flex-col gap-1">
+          {/* Source Badge */}
+          {piano.source && (
+            <div className={`badge badge-sm ${piano.source === 'Sing for Hope' ? 'badge-primary' : 'badge-info'}`}>
+              {piano.source === 'Sing for Hope' ? '🎹' : '🌐'} {piano.source}
+            </div>
+          )}
+          
+          {/* Verified Badge */}
+          {piano.verified && (
             <div className="badge badge-success badge-sm">
               <Star className="w-3 h-3 mr-1" />
               Verified
             </div>
-          </div>
-        )}
-
-        {/* Image Count Badge */}
-        {piano.images && piano.images.length > 1 && (
-          <div className="absolute bottom-2 right-2">
-            <div className="badge badge-outline badge-sm bg-base-100/80">
-              +{piano.images.length - 1} more
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </figure>
 
       <div className="card-body p-4">
-        {/* Piano Name */}
+        {/* Piano Title */}
         <h3 className="card-title text-lg">
-          <span className="line-clamp-2">{piano.name}</span>
+          <span className="line-clamp-2">{piano.piano_title}</span>
         </h3>
+
+        {/* Artist Name */}
+        {piano.artist_name && (
+          <div className="text-sm text-primary font-medium mb-1">
+            by {piano.artist_name}
+          </div>
+        )}
 
         {/* Location */}
         <div className="flex items-center text-sm text-base-content/70 mb-2">
           <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
-          <span className="truncate">{piano.location_name}</span>
+          <span className="truncate">{piano.location_display_name}</span>
         </div>
 
-        {/* Description */}
-        {piano.description && (
+        {/* Piano Statement */}
+        {piano.piano_statement && (
           <p className="text-sm text-base-content/80 mb-3">
-            <span className="line-clamp-2">{piano.description}</span>
+            <span className="line-clamp-2">{piano.piano_statement}</span>
           </p>
         )}
 
         {/* Tags */}
         <div className="flex flex-wrap gap-2 mb-4">
-          <div className="badge badge-outline badge-sm">{piano.category}</div>
-          <div className="badge badge-outline badge-sm">{piano.condition}</div>
-          {piano.accessibility && (
-            <div className="badge badge-outline badge-sm">{piano.accessibility}</div>
+          {piano.piano_year && (
+            <div className="badge badge-outline badge-sm">{piano.piano_year}</div>
+          )}
+          {piano.piano_program && (
+            <div className="badge badge-outline badge-sm">{piano.piano_program}</div>
+          )}
+          {piano.piano_source === 'user_submitted' && (
+            <div className="badge badge-accent badge-sm">Community</div>
           )}
         </div>
 

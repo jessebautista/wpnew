@@ -116,7 +116,7 @@ export function HomePage() {
                 <Link key={piano.id} to={`/pianos/${piano.id}`} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-300 cursor-pointer">
                   <div className="card-body">
                     <h3 className="card-title">
-                      {piano.name}
+                      {piano.piano_title}
                       {piano.verified && (
                         <div className="badge badge-primary">
                           <Star className="w-3 h-3 mr-1" />
@@ -125,12 +125,19 @@ export function HomePage() {
                       )}
                     </h3>
                     <p className="text-sm text-base-content/70 mb-2">
-                      {piano.location_name}
+                      {piano.location_display_name || piano.public_location_name || piano.permanent_home_name}
                     </p>
-                    <p>{piano.description}</p>
+                    <p>{piano.piano_statement}</p>
                     <div className="flex flex-wrap gap-2 mt-3">
-                      <div className="badge badge-outline">{piano.category}</div>
-                      <div className="badge badge-outline">{piano.condition}</div>
+                      {piano.piano_source === 'sing_for_hope' && (
+                        <div className="badge badge-primary">🎹 Sing for Hope</div>
+                      )}
+                      {piano.piano_source === 'user_submitted' && (
+                        <div className="badge badge-accent">Community</div>
+                      )}
+                      {piano.piano_year && (
+                        <div className="badge badge-outline">{piano.piano_year}</div>
+                      )}
                     </div>
                   </div>
                 </Link>

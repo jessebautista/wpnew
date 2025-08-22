@@ -143,10 +143,10 @@ export function PianoDetailPage() {
     return SocialSharingService.generateShareData({
       type: 'piano',
       id: piano.id,
-      title: piano.name,
-      description: piano.description || undefined,
-      location: piano.location_name,
-      image: piano.images?.[0]?.image_url
+      title: piano.piano_title,
+      description: piano.piano_statement || undefined,
+      location: piano.location_display_name || piano.public_location_name || piano.permanent_home_name,
+      image: piano.piano_image
     })
   }
 
@@ -221,22 +221,36 @@ export function PianoDetailPage() {
               <div className="card-body">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h1 className="text-3xl font-bold mb-2">{piano.name}</h1>
+                    <h1 className="text-3xl font-bold mb-2">{piano.piano_title}</h1>
                     <div className="flex items-center text-base-content/70 mb-3">
                       <MapPin className="w-5 h-5 mr-2" />
-                      {piano.location_name}
+                      {piano.location_display_name || piano.public_location_name || piano.permanent_home_name}
                     </div>
                     <div className="flex flex-wrap gap-2 mb-4">
-                      <div className="badge badge-primary">{piano.category}</div>
-                      <div className="badge badge-secondary">{piano.condition}</div>
+                      {piano.source && (
+                        <div className={`badge ${piano.source === 'Sing for Hope' ? 'badge-primary' : 'badge-info'}`}>
+                          {piano.source === 'Sing for Hope' ? '🎹' : '🌐'} {piano.source}
+                        </div>
+                      )}
+                      {piano.piano_source === 'sing_for_hope' && (
+                        <div className="badge badge-primary">
+                          🎹 Sing for Hope
+                        </div>
+                      )}
+                      {piano.piano_source === 'user_submitted' && (
+                        <div className="badge badge-accent">Community</div>
+                      )}
+                      {piano.piano_year && (
+                        <div className="badge badge-outline">{piano.piano_year}</div>
+                      )}
                       {piano.verified && (
                         <div className="badge badge-success">
                           <Star className="w-3 h-3 mr-1" />
                           Verified
                         </div>
                       )}
-                      {piano.accessibility && (
-                        <div className="badge badge-outline">{piano.accessibility}</div>
+                      {piano.piano_program && (
+                        <div className="badge badge-secondary">{piano.piano_program}</div>
                       )}
                     </div>
                   </div>
@@ -251,21 +265,52 @@ export function PianoDetailPage() {
                   </div>
                 </div>
 
-                {piano.description && (
+                {piano.piano_statement && (
                   <div className="mt-4">
-                    <h3 className="font-semibold mb-2">Description</h3>
-                    <p className="text-base-content/80">{piano.description}</p>
+                    <h3 className="font-semibold mb-2">Piano Statement</h3>
+                    <p className="text-base-content/80">{piano.piano_statement}</p>
+                  </div>
+                )}
+
+                {piano.artist_name && (
+                  <div className="mt-4">
+                    <h3 className="font-semibold mb-2">Artist</h3>
+                    <div className="flex items-start gap-3">
+                      {piano.artist_photo && (
+                        <img 
+                          src={piano.artist_photo} 
+                          alt={piano.artist_name}
+                          className="w-12 h-12 rounded-full object-cover"
+                        />
+                      )}
+                      <div className="flex-1">
+                        <p className="font-medium text-primary">{piano.artist_name}</p>
+                        {piano.piano_artist_bio && (
+                          <p className="text-sm text-base-content/80 mt-1">{piano.piano_artist_bio}</p>
+                        )}
+                        {piano.artist_website_url && (
+                          <a 
+                            href={piano.artist_website_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="link link-primary text-sm mt-1 inline-block"
+                          >
+                            Visit Artist Website
+                          </a>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
 
                 {/* Piano Details */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                  {piano.hours && (
+                  {piano.permanent_home_name && (
                     <div className="flex items-center">
-                      <Clock className="w-5 h-5 mr-2 text-primary" />
+                      <MapPin className="w-5 h-5 mr-2 text-primary" />
                       <div>
-                        <div className="font-medium">Hours</div>
-                        <div className="text-sm text-base-content/70">{piano.hours}</div>
+                        <div className="font-medium">Permanent Home</div>
+                        <div className="text-sm text-base-content/70">{piano.permanent_home_name}</div>
                       </div>
                     </div>
                   )}
@@ -274,7 +319,7 @@ export function PianoDetailPage() {
                     <div>
                       <div className="font-medium">Added by</div>
                       <div className="text-sm text-base-content/70">
-                        {piano.author?.full_name || 'Community Member'}
+                        {piano.piano_source === 'sing_for_hope' ? 'Sing for Hope' : 'Community Member'}
                       </div>
                     </div>
                   </div>
@@ -288,6 +333,24 @@ export function PianoDetailPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Additional Details */}
+                {(piano.contributors_info || piano.notes) && (
+                  <div className="mt-6 space-y-3">
+                    {piano.contributors_info && (
+                      <div>
+                        <h4 className="font-medium text-sm text-base-content/70 mb-1">Contributors</h4>
+                        <p className="text-sm">{piano.contributors_info}</p>
+                      </div>
+                    )}
+                    {piano.notes && (
+                      <div>
+                        <h4 className="font-medium text-sm text-base-content/70 mb-1">Notes</h4>
+                        <p className="text-sm">{piano.notes}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -299,17 +362,15 @@ export function PianoDetailPage() {
                   Photos
                 </h2>
                 
-                {piano.images && piano.images.length > 0 ? (
+                {piano.piano_image ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {piano.images.map((image) => (
-                      <div key={image.id} className="aspect-video bg-base-200 rounded-lg overflow-hidden">
-                        <img 
-                          src={image.image_url} 
-                          alt={image.alt_text || piano.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ))}
+                    <div className="aspect-video bg-base-200 rounded-lg overflow-hidden">
+                      <img 
+                        src={piano.piano_image} 
+                        alt={`Photo of ${piano.piano_title}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
                   </div>
                 ) : (
                   <div className="text-center py-8">
@@ -404,21 +465,39 @@ export function PianoDetailPage() {
             <div className="card bg-base-100 shadow-xl">
               <div className="card-body">
                 <h3 className="card-title">Location</h3>
-                <div className="h-64 rounded-lg overflow-hidden">
-                  <MapContainer
-                    center={[piano.latitude, piano.longitude]}
-                    zoom={15}
-                    style={{ height: '100%', width: '100%' }}
-                  >
-                    <TileLayer
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-                    <Marker position={[piano.latitude, piano.longitude]} />
-                  </MapContainer>
-                </div>
+{(() => {
+                  // Parse coordinates properly, handling "null" strings
+                  const latStr = piano.perm_lat
+                  const lngStr = piano.perm_lng
+                  const lat = piano.latitude || (latStr && latStr !== 'null' && latStr !== '' ? parseFloat(latStr) : null)
+                  const lng = piano.longitude || (lngStr && lngStr !== 'null' && lngStr !== '' ? parseFloat(lngStr) : null)
+                  
+                  return (lat && lng && !isNaN(lat) && !isNaN(lng)) ? (
+                    <>
+                      <div className="h-64 rounded-lg overflow-hidden">
+                        <MapContainer
+                          center={[lat, lng]}
+                          zoom={15}
+                          style={{ height: '100%', width: '100%' }}
+                        >
+                          <TileLayer
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                          />
+                          <Marker position={[lat, lng]} />
+                        </MapContainer>
+                      </div>
+                    </>) : (
+                      <div className="h-64 bg-base-200 rounded-lg flex items-center justify-center">
+                        <div className="text-center">
+                          <MapPin className="w-8 h-8 mx-auto mb-2 text-base-content/30" />
+                          <p className="text-base-content/50">Location coordinates not available</p>
+                        </div>
+                      </div>
+                    )
+                })()}
                 <p className="text-sm text-base-content/70 mt-2">
-                  {piano.location_name}
+                  {piano.location_display_name || piano.public_location_name || piano.permanent_home_name}
                 </p>
               </div>
             </div>
@@ -451,7 +530,7 @@ export function PianoDetailPage() {
               <div className="card-body">
                 <h3 className="card-title">Similar Pianos</h3>
                 <p className="text-sm text-base-content/70 mb-4">
-                  Other {piano.category.toLowerCase()} pianos nearby
+                  Other pianos in this area
                 </p>
                 <div className="space-y-3">
                   {/* Mock similar pianos - in real app, this would be fetched */}

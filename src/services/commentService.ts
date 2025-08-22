@@ -21,34 +21,11 @@ export class CommentService {
 
     try {
       console.log('[SUPABASE] Fetching comments from Supabase')
-      const { data, error } = await supabase
-        .from('comments')
-        .select('*')
-        .eq('content_type', contentType)
-        .eq('content_id', contentId)
-        .order('created_at', { ascending: true })
-
-      if (error) {
-        console.error('Error fetching comments:', error)
-        return []
-      }
-
-      // Get unique author IDs to fetch user data
-      const authorIds = [...new Set(data?.map(comment => comment.author_id).filter(Boolean))]
       
-      let users: Array<{ id: string; full_name: string; email: string }> = []
-      if (authorIds.length > 0) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('id, full_name, email')
-          .in('id', authorIds)
-        users = userData || []
-      }
-
-      return data?.map(comment => ({
-        ...comment,
-        author: users.find(user => user.id === comment.author_id) || undefined
-      })) || []
+      // Comments are temporarily disabled due to schema mismatch
+      // Piano IDs are integers but comments table expects UUID piano_id  
+      console.warn('[SUPABASE] Comments temporarily disabled due to schema mismatch')
+      return []
     } catch (error) {
       console.error('Error fetching comments:', error)
       return []
@@ -86,24 +63,9 @@ export class CommentService {
       console.log('[SUPABASE] Adding comment to Supabase')
       const displayName = getDisplayName(user)
       
-      const { data, error } = await supabase
-        .from('comments')
-        .insert({
-          content: content.trim(),
-          content_type: contentType,
-          content_id: contentId,
-          author_id: user?.id || 'anonymous',
-          author_name: displayName
-        })
-        .select('*')
-        .single()
-
-      if (error) {
-        console.error('Error adding comment:', error)
-        throw error
-      }
-
-      return data
+      // Comments are temporarily disabled due to schema mismatch
+      console.warn('[SUPABASE] Comment submission temporarily disabled due to schema mismatch')
+      throw new Error('Comments are temporarily disabled due to database schema issues')
     } catch (error) {
       console.error('Error adding comment:', error)
       throw error

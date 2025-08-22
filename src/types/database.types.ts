@@ -41,55 +41,100 @@ export interface Database {
       }
       pianos: {
         Row: {
-          id: string
-          name: string
-          description: string | null
-          location_name: string
-          latitude: number
-          longitude: number
-          category: string
-          condition: string
-          accessibility: string | null
-          hours: string | null
-          verified: boolean
-          created_by: string
-          verified_by: string | null
+          id: number
+          piano_title: string
+          piano_image: string | null
+          piano_statement: string | null
+          piano_url: string | null
+          piano_year: string | null
+          piano_artist: string | null
+          artist_name: string | null
+          piano_artist_bio: string | null
+          artist_photo: string | null
+          artist_website_url: string | null
+          artist_facebook_url: string | null
+          artist_instagram_url: string | null
+          permanent_home_name: string | null
+          public_location_name: string | null
+          perm_lat: string | null
+          perm_lng: string | null
+          piano_program: string | null
+          contributors_info: string | null
+          piano_site: number | null
+          notes: string | null
+          piano_search: string | null
+          search_vector: any
           created_at: string
           updated_at: string
+          created_by: string
+          verified_by: string | null
+          moderation_status: string
+          verified: boolean
+          piano_source: string
         }
         Insert: {
-          id?: string
-          name: string
-          description?: string | null
-          location_name: string
-          latitude: number
-          longitude: number
-          category: string
-          condition: string
-          accessibility?: string | null
-          hours?: string | null
-          verified?: boolean
-          created_by: string
-          verified_by?: string | null
+          id?: number
+          piano_title: string
+          piano_image?: string | null
+          piano_statement?: string | null
+          piano_url?: string | null
+          piano_year?: string | null
+          piano_artist?: string | null
+          artist_name?: string | null
+          piano_artist_bio?: string | null
+          artist_photo?: string | null
+          artist_website_url?: string | null
+          artist_facebook_url?: string | null
+          artist_instagram_url?: string | null
+          permanent_home_name?: string | null
+          public_location_name?: string | null
+          perm_lat?: string | null
+          perm_lng?: string | null
+          piano_program?: string | null
+          contributors_info?: string | null
+          piano_site?: number | null
+          notes?: string | null
+          piano_search?: string | null
+          search_vector?: any
           created_at?: string
           updated_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          description?: string | null
-          location_name?: string
-          latitude?: number
-          longitude?: number
-          category?: string
-          condition?: string
-          accessibility?: string | null
-          hours?: string | null
-          verified?: boolean
           created_by?: string
           verified_by?: string | null
+          moderation_status?: string
+          verified?: boolean
+          piano_source?: string
+        }
+        Update: {
+          id?: number
+          piano_title?: string
+          piano_image?: string | null
+          piano_statement?: string | null
+          piano_url?: string | null
+          piano_year?: string | null
+          piano_artist?: string | null
+          artist_name?: string | null
+          piano_artist_bio?: string | null
+          artist_photo?: string | null
+          artist_website_url?: string | null
+          artist_facebook_url?: string | null
+          artist_instagram_url?: string | null
+          permanent_home_name?: string | null
+          public_location_name?: string | null
+          perm_lat?: string | null
+          perm_lng?: string | null
+          piano_program?: string | null
+          contributors_info?: string | null
+          piano_site?: number | null
+          notes?: string | null
+          piano_search?: string | null
+          search_vector?: any
           created_at?: string
           updated_at?: string
+          created_by?: string
+          verified_by?: string | null
+          moderation_status?: string
+          verified?: boolean
+          piano_source?: string
         }
       }
       events: {
@@ -98,48 +143,120 @@ export interface Database {
           title: string
           description: string | null
           date: string
+          end_date: string | null
           location_name: string
+          address: string | null
           latitude: number | null
           longitude: number | null
+          piano_id: string | null
           category: string
-          organizer: string | null
-          verified: boolean
-          created_by: string
-          verified_by: string | null
+          max_attendees: number | null
+          current_attendees: number | null
+          is_virtual: boolean | null
+          meeting_url: string | null
+          ticket_price: number | null
+          status: string | null
+          organizer_id: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          moderation_status: string | null
+          moderated_by: string | null
+          moderated_at: string | null
+          published_at: string | null
           created_at: string
           updated_at: string
+          legacy_id: string | null
+          attendee_count: number | null
+          created_by: string
+          verified_by: string | null
+          organizer: string | null
+          verified: boolean | null
+          piano_count: number | null
+          piano_type: string | null
+          piano_condition: string | null
+          piano_special_features: string[] | null
+          piano_accessibility: string | null
+          piano_images: string[] | null
         }
         Insert: {
           id?: string
           title: string
           description?: string | null
           date: string
+          end_date?: string | null
           location_name: string
+          address?: string | null
           latitude?: number | null
           longitude?: number | null
+          piano_id?: string | null
           category: string
-          organizer?: string | null
-          verified?: boolean
-          created_by: string
-          verified_by?: string | null
+          max_attendees?: number | null
+          current_attendees?: number | null
+          is_virtual?: boolean | null
+          meeting_url?: string | null
+          ticket_price?: number | null
+          status?: string | null
+          organizer_id?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          moderation_status?: string | null
+          moderated_by?: string | null
+          moderated_at?: string | null
+          published_at?: string | null
           created_at?: string
           updated_at?: string
+          legacy_id?: string | null
+          attendee_count?: number | null
+          created_by: string
+          verified_by?: string | null
+          organizer?: string | null
+          verified?: boolean | null
+          piano_count?: number | null
+          piano_type?: string | null
+          piano_condition?: string | null
+          piano_special_features?: string[] | null
+          piano_accessibility?: string | null
+          piano_images?: string[] | null
         }
         Update: {
           id?: string
           title?: string
           description?: string | null
           date?: string
+          end_date?: string | null
           location_name?: string
+          address?: string | null
           latitude?: number | null
           longitude?: number | null
+          piano_id?: string | null
           category?: string
-          organizer?: string | null
-          verified?: boolean
-          created_by?: string
-          verified_by?: string | null
+          max_attendees?: number | null
+          current_attendees?: number | null
+          is_virtual?: boolean | null
+          meeting_url?: string | null
+          ticket_price?: number | null
+          status?: string | null
+          organizer_id?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          moderation_status?: string | null
+          moderated_by?: string | null
+          moderated_at?: string | null
+          published_at?: string | null
           created_at?: string
           updated_at?: string
+          legacy_id?: string | null
+          attendee_count?: number | null
+          created_by?: string
+          verified_by?: string | null
+          organizer?: string | null
+          verified?: boolean | null
+          piano_count?: number | null
+          piano_type?: string | null
+          piano_condition?: string | null
+          piano_special_features?: string[] | null
+          piano_accessibility?: string | null
+          piano_images?: string[] | null
         }
       }
       blog_posts: {

@@ -29,18 +29,9 @@ import { usePermissions } from '../../hooks/usePermissions'
 import { AdminService, type AdminStats, type RecentActivity } from '../../services/adminService'
 import { GeocodingService } from '../../services/geocodingService'
 import { supabase } from '../../lib/supabase'
-// TODO: Newsletter Dashboard Implementation
-// The newsletter functionality is temporarily disabled pending full implementation.
-// To re-enable:
-// 1. Uncomment the import below
-// 2. Replace NewsletterComingSoon with <NewsletterDashboard /> in the newsletter tab
-// 3. Ensure database tables are set up for newsletter subscribers and campaigns
-// 4. Complete NewsletterService implementation with email provider integration
-// 5. Test email sending functionality and subscriber management
-// Components ready for use:
-// - NewsletterDashboard: Main dashboard with subscriber and campaign management
-// - NewsletterService: Service layer for newsletter operations (needs completion)
-// import { NewsletterDashboard } from '../../components/admin/NewsletterDashboard'
+import { NewsletterDashboard } from '../../components/admin/NewsletterDashboard'
+import { SocialSharingStats } from '../../components/admin/SocialSharingStats'
+import { testNewsletterIntegration } from '../../utils/testNewsletterIntegration'
 // TODO: Settings Dashboard Implementation
 // The settings functionality is temporarily disabled pending full implementation.
 // To re-enable:
@@ -64,6 +55,13 @@ export function AdminDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [selectedTab, setSelectedTab] = useState<'overview' | 'users' | 'content' | 'reports' | 'newsletter' | 'settings'>('overview')
   const [hasAccess, setHasAccess] = useState(false)
+
+  // Make test function available in development
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      (window as any).testNewsletterIntegration = testNewsletterIntegration
+    }
+  }, [])
 
   const loadDashboardData = useCallback(async () => {
     try {
@@ -220,7 +218,7 @@ export function AdminDashboardPage() {
           <ReportsTab />
         )}
         {selectedTab === 'newsletter' && (
-          <NewsletterComingSoon />
+          <NewsletterDashboard />
         )}
         {/* TODO: Re-enable settings tab content once SettingsDashboard is fully implemented */}
         {/* {selectedTab === 'settings' && (
@@ -2129,44 +2127,3 @@ function CreateUserModal({ isOpen, onClose, onUserCreated }: CreateUserModalProp
   )
 }
 
-// TODO: Replace with actual NewsletterDashboard component once newsletter functionality is implemented
-function NewsletterComingSoon() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-      <div className="max-w-md mx-auto">
-        <div className="mb-6">
-          <Mail className="w-16 h-16 mx-auto text-primary opacity-50" />
-        </div>
-        <h2 className="text-2xl font-bold mb-4 text-base-content">Newsletter Dashboard</h2>
-        <p className="text-base-content/70 mb-6 leading-relaxed">
-          The newsletter management system is currently under development. This feature will allow you to:
-        </p>
-        <ul className="text-left text-base-content/60 space-y-2 mb-8">
-          <li className="flex items-center">
-            <CheckCircle className="w-4 h-4 mr-2 text-success" />
-            Manage subscriber lists and segments
-          </li>
-          <li className="flex items-center">
-            <CheckCircle className="w-4 h-4 mr-2 text-success" />
-            Create and send newsletter campaigns
-          </li>
-          <li className="flex items-center">
-            <CheckCircle className="w-4 h-4 mr-2 text-success" />
-            Track email metrics and engagement
-          </li>
-          <li className="flex items-center">
-            <CheckCircle className="w-4 h-4 mr-2 text-success" />
-            Automate newsletter workflows
-          </li>
-        </ul>
-        <div className="bg-base-200 p-4 rounded-lg">
-          <h3 className="font-semibold mb-2 text-base-content">Coming Soon</h3>
-          <p className="text-sm text-base-content/60">
-            We're working hard to bring you comprehensive newsletter management tools. 
-            Stay tuned for updates!
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-}

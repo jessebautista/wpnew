@@ -359,20 +359,62 @@ export interface Database {
         Row: {
           id: string
           email: string
-          confirmed: boolean
+          confirmed?: boolean
+          first_name?: string
+          last_name?: string
+          status: 'active' | 'unsubscribed' | 'bounced'
+          source: string
+          subscribed_at: string
+          unsubscribed_at?: string
+          preferences: {
+            weekly_digest: boolean
+            event_notifications: boolean
+            new_piano_alerts: boolean
+            blog_updates: boolean
+          }
+          tags: string[]
           created_at: string
+          updated_at: string
         }
         Insert: {
           id?: string
           email: string
           confirmed?: boolean
+          first_name?: string
+          last_name?: string
+          status?: 'active' | 'unsubscribed' | 'bounced'
+          source?: string
+          subscribed_at?: string
+          unsubscribed_at?: string
+          preferences?: {
+            weekly_digest?: boolean
+            event_notifications?: boolean
+            new_piano_alerts?: boolean
+            blog_updates?: boolean
+          }
+          tags?: string[]
           created_at?: string
+          updated_at?: string
         }
         Update: {
           id?: string
           email?: string
           confirmed?: boolean
+          first_name?: string
+          last_name?: string
+          status?: 'active' | 'unsubscribed' | 'bounced'
+          source?: string
+          subscribed_at?: string
+          unsubscribed_at?: string
+          preferences?: {
+            weekly_digest?: boolean
+            event_notifications?: boolean
+            new_piano_alerts?: boolean
+            blog_updates?: boolean
+          }
+          tags?: string[]
           created_at?: string
+          updated_at?: string
         }
       }
     }

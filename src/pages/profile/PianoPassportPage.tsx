@@ -390,9 +390,9 @@ export function PianoPassportPage() {
                     </div>
                     <div className="flex-1">
                       <Link to={`/pianos/${piano.id}`} className="font-medium hover:link">
-                        {piano.name}
+                        {piano.piano_title}
                       </Link>
-                      <p className="text-sm text-base-content/70">{piano.location_name}</p>
+                      <p className="text-sm text-base-content/70">{piano.location_display_name || piano.permanent_home_name}</p>
                     </div>
                   </div>
                 ))}

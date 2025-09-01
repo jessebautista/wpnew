@@ -63,9 +63,9 @@ export function ModerationQueuePage() {
       const items: ModerationItem[] = [
         // Piano items
         ...pianos.map((piano) => ({
-          id: piano.id, // Use the piano's UUID directly
+          id: String(piano.id), // Convert to string for ModerationItem
           type: 'piano' as const,
-          title: piano.name,
+          title: piano.piano_title,
           content: piano,
           author: {
             id: piano.created_by || 'unknown',

@@ -21,8 +21,8 @@ export interface User {
 }
 
 export interface Piano {
-  // Core piano identification
-  id: number
+  // Core piano identification  
+  id: number | string
   piano_title: string
   piano_image: string | null
   piano_statement: string | null

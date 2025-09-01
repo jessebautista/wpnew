@@ -61,7 +61,6 @@ export class CommentService {
 
     try {
       console.log('[SUPABASE] Adding comment to Supabase')
-      const displayName = getDisplayName(user)
       
       // Comments are temporarily disabled due to schema mismatch
       console.warn('[SUPABASE] Comment submission temporarily disabled due to schema mismatch')

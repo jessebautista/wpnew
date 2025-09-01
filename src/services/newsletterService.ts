@@ -232,11 +232,87 @@ export class NewsletterService {
     subscriberId: string, 
     updates: Partial<NewsletterSubscriber>
   ): Promise<NewsletterSubscriber | null> {
-    const index = this.subscribers.findIndex(sub => sub.id === subscriberId)
-    if (index === -1) return null
+    if (shouldUseMockData('supabase')) {
+      const index = this.subscribers.findIndex(sub => sub.id === subscriberId)
+      if (index === -1) return null
 
-    this.subscribers[index] = { ...this.subscribers[index], ...updates }
-    return this.subscribers[index]
+      this.subscribers[index] = { ...this.subscribers[index], ...updates }
+      return this.subscribers[index]
+    }
+
+    try {
+      console.log('[SUPABASE] Updating subscriber:', subscriberId)
+      
+      // Clean updates to match database schema
+      const cleanedUpdates: any = {}
+      if (updates.first_name !== undefined) cleanedUpdates.first_name = updates.first_name
+      if (updates.last_name !== undefined) cleanedUpdates.last_name = updates.last_name
+      if (updates.status !== undefined) cleanedUpdates.status = updates.status
+      if (updates.source !== undefined) cleanedUpdates.source = updates.source
+      if (updates.preferences !== undefined) cleanedUpdates.preferences = updates.preferences
+      if (updates.tags !== undefined) cleanedUpdates.tags = updates.tags
+      if (updates.unsubscribed_at !== undefined) cleanedUpdates.unsubscribed_at = updates.unsubscribed_at
+
+      const { data, error } = await supabase
+        .from('newsletter_subscriptions')
+        .update(cleanedUpdates)
+        .eq('id', subscriberId)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // Map back to service format
+      const subscriber: NewsletterSubscriber = {
+        id: data.id,
+        email: data.email,
+        first_name: data.first_name || undefined,
+        last_name: data.last_name || undefined,
+        status: data.status || 'active',
+        source: data.source || 'website',
+        subscribed_at: data.subscribed_at || data.created_at,
+        unsubscribed_at: data.unsubscribed_at || undefined,
+        preferences: data.preferences || {
+          weekly_digest: true,
+          event_notifications: true,
+          new_piano_alerts: true,
+          blog_updates: true
+        },
+        tags: data.tags || ['website']
+      }
+
+      return subscriber
+    } catch (error) {
+      console.error('Update subscriber error:', error)
+      return null
+    }
+  }
+
+  static async deleteSubscriber(subscriberId: string): Promise<boolean> {
+    if (shouldUseMockData('supabase')) {
+      const index = this.subscribers.findIndex(sub => sub.id === subscriberId)
+      if (index === -1) return false
+
+      this.subscribers.splice(index, 1)
+      return true
+    }
+
+    try {
+      console.log('[SUPABASE] Deleting subscriber:', subscriberId)
+      
+      const { error } = await supabase
+        .from('newsletter_subscriptions')
+        .delete()
+        .eq('id', subscriberId)
+
+      if (error) throw error
+
+      console.log('[SUPABASE] Successfully deleted subscriber')
+      return true
+    } catch (error) {
+      console.error('Delete subscriber error:', error)
+      return false
+    }
   }
 
   static async getSubscribers(
@@ -247,32 +323,96 @@ export class NewsletterService {
       search?: string
     }
   ): Promise<NewsletterSubscriber[]> {
-    let filtered = [...this.subscribers]
+    if (shouldUseMockData('supabase')) {
+      let filtered = [...this.subscribers]
 
-    if (filters?.status) {
-      filtered = filtered.filter(sub => sub.status === filters.status)
+      if (filters?.status) {
+        filtered = filtered.filter(sub => sub.status === filters.status)
+      }
+
+      if (filters?.source) {
+        filtered = filtered.filter(sub => sub.source === filters.source)
+      }
+
+      if (filters?.tags && filters.tags.length > 0) {
+        filtered = filtered.filter(sub => 
+          filters.tags!.some(tag => sub.tags.includes(tag))
+        )
+      }
+
+      if (filters?.search) {
+        const search = filters.search.toLowerCase()
+        filtered = filtered.filter(sub => 
+          sub.email.toLowerCase().includes(search) ||
+          sub.first_name?.toLowerCase().includes(search) ||
+          sub.last_name?.toLowerCase().includes(search)
+        )
+      }
+
+      return filtered.sort((a, b) => new Date(b.subscribed_at).getTime() - new Date(a.subscribed_at).getTime())
     }
 
-    if (filters?.source) {
-      filtered = filtered.filter(sub => sub.source === filters.source)
-    }
+    try {
+      console.log('[SUPABASE] Getting newsletter subscribers')
+      
+      // Start with a basic query
+      let query = supabase.from('newsletter_subscriptions').select('*')
 
-    if (filters?.tags && filters.tags.length > 0) {
-      filtered = filtered.filter(sub => 
-        filters.tags!.some(tag => sub.tags.includes(tag))
-      )
-    }
+      // Apply filters
+      if (filters?.status) {
+        query = query.eq('status', filters.status)
+      }
 
-    if (filters?.search) {
-      const search = filters.search.toLowerCase()
-      filtered = filtered.filter(sub => 
-        sub.email.toLowerCase().includes(search) ||
-        sub.first_name?.toLowerCase().includes(search) ||
-        sub.last_name?.toLowerCase().includes(search)
-      )
-    }
+      if (filters?.source) {
+        query = query.eq('source', filters.source)
+      }
 
-    return filtered.sort((a, b) => new Date(b.subscribed_at).getTime() - new Date(a.subscribed_at).getTime())
+      if (filters?.search) {
+        const searchTerm = `%${filters.search}%`
+        query = query.or(`email.ilike.${searchTerm}`)
+      }
+
+      // Simple execution with fallback ordering
+      const { data, error } = await query.limit(1000)
+
+      if (error) {
+        console.error('Error getting subscribers:', error)
+        throw error
+      }
+
+      // Map database format to service format
+      const subscribers: NewsletterSubscriber[] = (data || []).map(item => ({
+        id: item.id,
+        email: item.email,
+        first_name: item.first_name || undefined,
+        last_name: item.last_name || undefined,
+        status: item.status || 'active',
+        source: item.source || 'website',
+        subscribed_at: item.subscribed_at || item.created_at || new Date().toISOString(),
+        unsubscribed_at: item.unsubscribed_at || undefined,
+        preferences: item.preferences || {
+          weekly_digest: true,
+          event_notifications: true,
+          new_piano_alerts: true,
+          blog_updates: true
+        },
+        tags: item.tags || ['website']
+      }))
+
+      // Sort in JavaScript to avoid column issues
+      subscribers.sort((a, b) => new Date(b.subscribed_at).getTime() - new Date(a.subscribed_at).getTime())
+
+      console.log('[SUPABASE] Retrieved subscribers:', subscribers.length)
+      return subscribers
+    } catch (error) {
+      console.error('Newsletter getSubscribers error:', error)
+      // Don't recursively call - just return empty array or fallback to mock
+      if (shouldUseMockData('supabase')) {
+        const mockFiltered = [...this.subscribers]
+        return mockFiltered
+      }
+      return []
+    }
   }
 
   // Template Management

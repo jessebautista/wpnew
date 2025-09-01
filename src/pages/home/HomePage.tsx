@@ -3,6 +3,7 @@ import { Piano, Map, Calendar, Users, Star } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { MockDataService } from '../../data/mockData'
 import { NewsletterSubscription } from '../../components/newsletter/NewsletterSubscription'
+import { SocialShareWidget } from '../../components/social/SocialShareWidget'
 import { generateEventSlug } from '../../utils/slugUtils'
 import type { Piano as PianoType, Event } from '../../types'
 
@@ -197,6 +198,19 @@ export function HomePage() {
               showPreferences={true}
               variant="inline"
               className="w-full"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Social Share Section */}
+      <div className="py-16 bg-base-100">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <SocialShareWidget 
+              variant="full"
+              showStats={true}
+              showFollowButtons={true}
             />
           </div>
         </div>

@@ -24,7 +24,7 @@ export function MapPage() {
         console.log('[MAP] Loading pianos for map view...')
         const data = await DataService.getPianos()
         console.log('[MAP] Loaded pianos:', data.length, 'pianos')
-        console.log('[MAP] Sample piano coordinates:', data.slice(0, 3).map(p => ({id: p.id, name: p.name, lat: p.latitude, lng: p.longitude})))
+        console.log('[MAP] Sample piano coordinates:', data.slice(0, 3).map(p => ({id: p.id, name: p.piano_title, lat: p.latitude, lng: p.longitude})))
         setPianos(data)
         setFilteredPianos(data)
       } catch (error) {

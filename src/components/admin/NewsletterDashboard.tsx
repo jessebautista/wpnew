@@ -12,9 +12,13 @@ import {
   Pause,
   BarChart3,
   Download,
-  Search
+  Search,
+  AlertTriangle,
+  Check,
+  X
 } from 'lucide-react'
 import { NewsletterService } from '../../services/newsletterService'
+import { EditSubscriberModal } from './EditSubscriberModal'
 import type { 
   NewsletterSubscriber, 
   NewsletterTemplate, 
@@ -265,6 +269,10 @@ function SubscribersTab() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'unsubscribed' | 'bounced'>('all')
+  const [selectedSubscriber, setSelectedSubscriber] = useState<NewsletterSubscriber | null>(null)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     loadSubscribers()
@@ -284,6 +292,68 @@ function SubscribersTab() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleDeleteClick = (subscriber: NewsletterSubscriber) => {
+    setSelectedSubscriber(subscriber)
+    setShowDeleteModal(true)
+  }
+
+  const handleEditClick = (subscriber: NewsletterSubscriber) => {
+    setSelectedSubscriber(subscriber)
+    setShowEditModal(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!selectedSubscriber) return
+
+    try {
+      setDeleting(true)
+      const success = await NewsletterService.deleteSubscriber(selectedSubscriber.id)
+      if (success) {
+        await loadSubscribers()
+        setShowDeleteModal(false)
+        setSelectedSubscriber(null)
+      } else {
+        alert('Failed to delete subscriber')
+      }
+    } catch (error) {
+      console.error('Error deleting subscriber:', error)
+      alert('Failed to delete subscriber')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const exportSubscribers = () => {
+    // Create CSV content
+    const headers = ['Email', 'First Name', 'Last Name', 'Status', 'Source', 'Subscribed At', 'Preferences']
+    const csvContent = [
+      headers.join(','),
+      ...subscribers.map(sub => [
+        sub.email,
+        sub.first_name || '',
+        sub.last_name || '',
+        sub.status,
+        sub.source,
+        new Date(sub.subscribed_at).toLocaleDateString(),
+        Object.entries(sub.preferences)
+          .filter(([_, enabled]) => enabled)
+          .map(([key, _]) => key)
+          .join(';')
+      ].map(field => `"${field}"`).join(','))
+    ].join('\n')
+
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `newsletter-subscribers-${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   return (
@@ -315,9 +385,13 @@ function SubscribersTab() {
         </div>
         
         <div className="flex gap-2">
-          <button className="btn btn-outline">
+          <button 
+            className="btn btn-outline"
+            onClick={exportSubscribers}
+            disabled={subscribers.length === 0}
+          >
             <Download className="w-4 h-4 mr-2" />
-            Export
+            Export CSV
           </button>
           <button className="btn btn-primary">
             <Plus className="w-4 h-4 mr-2" />
@@ -380,13 +454,24 @@ function SubscribersTab() {
                   </td>
                   <td>
                     <div className="flex gap-1">
-                      <button className="btn btn-ghost btn-xs">
+                      <button 
+                        className="btn btn-ghost btn-xs"
+                        title="View subscriber details"
+                      >
                         <Eye className="w-3 h-3" />
                       </button>
-                      <button className="btn btn-ghost btn-xs">
+                      <button 
+                        className="btn btn-ghost btn-xs"
+                        onClick={() => handleEditClick(subscriber)}
+                        title="Edit subscriber"
+                      >
                         <Edit className="w-3 h-3" />
                       </button>
-                      <button className="btn btn-ghost btn-xs text-error">
+                      <button 
+                        className="btn btn-ghost btn-xs text-error"
+                        onClick={() => handleDeleteClick(subscriber)}
+                        title="Delete subscriber"
+                      >
                         <Trash2 className="w-3 h-3" />
                       </button>
                     </div>
@@ -397,201 +482,156 @@ function SubscribersTab() {
           </table>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && selectedSubscriber && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg mb-4">Confirm Deletion</h3>
+            <div className="flex items-center mb-4">
+              <AlertTriangle className="w-6 h-6 text-warning mr-3" />
+              <span>Are you sure you want to delete this subscriber?</span>
+            </div>
+            <div className="bg-base-200 p-4 rounded-lg mb-6">
+              <p className="font-semibold">{selectedSubscriber.email}</p>
+              <p className="text-sm text-base-content/70 mt-1">
+                {selectedSubscriber.first_name} {selectedSubscriber.last_name}
+              </p>
+              <p className="text-sm text-error mt-2">
+                ⚠️ This action cannot be undone.
+              </p>
+            </div>
+            <div className="modal-action">
+              <button 
+                onClick={() => {
+                  setShowDeleteModal(false)
+                  setSelectedSubscriber(null)
+                }}
+                className="btn btn-ghost"
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmDelete}
+                className="btn btn-error"
+                disabled={deleting}
+              >
+                {deleting ? (
+                  <>
+                    <span className="loading loading-spinner loading-xs mr-2"></span>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+          <div className="modal-backdrop" onClick={() => !deleting && setShowDeleteModal(false)}></div>
+        </div>
+      )}
+
+      {/* Edit Subscriber Modal */}
+      {showEditModal && selectedSubscriber && (
+        <EditSubscriberModal 
+          subscriber={selectedSubscriber}
+          onClose={() => {
+            setShowEditModal(false)
+            setSelectedSubscriber(null)
+          }}
+          onSave={async () => {
+            await loadSubscribers()
+            setShowEditModal(false)
+            setSelectedSubscriber(null)
+          }}
+        />
+      )}
     </div>
   )
 }
 
 function CampaignsTab() {
-  const [campaigns, setCampaigns] = useState<NewsletterCampaign[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    loadCampaigns()
-  }, [])
-
-  const loadCampaigns = async () => {
-    try {
-      setLoading(true)
-      const data = await NewsletterService.getCampaigns()
-      setCampaigns(data)
-    } catch (error) {
-      console.error('Error loading campaigns:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const getStatusBadge = (status: NewsletterCampaign['status']) => {
-    const variants = {
-      draft: 'badge-ghost',
-      scheduled: 'badge-info',
-      sending: 'badge-warning',
-      sent: 'badge-success',
-      cancelled: 'badge-error'
-    }
-    return `badge ${variants[status]}`
-  }
-
   return (
-    <div className="space-y-6">
-      {/* Controls */}
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Email Campaigns</h3>
-        <button className="btn btn-primary">
-          <Plus className="w-4 h-4 mr-2" />
-          New Campaign
-        </button>
+    <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+      <div className="max-w-md mx-auto">
+        <div className="mb-6">
+          <Send className="w-16 h-16 mx-auto text-primary opacity-50" />
+        </div>
+        <h2 className="text-2xl font-bold mb-4 text-base-content">Email Campaigns</h2>
+        <p className="text-base-content/70 mb-6 leading-relaxed">
+          Campaign management features are coming soon. This will include:
+        </p>
+        <ul className="text-left text-base-content/60 space-y-2 mb-8">
+          <li className="flex items-center">
+            <Send className="w-4 h-4 mr-2 text-primary" />
+            Create and schedule email campaigns
+          </li>
+          <li className="flex items-center">
+            <Users className="w-4 h-4 mr-2 text-primary" />
+            Segment subscribers for targeted messaging
+          </li>
+          <li className="flex items-center">
+            <BarChart3 className="w-4 h-4 mr-2 text-primary" />
+            Track open rates and click analytics
+          </li>
+          <li className="flex items-center">
+            <Edit className="w-4 h-4 mr-2 text-primary" />
+            A/B test different email content
+          </li>
+        </ul>
+        <div className="bg-base-200 p-4 rounded-lg">
+          <h3 className="font-semibold mb-2 text-base-content">Coming Soon</h3>
+          <p className="text-sm text-base-content/60">
+            We're building comprehensive campaign management tools. 
+            Stay tuned for updates!
+          </p>
+        </div>
       </div>
-
-      {/* Campaigns List */}
-      {loading ? (
-        <div className="flex justify-center py-8">
-          <span className="loading loading-spinner loading-lg"></span>
-        </div>
-      ) : (
-        <div className="grid gap-4">
-          {campaigns.map((campaign) => (
-            <div key={campaign.id} className="card bg-base-100 shadow-xl">
-              <div className="card-body">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <h4 className="card-title">{campaign.name}</h4>
-                    <p className="text-base-content/70 mb-3">{campaign.subject}</p>
-                    
-                    <div className="flex items-center gap-4 text-sm">
-                      <div className={getStatusBadge(campaign.status)}>
-                        {campaign.status}
-                      </div>
-                      <span>Recipients: {campaign.recipient_count}</span>
-                      {campaign.sent_at && (
-                        <span>Sent: {new Date(campaign.sent_at).toLocaleDateString()}</span>
-                      )}
-                    </div>
-
-                    {campaign.status === 'sent' && (
-                      <div className="stats stats-horizontal mt-4">
-                        <div className="stat py-2 px-4">
-                          <div className="stat-title text-xs">Delivered</div>
-                          <div className="stat-value text-sm">{campaign.sent_count}</div>
-                        </div>
-                        <div className="stat py-2 px-4">
-                          <div className="stat-title text-xs">Opened</div>
-                          <div className="stat-value text-sm">{campaign.opened_count}</div>
-                          <div className="stat-desc text-xs">
-                            {((campaign.opened_count / campaign.sent_count) * 100).toFixed(1)}%
-                          </div>
-                        </div>
-                        <div className="stat py-2 px-4">
-                          <div className="stat-title text-xs">Clicked</div>
-                          <div className="stat-value text-sm">{campaign.clicked_count}</div>
-                          <div className="stat-desc text-xs">
-                            {((campaign.clicked_count / campaign.opened_count) * 100).toFixed(1)}%
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <button className="btn btn-ghost btn-sm">
-                      <Eye className="w-4 h-4" />
-                    </button>
-                    {campaign.status === 'draft' && (
-                      <>
-                        <button className="btn btn-ghost btn-sm">
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button className="btn btn-primary btn-sm">
-                          <Play className="w-4 h-4" />
-                        </button>
-                      </>
-                    )}
-                    {campaign.status === 'scheduled' && (
-                      <button className="btn btn-ghost btn-sm">
-                        <Pause className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   )
 }
 
 function TemplatesTab() {
-  const [templates, setTemplates] = useState<NewsletterTemplate[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    loadTemplates()
-  }, [])
-
-  const loadTemplates = async () => {
-    try {
-      setLoading(true)
-      const data = await NewsletterService.getTemplates()
-      setTemplates(data)
-    } catch (error) {
-      console.error('Error loading templates:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   return (
-    <div className="space-y-6">
-      {/* Controls */}
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Email Templates</h3>
-        <button className="btn btn-primary">
-          <Plus className="w-4 h-4 mr-2" />
-          New Template
-        </button>
+    <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+      <div className="max-w-md mx-auto">
+        <div className="mb-6">
+          <Edit className="w-16 h-16 mx-auto text-primary opacity-50" />
+        </div>
+        <h2 className="text-2xl font-bold mb-4 text-base-content">Email Templates</h2>
+        <p className="text-base-content/70 mb-6 leading-relaxed">
+          Template management features are coming soon. This will include:
+        </p>
+        <ul className="text-left text-base-content/60 space-y-2 mb-8">
+          <li className="flex items-center">
+            <Edit className="w-4 h-4 mr-2 text-primary" />
+            Create reusable email templates
+          </li>
+          <li className="flex items-center">
+            <Mail className="w-4 h-4 mr-2 text-primary" />
+            Pre-designed newsletter layouts
+          </li>
+          <li className="flex items-center">
+            <Plus className="w-4 h-4 mr-2 text-primary" />
+            Custom template builder
+          </li>
+          <li className="flex items-center">
+            <Eye className="w-4 h-4 mr-2 text-primary" />
+            Preview and test templates
+          </li>
+        </ul>
+        <div className="bg-base-200 p-4 rounded-lg">
+          <h3 className="font-semibold mb-2 text-base-content">Coming Soon</h3>
+          <p className="text-sm text-base-content/60">
+            We're developing a powerful template system for beautiful newsletters. 
+            Stay tuned for updates!
+          </p>
+        </div>
       </div>
-
-      {/* Templates Grid */}
-      {loading ? (
-        <div className="flex justify-center py-8">
-          <span className="loading loading-spinner loading-lg"></span>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {templates.map((template) => (
-            <div key={template.id} className="card bg-base-100 shadow-xl">
-              <div className="card-body">
-                <h4 className="card-title text-lg">{template.name}</h4>
-                <p className="text-base-content/70 text-sm mb-3">{template.subject}</p>
-                
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="badge badge-outline">{template.template_type}</div>
-                </div>
-
-                <div className="text-xs text-base-content/60 mb-4">
-                  Created: {new Date(template.created_at).toLocaleDateString()}
-                  <br />
-                  Updated: {new Date(template.updated_at).toLocaleDateString()}
-                </div>
-
-                <div className="card-actions justify-end">
-                  <button className="btn btn-ghost btn-sm">
-                    <Eye className="w-4 h-4" />
-                  </button>
-                  <button className="btn btn-ghost btn-sm">
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button className="btn btn-ghost btn-sm text-error">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   )
 }

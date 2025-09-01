@@ -183,7 +183,7 @@ export function BlogPostPage() {
                   />
                 )}
                 
-                {canEdit(post.author_id) && (
+                {canEdit(post.author_id || undefined) && (
                   <button className="btn btn-ghost btn-sm">
                     <Edit className="w-4 h-4 mr-1" />
                     Edit

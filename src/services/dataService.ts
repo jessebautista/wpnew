@@ -40,6 +40,7 @@ const mockPianos: Piano[] = [
     moderation_status: 'approved',
     verified: true,
     piano_source: 'sing_for_hope',
+    source: 'Sing for Hope',
     latitude: 40.7829,
     longitude: -73.9654,
     location_display_name: 'Central Park - Bethesda Fountain Area'

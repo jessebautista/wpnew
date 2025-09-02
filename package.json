@@ -8,14 +8,7 @@
     "build": "vite build",
     "build:check": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "test": "playwright test",
-    "test:headed": "playwright test --headed",
-    "test:ui": "playwright test --ui",
-    "test:smoke": "playwright test tests/smoke.spec.ts",
-    "test:social": "playwright test tests/social-sharing.spec.ts",
-    "test:newsletter": "playwright test tests/newsletter.spec.ts",
-    "test:report": "playwright show-report"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
@@ -43,7 +36,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",
-    "@playwright/test": "^1.55.0",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",

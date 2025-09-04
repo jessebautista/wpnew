@@ -2,8 +2,12 @@ import { Link } from 'react-router-dom'
 import { Piano } from 'lucide-react'
 import { NewsletterSubscription } from '../newsletter/NewsletterSubscription'
 import { SocialFollow } from '../social/SocialFollow'
+import { useLanguage } from '../../contexts/LanguageContext'
 
 export function Footer() {
+  const { t } = useLanguage()
+  const currentYear = new Date().getFullYear()
+  
   return (
     <footer className="bg-base-200 text-base-content">
       <div className="container mx-auto px-4 py-10">
@@ -24,7 +28,7 @@ export function Footer() {
               <span className="text-xl font-bold">WorldPianos</span>
             </div>
             <p className="text-sm">
-              Connecting piano enthusiasts worldwide, making it easy to find, share, and celebrate public pianos.
+              {t('footer.description')}
             </p>
             <div className="flex justify-center md:justify-start">
               <SocialFollow 
@@ -37,24 +41,24 @@ export function Footer() {
 
           {/* Quick Links - Shows third on mobile, second on desktop */}
           <div className="order-3 md:order-2 text-center">
-            <h3 className="font-semibold text-lg mb-4">Quick Links</h3>
+            <h3 className="font-semibold text-lg mb-4">{t('footer.quickLinks')}</h3>
             <ul className="space-y-2">
-              <li><Link to="/pianos" className="link link-hover">Find Pianos</Link></li>
-              <li><Link to="/events" className="link link-hover">Events</Link></li>
-              <li><Link to="/blog" className="link link-hover">Blog</Link></li>
-              <li><Link to="/about" className="link link-hover">About Us</Link></li>
+              <li><Link to="/pianos" className="link link-hover">{t('footer.findPianos')}</Link></li>
+              <li><Link to="/events" className="link link-hover">{t('footer.events')}</Link></li>
+              <li><Link to="/blog" className="link link-hover">{t('footer.blog')}</Link></li>
+              <li><Link to="/about" className="link link-hover">{t('footer.aboutUs')}</Link></li>
             </ul>
           </div>
 
           {/* Support - Shows fourth on mobile, third on desktop */}
           <div className="order-4 md:order-3 text-center">
-            <h3 className="font-semibold text-lg mb-4">Support</h3>
+            <h3 className="font-semibold text-lg mb-4">{t('footer.support')}</h3>
             <ul className="space-y-2">
-              <li><Link to="/contact" className="link link-hover">Contact Us</Link></li>
-              <li><Link to="/faq" className="link link-hover">FAQ</Link></li>
-              <li><Link to="/report" className="link link-hover">Report an Issue</Link></li>
-              <li><Link to="/privacy" className="link link-hover">Privacy Policy</Link></li>
-              <li><Link to="/terms" className="link link-hover">Terms of Service</Link></li>
+              <li><Link to="/contact" className="link link-hover">{t('footer.contactUs')}</Link></li>
+              <li><Link to="/faq" className="link link-hover">{t('footer.faq')}</Link></li>
+              <li><Link to="/report" className="link link-hover">{t('footer.reportIssue')}</Link></li>
+              <li><Link to="/privacy" className="link link-hover">{t('footer.privacyPolicy')}</Link></li>
+              <li><Link to="/terms" className="link link-hover">{t('footer.termsOfService')}</Link></li>
             </ul>
           </div>
         </div>
@@ -63,12 +67,12 @@ export function Footer() {
         <div className="divider"></div>
         <div className="flex flex-col md:flex-row justify-between items-center gap-2">
           <p className="text-sm">
-            © 2025 WorldPianos.org. All rights reserved.
+            {t('footer.copyright', { year: currentYear })}
           </p>
           <div className="flex flex-col md:flex-row items-center gap-2 text-sm">
-            <p>Made with ♪ for piano lovers worldwide</p>
+            <p>{t('footer.madeWith')}</p>
             <span className="hidden md:inline">•</span>
-            <p>Powered by Sing for Hope</p>
+            <p>{t('footer.poweredBy')}</p>
           </div>
         </div>
       </div>

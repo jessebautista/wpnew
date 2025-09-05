@@ -22,6 +22,7 @@ import { DataService } from '../../services/dataService'
 import { CommentSection } from '../../components/comments/CommentSection'
 import { ShareButton } from '../../components/social/ShareButton'
 import { ShareModal } from '../../components/social/ShareModal'
+import { PianoStatusBadge } from '../../components/pianos/PianoStatusBadge'
 import { SocialSharingService } from '../../services/socialSharingService'
 import { ImageUploadService } from '../../services/imageUploadService'
 import { PianoVisitService } from '../../services/pianoVisitService'
@@ -248,6 +249,9 @@ export function PianoDetailPage() {
                           <Star className="w-3 h-3 mr-1" />
                           Verified
                         </div>
+                      )}
+                      {piano.status && (
+                        <PianoStatusBadge status={piano.status} />
                       )}
                       {piano.piano_program && (
                         <div className="badge badge-secondary">{piano.piano_program}</div>

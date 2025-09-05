@@ -1,4 +1,5 @@
 export type UserRole = 'user' | 'moderator' | 'admin'
+export type PianoStatus = 'Unknown' | 'Available' | 'Unplayable' | 'Archived'
 
 export interface User {
   id: string
@@ -65,6 +66,7 @@ export interface Piano {
   verified: boolean
   piano_source: 'sing_for_hope' | 'user_submitted'
   source: 'WorldPianos' | 'Sing for Hope' // New source field for display
+  status: PianoStatus // Piano availability status
   
   // Computed fields (from view or frontend)
   latitude?: number // Computed from perm_lat

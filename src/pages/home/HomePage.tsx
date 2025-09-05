@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { MockDataService } from '../../data/mockData'
 import { NewsletterSubscription } from '../../components/newsletter/NewsletterSubscription'
 import { SocialShareWidget } from '../../components/social/SocialShareWidget'
+import { PianoStatusBadge } from '../../components/pianos/PianoStatusBadge'
 import { generateEventSlug } from '../../utils/slugUtils'
 import type { Piano as PianoType, Event } from '../../types'
 
@@ -20,7 +21,13 @@ export function HomePage() {
           MockDataService.getEvents()
         ])
         setFeaturedPianos(pianos.filter(p => p.verified).slice(0, 3))
-        setUpcomingEvents(events.slice(0, 3))
+        
+        // Filter to only upcoming events (in the future)
+        const now = new Date()
+        const upcomingEventsFiltered = events
+          .filter(event => new Date(event.date) > now)
+          .slice(0, 3)
+        setUpcomingEvents(upcomingEventsFiltered)
       } catch (error) {
         console.error('Error loading data:', error)
       } finally {
@@ -136,6 +143,9 @@ export function HomePage() {
                       {piano.piano_source === 'user_submitted' && (
                         <div className="badge badge-accent">Community</div>
                       )}
+                      {piano.status && (
+                        <PianoStatusBadge status={piano.status} size="sm" />
+                      )}
                       {piano.piano_year && (
                         <div className="badge badge-outline">{piano.piano_year}</div>
                       )}
@@ -152,19 +162,15 @@ export function HomePage() {
         </div>
       </div>
 
-      {/* Upcoming Events */}
-      <div className="py-12 sm:py-16 bg-base-200">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-8 sm:mb-12">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4">Upcoming Events</h2>
-            <p className="text-base sm:text-lg lg:text-xl text-base-content/80">Join piano enthusiasts in your area</p>
-          </div>
-
-          {loading ? (
-            <div className="flex justify-center">
-              <span className="loading loading-spinner loading-lg"></span>
+      {/* Upcoming Events - Only show if there are upcoming events */}
+      {(!loading && upcomingEvents.length > 0) && (
+        <div className="py-12 sm:py-16 bg-base-200">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-8 sm:mb-12">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4">Upcoming Events</h2>
+              <p className="text-base sm:text-lg lg:text-xl text-base-content/80">Join piano enthusiasts in your area</p>
             </div>
-          ) : (
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {upcomingEvents.map((event) => (
                 <Link key={event.id} to={`/events/${generateEventSlug(event.title, event.id, event.date)}`} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-300 cursor-pointer">
@@ -181,13 +187,13 @@ export function HomePage() {
                 </Link>
               ))}
             </div>
-          )}
 
-          <div className="text-center mt-8">
-            <Link to="/events" className="btn btn-primary">View All Events</Link>
+            <div className="text-center mt-8">
+              <Link to="/events" className="btn btn-primary">View All Events</Link>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Newsletter Section */}
       <div className="py-16 bg-base-200">

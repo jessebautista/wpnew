@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Piano as PianoIcon, MapPin, Star } from 'lucide-react'
+import { PianoStatusBadge } from '../pianos/PianoStatusBadge'
 import type { Piano } from '../../types'
 
 interface PianoCardProps {
@@ -43,6 +44,11 @@ export function PianoCard({ piano }: PianoCardProps) {
 
         {/* Badges Container */}
         <div className="absolute top-2 right-2 flex flex-col gap-1">
+          {/* Status Badge */}
+          {piano.status && (
+            <PianoStatusBadge status={piano.status} size="sm" />
+          )}
+          
           {/* Source Badge */}
           {piano.source && (
             <div className={`badge badge-sm ${piano.source === 'Sing for Hope' ? 'badge-primary' : 'badge-info'}`}>

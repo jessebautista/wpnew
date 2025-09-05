@@ -62,6 +62,7 @@ export const mockPianos: Piano[] = [
     verified: true,
     piano_source: 'sing_for_hope',
     source: 'Sing for Hope',
+    status: 'Available',
     latitude: 40.7829,
     longitude: -73.9654,
     location_display_name: 'Central Park, New York, NY'
@@ -98,6 +99,7 @@ export const mockPianos: Piano[] = [
     verified: true,
     piano_source: 'sing_for_hope',
     source: 'Sing for Hope',
+    status: 'Available',
     latitude: 40.7580,
     longitude: -73.9855,
     location_display_name: 'Times Square, New York, NY'
@@ -134,6 +136,7 @@ export const mockPianos: Piano[] = [
     verified: false,
     piano_source: 'user_submitted',
     source: 'WorldPianos',
+    status: 'Unknown',
     latitude: 40.7061,
     longitude: -73.9969,
     location_display_name: 'Brooklyn Bridge Park, New York, NY'

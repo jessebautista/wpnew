@@ -1,20 +1,35 @@
 import { useState } from 'react'
 import { Check } from 'lucide-react'
 import { NewsletterService } from '../../services/newsletterService'
+import { useLanguage } from '../../contexts/LanguageContext'
 import type { NewsletterSubscriber } from '../../services/newsletterService'
 
 interface EditSubscriberModalProps {
-  subscriber: NewsletterSubscriber
+  isOpen: boolean
+  subscriber: NewsletterSubscriber | null
   onClose: () => void
   onSave: () => Promise<void>
 }
 
-export function EditSubscriberModal({ subscriber, onClose, onSave }: EditSubscriberModalProps) {
+export function EditSubscriberModal({ isOpen, subscriber, onClose, onSave }: EditSubscriberModalProps) {
+  const { t } = useLanguage()
+  
+  // Early return if modal is closed or no subscriber
+  if (!isOpen || !subscriber) {
+    return null
+  }
+  
   const [formData, setFormData] = useState({
     first_name: subscriber.first_name || '',
     last_name: subscriber.last_name || '',
     status: subscriber.status,
-    preferences: { ...subscriber.preferences }
+    preferences: { 
+      weekly_digest: true,
+      event_notifications: true,
+      new_piano_alerts: true,
+      blog_updates: true,
+      ...subscriber.preferences 
+    }
   })
   const [saving, setSaving] = useState(false)
 

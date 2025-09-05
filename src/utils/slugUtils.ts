@@ -69,8 +69,13 @@ export function extractIdFromSlug(slug: string): string {
   const parts = slug.split('-')
   const lastPart = parts[parts.length - 1]
   
-  // If it looks like a UUID prefix (8 chars, alphanumeric), return it
+  // If it looks like a UUID prefix (6+ chars, hexadecimal), return it
   if (lastPart && lastPart.length >= 6 && /^[a-f0-9]+$/i.test(lastPart)) {
+    return lastPart
+  }
+  
+  // If it looks like a simple ID (1-5 chars, alphanumeric), return it
+  if (lastPart && lastPart.length >= 1 && lastPart.length <= 5 && /^[a-z0-9]+$/i.test(lastPart)) {
     return lastPart
   }
   

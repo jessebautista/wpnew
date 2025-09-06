@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { EventMap } from '../../components/map/EventMap'
+import { MapWithModals } from '../../components/map/MapWithModals'
 import { DataService } from '../../services/dataService'
 import type { Event } from '../../types'
 import { Map, Search, Filter, Locate, Calendar, List } from 'lucide-react'
@@ -9,7 +9,6 @@ export function EventsMapPage() {
   const [events, setEvents] = useState<Event[]>([])
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
-  const [, setSelectedEvent] = useState<Event | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filters, setFilters] = useState({
     category: '',
@@ -282,12 +281,12 @@ export function EventsMapPage() {
           <div className="lg:col-span-3">
             <div className="card bg-base-100 shadow-xl">
               <div className="card-body p-0">
-                <EventMap
-                  events={filteredEvents}
-                  onEventSelect={setSelectedEvent}
+                <MapWithModals
+                  items={filteredEvents}
                   height="600px"
                   center={userLocation || [40.7128, -74.0060]}
                   zoom={userLocation ? 12 : 2}
+                  itemType="events"
                 />
               </div>
             </div>

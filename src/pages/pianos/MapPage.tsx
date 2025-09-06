@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { PianoMap } from '../../components/map/PianoMap'
+import { MapWithModals } from '../../components/map/MapWithModals'
 import { DataService } from '../../services/dataService'
 import type { Piano } from '../../types'
 import { Map, Search, Filter, Locate, List } from 'lucide-react'
@@ -9,7 +9,6 @@ export function MapPage() {
   const [pianos, setPianos] = useState<Piano[]>([])
   const [filteredPianos, setFilteredPianos] = useState<Piano[]>([])
   const [loading, setLoading] = useState(true)
-  const [, setSelectedPiano] = useState<Piano | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filters, setFilters] = useState({
     source: '',
@@ -218,12 +217,12 @@ export function MapPage() {
           <div className="lg:col-span-3">
             <div className="card bg-base-100 shadow-xl">
               <div className="card-body p-0">
-                <PianoMap
-                  pianos={filteredPianos}
-                  onPianoSelect={setSelectedPiano}
+                <MapWithModals
+                  items={filteredPianos}
                   height="600px"
                   center={userLocation || [40.7128, -74.0060]}
                   zoom={userLocation ? 12 : 2}
+                  itemType="pianos"
                 />
               </div>
             </div>
@@ -265,6 +264,7 @@ export function MapPage() {
           </div>
         </div>
       </div>
+
     </div>
   )
 }

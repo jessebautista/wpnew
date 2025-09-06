@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
 import MarkerClusterGroup from 'react-leaflet-cluster'
 import { Icon, divIcon, point } from 'leaflet'
 import { Calendar, MapPin, Star, Clock, Piano as PianoIcon, Users, CheckCircle } from 'lucide-react'
@@ -114,6 +114,10 @@ interface InteractiveMapProps {
   center?: [number, number]
   zoom?: number
   itemType: 'pianos' | 'events'
+  // Optional modal support - if provided, will use modals instead of callbacks
+  showModal?: boolean
+  onPianoModalOpen?: (piano: Piano) => void
+  onEventModalOpen?: (event: Event) => void
 }
 
 // Component to fit map bounds to items
@@ -134,57 +138,6 @@ function FitBounds({ items }: { items: MapItem[] }) {
   return null
 }
 
-// Piano popup component
-function PianoPopup({ piano }: { piano: Piano }) {
-  return (
-    <div className="p-2 min-w-[200px]">
-      <div className="flex items-start justify-between mb-2">
-        <h3 className="font-bold text-lg">{piano.piano_title}</h3>
-        {piano.verified && (
-          <div className="badge badge-success badge-sm">
-            <Star className="w-3 h-3 mr-1" />
-            Verified
-          </div>
-        )}
-      </div>
-      
-      <div className="flex items-center text-sm text-gray-600 mb-2">
-        <MapPin className="w-4 h-4 mr-1" />
-        {piano.location_display_name || piano.public_location_name || piano.permanent_home_name}
-      </div>
-      
-      <div className="flex items-center text-sm text-gray-600 mb-2">
-        <PianoIcon className="w-4 h-4 mr-1" />
-        {piano.piano_source === 'sing_for_hope' ? 'Sing for Hope' : 'Community'} {piano.piano_year ? `• ${piano.piano_year}` : ''}
-      </div>
-      
-      {piano.piano_program && (
-        <div className="flex items-center text-sm text-gray-600 mb-3">
-          <Clock className="w-4 h-4 mr-1" />
-          {piano.piano_program}
-        </div>
-      )}
-      
-      {piano.piano_statement && (
-        <p className="text-sm text-gray-700 mb-3">
-          {piano.piano_statement.length > 100 
-            ? `${piano.piano_statement.substring(0, 100)}...`
-            : piano.piano_statement
-          }
-        </p>
-      )}
-      
-      <div className="flex space-x-2">
-        <a href={`/pianos/${piano.id}`} className="btn btn-primary btn-xs">
-          View Details
-        </a>
-        <button className="btn btn-outline btn-xs">
-          Mark Visited
-        </button>
-      </div>
-    </div>
-  )
-}
 
 // Event popup component
 function EventPopup({ event }: { event: Event }) {
@@ -271,10 +224,23 @@ export function InteractiveMap({
   height = '500px',
   center = [40.7128, -74.0060], // Default to NYC
   zoom = 2,
-  itemType
+  itemType,
+  showModal = false,
+  onPianoModalOpen,
+  onEventModalOpen
 }: InteractiveMapProps) {
   const handleItemClick = (item: MapItem) => {
-    onItemSelect?.(item)
+    if (showModal) {
+      // Use modal callbacks if provided
+      if (isPiano(item) && onPianoModalOpen) {
+        onPianoModalOpen(item)
+      } else if (isEvent(item) && onEventModalOpen) {
+        onEventModalOpen(item)
+      }
+    } else {
+      // Use regular callback
+      onItemSelect?.(item)
+    }
   }
 
   // Filter out items without valid coordinates
@@ -285,56 +251,11 @@ export function InteractiveMap({
 
   return (
     <div className="relative">
-      <style>{`
-        .custom-popup .leaflet-popup-content-wrapper {
-          touch-action: auto !important;
-          pointer-events: auto !important;
-          user-select: auto !important;
-          z-index: 1500 !important;
-        }
-        .custom-popup .leaflet-popup-content {
-          margin: 8px 12px !important;
-          touch-action: auto !important;
-          pointer-events: auto !important;
-        }
-        .custom-popup .leaflet-popup-close-button {
-          touch-action: auto !important;
-          pointer-events: auto !important;
-          z-index: 1501 !important;
-        }
-        /* Prevent map from interfering with popup on mobile */
-        .leaflet-container {
-          touch-action: pan-x pan-y !important;
-        }
-        .leaflet-popup {
-          z-index: 1500 !important;
-          touch-action: auto !important;
-          pointer-events: auto !important;
-        }
-        /* Ensure popup appears above all map controls and legend */
-        .leaflet-popup-pane {
-          z-index: 1500 !important;
-        }
-        .leaflet-popup-pane .leaflet-popup {
-          z-index: 1500 !important;
-        }
-        @media (max-width: 768px) {
-          .custom-popup .leaflet-popup-content-wrapper {
-            max-width: 280px !important;
-            min-height: 150px !important;
-          }
-          .leaflet-popup {
-            pointer-events: auto !important;
-            touch-action: auto !important;
-          }
-        }
-      `}</style>
       <MapContainer
         center={center}
         zoom={zoom}
         style={{ height, width: '100%' }}
         className="rounded-lg z-0"
-        closePopupOnClick={false}
         touchZoom={true}
         doubleClickZoom={false}
         scrollWheelZoom={true}
@@ -384,44 +305,9 @@ export function InteractiveMap({
                     handleItemClick(item)
                     // Prevent event from bubbling to map
                     e.originalEvent?.stopPropagation?.()
-                    // Multiple attempts to keep popup open on mobile
-                    setTimeout(() => {
-                      const popup = document.querySelector('.leaflet-popup') as HTMLElement;
-                      const popupPane = document.querySelector('.leaflet-popup-pane') as HTMLElement;
-                      if (popup) {
-                        popup.style.pointerEvents = 'auto';
-                        popup.style.touchAction = 'auto';
-                        popup.style.zIndex = '1500';
-                        popup.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: false });
-                        popup.addEventListener('touchend', (e) => e.stopPropagation(), { passive: false });
-                      }
-                      if (popupPane) {
-                        popupPane.style.zIndex = '1500';
-                      }
-                    }, 50);
-                    // Double check after longer delay
-                    setTimeout(() => {
-                      const popup = document.querySelector('.leaflet-popup') as HTMLElement;
-                      if (popup && popup.style.display === 'none') {
-                        popup.style.display = 'block';
-                      }
-                    }, 200);
                   }
                 }}
-              >
-                <Popup
-                  closeOnEscapeKey={false}
-                  closeOnClick={false}
-                  autoClose={false}
-                  className="custom-popup"
-                >
-                  {isPianoItem ? (
-                    <PianoPopup piano={item} />
-                  ) : (
-                    <EventPopup event={item as Event} />
-                  )}
-                </Popup>
-              </Marker>
+              />
             )
           })}
         </MarkerClusterGroup>

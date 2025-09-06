@@ -316,7 +316,7 @@ export function InteractiveMap({
       </MapContainer>
       
       {/* Map Legend */}
-      <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-3 z-10" style={{zIndex: 400}}>
+      <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-3 z-10">
         <h4 className="font-semibold text-sm mb-2">
           {itemType === 'pianos' ? 'Piano Types' : 'Event Types'}
         </h4>

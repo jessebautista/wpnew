@@ -52,7 +52,7 @@ export function EventModal({ event, isOpen, onClose }: EventModalProps) {
     <>
       {/* Backdrop */}
       <div 
-        className={`fixed inset-0 bg-black bg-opacity-50 transition-opacity z-50 ${
+        className={`fixed inset-0 bg-black bg-opacity-50 transition-opacity z-[9999] ${
           isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         onClick={handleBackdropClick}
@@ -61,14 +61,14 @@ export function EventModal({ event, isOpen, onClose }: EventModalProps) {
         <div className={`fixed inset-0 overflow-y-auto transition-transform ${
           isOpen ? 'translate-y-0' : 'translate-y-full'
         }`}>
-          <div className="flex min-h-full items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="flex min-h-full items-center justify-center p-0 sm:p-4">
             {/* Modal Content */}
             <div className="relative w-full sm:max-w-lg bg-base-100 rounded-t-xl sm:rounded-xl shadow-xl transform transition-all">
               {/* Mobile Close Button - Top Right */}
-              <div className="sticky top-0 z-10 flex justify-end p-4 bg-base-100 rounded-t-xl sm:hidden">
+              <div className="sticky top-0 z-20 flex justify-end p-4 bg-base-100 rounded-t-xl sm:hidden">
                 <button
                   onClick={onClose}
-                  className="btn btn-ghost btn-sm btn-circle"
+                  className="btn btn-ghost btn-sm btn-circle bg-base-200 hover:bg-base-300"
                   aria-label="Close modal"
                 >
                   <X className="w-5 h-5" />
@@ -76,10 +76,10 @@ export function EventModal({ event, isOpen, onClose }: EventModalProps) {
               </div>
 
               {/* Desktop Close Button */}
-              <div className="hidden sm:block absolute top-4 right-4 z-10">
+              <div className="hidden sm:block absolute top-4 right-4 z-20">
                 <button
                   onClick={onClose}
-                  className="btn btn-ghost btn-sm btn-circle"
+                  className="btn btn-ghost btn-sm btn-circle bg-base-200 hover:bg-base-300 shadow-lg"
                   aria-label="Close modal"
                 >
                   <X className="w-5 h-5" />

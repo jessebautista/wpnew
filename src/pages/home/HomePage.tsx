@@ -6,6 +6,8 @@ import { NewsletterSubscription } from '../../components/newsletter/NewsletterSu
 import { SocialShareWidget } from '../../components/social/SocialShareWidget'
 import { PianoStatusBadge } from '../../components/pianos/PianoStatusBadge'
 import { generateEventSlug } from '../../utils/slugUtils'
+import { PageTransition, StaggerContainer, StaggerItem } from '../../components/animations/PageTransition'
+import { AnimatedCard, AnimatedButton, AnimatedSpinner, FadeIn } from '../../components/animations/AnimatedComponents'
 import type { Piano as PianoType, Event } from '../../types'
 
 export function HomePage() {
@@ -39,9 +41,9 @@ export function HomePage() {
   }, [])
 
   return (
-    <div className="min-h-screen">
+    <PageTransition className="min-h-screen">
       {/* Hero Section */}
-      <div className="hero min-h-[70vh] lg:min-h-[80vh] relative overflow-hidden">
+      <FadeIn className="hero min-h-[70vh] lg:min-h-[80vh] relative overflow-hidden">
         {/* Hero Background Image with Blur */}
         <div 
           className="hero-overlay absolute inset-0 bg-cover bg-center bg-no-repeat scale-110 blur-sm"
@@ -61,53 +63,59 @@ export function HomePage() {
               Connect with fellow piano enthusiasts and share your musical journey.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center">
-              <Link to="/pianos" className="btn btn-primary btn-lg w-full sm:w-auto shadow-2xl hover:shadow-primary/25 transition-all duration-300 transform hover:scale-105">
+              <Link to="/pianos" className="btn btn-primary btn-lg w-full sm:w-auto shadow-2xl hover:shadow-primary/25">
                 <Map className="w-5 h-5 mr-2" />
                 Explore Piano Map
               </Link>
-              <Link to="/events" className="btn btn-outline btn-lg w-full sm:w-auto text-white border-white/80 hover:bg-white hover:text-black hover:border-white shadow-2xl backdrop-blur-sm transition-all duration-300 transform hover:scale-105">
+              <Link to="/events" className="btn btn-outline btn-lg w-full sm:w-auto text-white border-white/80 hover:bg-white hover:text-black hover:border-white shadow-2xl backdrop-blur-sm">
                 <Calendar className="w-5 h-5 mr-2" />
                 Find Events
               </Link>
             </div>
           </div>
         </div>
-      </div>
+      </FadeIn>
 
       {/* Stats Section */}
-      <div className="py-12 sm:py-16 bg-base-200">
+      <FadeIn delay={0.2} className="py-12 sm:py-16 bg-base-200">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
-            <div className="stat bg-base-100 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 text-center">
-              <div className="stat-figure text-primary mb-2">
-                <Piano className="w-10 h-10 sm:w-8 sm:h-8 mx-auto" />
-              </div>
-              <div className="stat-title text-base sm:text-sm font-medium">Public Pianos</div>
-              <div className="stat-value text-primary text-2xl sm:text-3xl font-bold">2,500+</div>
-              <div className="stat-desc text-sm opacity-70 mt-1">Across 50+ countries</div>
-            </div>
-            <div className="stat bg-base-100 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 text-center">
-              <div className="stat-figure text-secondary mb-2">
-                <Users className="w-10 h-10 sm:w-8 sm:h-8 mx-auto" />
-              </div>
-              <div className="stat-title text-base sm:text-sm font-medium">Community Members</div>
-              <div className="stat-value text-secondary text-2xl sm:text-3xl font-bold">10,000+</div>
-              <div className="stat-desc text-sm opacity-70 mt-1">Piano enthusiasts worldwide</div>
-            </div>
-            <div className="stat bg-base-100 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 text-center sm:col-span-1 col-span-1">
-              <div className="stat-figure text-accent mb-2">
-                <Calendar className="w-10 h-10 sm:w-8 sm:h-8 mx-auto" />
-              </div>
-              <div className="stat-title text-base sm:text-sm font-medium">Events Hosted</div>
-              <div className="stat-value text-accent text-2xl sm:text-3xl font-bold">500+</div>
-              <div className="stat-desc text-sm opacity-70 mt-1">Meetups and concerts</div>
-            </div>
-          </div>
+          <StaggerContainer className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
+            <StaggerItem>
+              <AnimatedCard className="stat bg-base-100 rounded-2xl shadow-lg p-6 text-center">
+                <div className="stat-figure text-primary mb-2">
+                  <Piano className="w-10 h-10 sm:w-8 sm:h-8 mx-auto" />
+                </div>
+                <div className="stat-title text-base sm:text-sm font-medium">Public Pianos</div>
+                <div className="stat-value text-primary text-2xl sm:text-3xl font-bold">2,500+</div>
+                <div className="stat-desc text-sm opacity-70 mt-1">Across 50+ countries</div>
+              </AnimatedCard>
+            </StaggerItem>
+            <StaggerItem>
+              <AnimatedCard className="stat bg-base-100 rounded-2xl shadow-lg p-6 text-center">
+                <div className="stat-figure text-secondary mb-2">
+                  <Users className="w-10 h-10 sm:w-8 sm:h-8 mx-auto" />
+                </div>
+                <div className="stat-title text-base sm:text-sm font-medium">Community Members</div>
+                <div className="stat-value text-secondary text-2xl sm:text-3xl font-bold">10,000+</div>
+                <div className="stat-desc text-sm opacity-70 mt-1">Piano enthusiasts worldwide</div>
+              </AnimatedCard>
+            </StaggerItem>
+            <StaggerItem>
+              <AnimatedCard className="stat bg-base-100 rounded-2xl shadow-lg p-6 text-center sm:col-span-1 col-span-1">
+                <div className="stat-figure text-accent mb-2">
+                  <Calendar className="w-10 h-10 sm:w-8 sm:h-8 mx-auto" />
+                </div>
+                <div className="stat-title text-base sm:text-sm font-medium">Events Hosted</div>
+                <div className="stat-value text-accent text-2xl sm:text-3xl font-bold">500+</div>
+                <div className="stat-desc text-sm opacity-70 mt-1">Meetups and concerts</div>
+              </AnimatedCard>
+            </StaggerItem>
+          </StaggerContainer>
         </div>
-      </div>
+      </FadeIn>
 
       {/* Featured Pianos */}
-      <div className="py-12 sm:py-16">
+      <FadeIn delay={0.4} className="py-12 sm:py-16">
         <div className="container mx-auto px-4">
           <div className="text-center mb-8 sm:mb-12">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4">Featured Pianos</h2>
@@ -115,13 +123,13 @@ export function HomePage() {
           </div>
 
           {loading ? (
-            <div className="flex justify-center">
-              <span className="loading loading-spinner loading-lg"></span>
-            </div>
+            <AnimatedSpinner size="lg" />
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-              {featuredPianos.map((piano) => (
-                <Link key={piano.id} to={`/pianos/${piano.id}`} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-300 cursor-pointer">
+            <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8" delay={0.15}>
+              {featuredPianos.map((piano, index) => (
+                <StaggerItem key={piano.id}>
+                  <AnimatedCard delay={index * 0.1} className="card bg-base-100 shadow-xl">
+                    <Link to={`/pianos/${piano.id}`} className="cursor-pointer">
                   <div className="card-body">
                     <h3 className="card-title">
                       {piano.piano_title}
@@ -149,18 +157,20 @@ export function HomePage() {
                       {piano.piano_year && (
                         <div className="badge badge-outline">{piano.piano_year}</div>
                       )}
+                      </div>
                     </div>
-                  </div>
-                </Link>
+                  </Link>
+                </AnimatedCard>
+              </StaggerItem>
               ))}
-            </div>
+            </StaggerContainer>
           )}
 
           <div className="text-center mt-8">
             <Link to="/pianos" className="btn btn-primary">View All Pianos</Link>
           </div>
         </div>
-      </div>
+      </FadeIn>
 
       {/* Upcoming Events - Only show if there are upcoming events */}
       {(!loading && upcomingEvents.length > 0) && (
@@ -242,6 +252,6 @@ export function HomePage() {
           </div>
         </div>
       </div>
-    </div>
+    </PageTransition>
   )
 }

@@ -1,4 +1,5 @@
 import { X, MapPin, Calendar, Users, Clock, Piano as PianoIcon, CheckCircle, Share2, Navigation, ExternalLink, Heart } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useLanguage } from '../../contexts/LanguageContext'
 import type { Event } from '../../types'
 
@@ -49,21 +50,43 @@ export function EventModal({ event, isOpen, onClose }: EventModalProps) {
   const isUpcoming = eventDate > new Date()
 
   return (
-    <>
+    <AnimatePresence mode="wait">
       {/* Backdrop */}
-      <div 
-        className={`fixed inset-0 bg-black bg-opacity-50 transition-opacity z-[9999] ${
-          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`}
+      <motion.div 
+        className="fixed inset-0 bg-black z-[9999]"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.5 }}
+        exit={{ opacity: 0 }}
         onClick={handleBackdropClick}
       >
         {/* Modal Container */}
-        <div className={`fixed inset-0 overflow-y-auto transition-transform ${
-          isOpen ? 'translate-y-0' : 'translate-y-full'
-        }`}>
+        <div className="fixed inset-0 overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-0 sm:p-4">
             {/* Modal Content */}
-            <div className="relative w-full sm:max-w-lg bg-base-100 rounded-t-xl sm:rounded-xl shadow-xl transform transition-all">
+            <motion.div 
+              className="relative w-full sm:max-w-lg bg-base-100 rounded-t-xl sm:rounded-xl shadow-xl"
+              initial={{ 
+                opacity: 0, 
+                scale: 0.9,
+                y: window.innerWidth < 640 ? '100%' : 0 // Slide up on mobile, scale on desktop
+              }}
+              animate={{ 
+                opacity: 1, 
+                scale: 1,
+                y: 0
+              }}
+              exit={{ 
+                opacity: 0, 
+                scale: 0.9,
+                y: window.innerWidth < 640 ? '100%' : 0
+              }}
+              transition={{
+                type: 'spring',
+                damping: 25,
+                stiffness: 300,
+                duration: 0.3
+              }}
+            >
               {/* Mobile Close Button - Top Right */}
               <div className="sticky top-0 z-20 flex justify-end p-4 bg-base-100 rounded-t-xl sm:hidden">
                 <button
@@ -221,10 +244,10 @@ export function EventModal({ event, isOpen, onClose }: EventModalProps) {
                   {t('common.close')}
                 </button>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
-      </div>
-    </>
+      </motion.div>
+    </AnimatePresence>
   )
 }

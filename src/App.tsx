@@ -12,7 +12,6 @@ import { MapPage } from './pages/pianos/MapPage'
 import { EventsPage } from './pages/events/EventsPage'
 import { EventDetailPage } from './pages/events/EventDetailPage'
 import { AddEventPage } from './pages/events/AddEventPage'
-import { EventsMapPage } from './pages/events/EventsMapPage'
 import { BlogPage } from './pages/blog/BlogPage'
 import { BlogPostPage } from './pages/blog/BlogPostPage'
 import { ModerationQueuePage } from './pages/moderation/ModerationQueuePage'
@@ -62,7 +61,6 @@ function App() {
                   <Route path="/pianos/map" element={<MapPage />} />
                   <Route path="/events" element={<EventsPage />} />
                   <Route path="/events/add" element={<AddEventPage />} />
-                  <Route path="/events/map" element={<EventsMapPage />} />
                   <Route path="/events/:id" element={<EventDetailPage />} />
                   <Route path="/blog" element={<BlogPage />} />
                   <Route path="/blog/:id" element={<BlogPostPage />} />

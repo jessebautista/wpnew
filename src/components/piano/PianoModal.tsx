@@ -49,9 +49,9 @@ export function PianoModal({ piano, isOpen, onClose }: PianoModalProps) {
     <AnimatePresence mode="wait">
       {/* Backdrop */}
       <motion.div 
-        className="fixed inset-0 bg-black z-[9999]"
+        className="fixed inset-0 bg-white z-[9999]"
         initial={{ opacity: 0 }}
-        animate={{ opacity: 0.75 }}
+        animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={handleBackdropClick}
       >

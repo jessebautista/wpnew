@@ -184,13 +184,6 @@ export function EventsPage() {
                   <Grid className="w-4 h-4" />
                 </button>
               </div>
-              <Link 
-                to="/events/map"
-                className="btn btn-sm btn-outline"
-              >
-                <Map className="w-4 h-4 mr-2" />
-                Map
-              </Link>
             </div>
           </div>
 

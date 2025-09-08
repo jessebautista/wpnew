@@ -45,14 +45,24 @@ export function EventDetailPage() {
   const [interestLoading, setInterestLoading] = useState(false)
 
   useEffect(() => {
+    const abortController = new AbortController()
+    
     const loadEvent = async () => {
-      if (!id) return
+      if (!id) {
+        setLoading(false)
+        return
+      }
 
       try {
         console.log('Loading event with slug/ID:', id)
         
         // First, get all events to search by slug
         const allEvents = await DataService.getEvents()
+        
+        // Check if request was aborted
+        if (abortController.signal.aborted) {
+          return
+        }
         
         // Try to find the event by slug or ID
         const foundEvent = findBySlugOrId(
@@ -65,26 +75,56 @@ export function EventDetailPage() {
           console.log('Found event:', foundEvent)
           setEvent(foundEvent)
           
-          // Load real attendee count and user interest
-          const count = await EventInterestService.getInterestCount(foundEvent.id)
-          setAttendeeCount(count)
+          // Check if request was aborted before loading additional data
+          if (abortController.signal.aborted) {
+            return
+          }
           
-          // Load user's interest status if logged in
+          // Load real attendee count and user interest in parallel
+          const promises = [
+            EventInterestService.getInterestCount(foundEvent.id)
+          ]
+          
           if (user) {
-            const userInterest = await EventInterestService.getUserInterest(foundEvent.id, user.id)
-            setIsInterested(userInterest)
+            promises.push(EventInterestService.getUserInterest(foundEvent.id, user.id))
+          }
+          
+          const results = await Promise.allSettled(promises)
+          
+          // Check if request was aborted after promises
+          if (abortController.signal.aborted) {
+            return
+          }
+          
+          // Handle results
+          if (results[0].status === 'fulfilled') {
+            setAttendeeCount(results[0].value)
+          }
+          
+          if (user && results[1] && results[1].status === 'fulfilled') {
+            setIsInterested(results[1].value)
           }
         } else {
-          console.log('Event not found')
+          console.log('Event not found for slug/ID:', id)
         }
       } catch (error) {
-        console.error('Error loading event:', error)
+        // Only log error if it's not an AbortError
+        if (error.name !== 'AbortError' && !abortController.signal.aborted) {
+          console.error('Error loading event:', error)
+        }
       } finally {
-        setLoading(false)
+        if (!abortController.signal.aborted) {
+          setLoading(false)
+        }
       }
     }
 
     loadEvent()
+    
+    // Cleanup function to abort request if component unmounts or effect re-runs
+    return () => {
+      abortController.abort()
+    }
   }, [id, user])
 
   const handleInterestToggle = async () => {

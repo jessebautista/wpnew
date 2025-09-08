@@ -51,20 +51,20 @@ export function PianoModal({ piano, isOpen, onClose }: PianoModalProps) {
       <motion.div 
         className="fixed inset-0 bg-black z-[9999]"
         initial={{ opacity: 0 }}
-        animate={{ opacity: 0.5 }}
+        animate={{ opacity: 0.75 }}
         exit={{ opacity: 0 }}
         onClick={handleBackdropClick}
       >
         {/* Modal Container */}
         <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-0 sm:p-4">
+          <div className="flex min-h-full items-end sm:items-center justify-center p-0 sm:p-4">
             {/* Modal Content */}
             <motion.div 
-              className="relative w-full sm:max-w-lg bg-base-100 rounded-t-xl sm:rounded-xl shadow-xl"
+              className="relative w-full h-full sm:h-auto sm:max-w-lg bg-base-100 sm:rounded-xl shadow-xl flex flex-col"
               initial={{ 
                 opacity: 0, 
-                scale: 0.9,
-                y: window.innerWidth < 640 ? '100%' : 0 // Slide up on mobile, scale on desktop
+                scale: window.innerWidth < 640 ? 1 : 0.9,
+                y: window.innerWidth < 640 ? '100%' : 0
               }}
               animate={{ 
                 opacity: 1, 
@@ -73,7 +73,7 @@ export function PianoModal({ piano, isOpen, onClose }: PianoModalProps) {
               }}
               exit={{ 
                 opacity: 0, 
-                scale: 0.9,
+                scale: window.innerWidth < 640 ? 1 : 0.9,
                 y: window.innerWidth < 640 ? '100%' : 0
               }}
               transition={{
@@ -84,10 +84,13 @@ export function PianoModal({ piano, isOpen, onClose }: PianoModalProps) {
               }}
             >
               {/* Mobile Close Button - Top Right */}
-              <div className="sticky top-0 z-20 flex justify-end p-4 bg-base-100 rounded-t-xl sm:hidden">
+              <div className="sticky top-0 z-20 flex justify-between items-center p-4 bg-base-100 border-b sm:hidden">
+                <h2 className="text-lg font-semibold truncate pr-4">
+                  {piano.piano_title}
+                </h2>
                 <button
                   onClick={onClose}
-                  className="btn btn-ghost btn-sm btn-circle bg-base-200 hover:bg-base-300"
+                  className="btn btn-ghost btn-sm btn-circle bg-base-200 hover:bg-base-300 shrink-0"
                   aria-label="Close modal"
                 >
                   <X className="w-5 h-5" />
@@ -106,9 +109,9 @@ export function PianoModal({ piano, isOpen, onClose }: PianoModalProps) {
               </div>
 
               {/* Content */}
-              <div className="p-6 pt-0 sm:pt-6">
-                {/* Header */}
-                <div className="mb-4">
+              <div className="flex-1 p-6 pt-0 sm:pt-6 overflow-y-auto">
+                {/* Desktop Header */}
+                <div className="mb-4 hidden sm:block">
                   <div className="flex items-start justify-between mb-3">
                     <h2 className="text-xl sm:text-2xl font-bold text-base-content pr-10">
                       {piano.piano_title}
@@ -122,6 +125,25 @@ export function PianoModal({ piano, isOpen, onClose }: PianoModalProps) {
                   </div>
                   
                   <div className="flex items-center text-base-content/70 mb-2">
+                    <MapPin className="w-4 h-4 mr-2 shrink-0" />
+                    <span className="text-sm">
+                      {piano.location_display_name || piano.public_location_name || piano.permanent_home_name}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Mobile Header Info */}
+                <div className="mb-4 sm:hidden">
+                  {piano.verified && (
+                    <div className="mb-3">
+                      <div className="badge badge-success gap-1">
+                        <Star className="w-3 h-3" />
+                        {t('piano.verified')}
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center text-base-content/70">
                     <MapPin className="w-4 h-4 mr-2 shrink-0" />
                     <span className="text-sm">
                       {piano.location_display_name || piano.public_location_name || piano.permanent_home_name}

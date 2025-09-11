@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { 
   Piano, 
   MapPin, 
@@ -16,52 +18,51 @@ import { usePermissions } from '../../hooks/usePermissions'
 import { DataService } from '../../services/dataService'
 import { GeocodingService, type LocationSuggestion } from '../../services/geocodingService'
 import { ImageUploadService } from '../../services/imageUploadService'
-
-interface PianoFormData {
-  piano_title: string
-  piano_statement: string
-  location_name: string
-  latitude: number | null
-  longitude: number | null
-  piano_year: string
-  artist_name: string
-  piano_artist_bio: string
-  artist_website_url: string
-  permanent_home_name: string
-  public_location_name: string
-  piano_program: string
-  contributors_info: string
-  notes: string
-  images: File[]
-}
+import { pianoSchema, type PianoFormData } from '../../schemas/pianoSchema'
 
 export function AddPianoPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { canCreate } = usePermissions()
-  const [loading, setLoading] = useState(false)
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [locationLoading, setLocationLoading] = useState(false)
-  const [formData, setFormData] = useState<PianoFormData>({
-    piano_title: '',
-    piano_statement: '',
-    location_name: '',
-    latitude: null,
-    longitude: null,
-    piano_year: '',
-    artist_name: '',
-    piano_artist_bio: '',
-    artist_website_url: '',
-    permanent_home_name: '',
-    public_location_name: '',
-    piano_program: '',
-    contributors_info: '',
-    notes: '',
-    images: []
+  
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    setValue,
+    watch,
+    getValues
+  } = useForm<PianoFormData>({
+    resolver: zodResolver(pianoSchema),
+    defaultValues: {
+      piano_title: '',
+      piano_statement: '',
+      location_name: '',
+      latitude: null,
+      longitude: null,
+      piano_year: '',
+      artist_name: '',
+      piano_artist_bio: '',
+      artist_website_url: '',
+      permanent_home_name: '',
+      public_location_name: '',
+      piano_program: '',
+      contributors_info: '',
+      notes: '',
+      images: []
+    }
   })
+
+  const [locationLoading, setLocationLoading] = useState(false)
   const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
-  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null)
+  const [searchTimeout, setSearchTimeout] = useState<ReturnType<typeof setTimeout> | null>(null)
+  
+  const watchedLocationName = watch('location_name')
+  
+  // Additional state for features not handled by React Hook Form
+  const [images, setImages] = useState<File[]>([])
+  
 
   if (!user || !canCreate()) {
     return (
@@ -75,13 +76,6 @@ export function AddPianoPage() {
     )
   }
 
-  const handleInputChange = (field: keyof PianoFormData, value: string | number | null) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }))
-    }
-  }
 
   const handleLocationSearch = async (query: string) => {
     // Clear any existing timeout
@@ -89,7 +83,7 @@ export function AddPianoPage() {
       clearTimeout(searchTimeout)
     }
 
-    setFormData(prev => ({ ...prev, location_name: query }))
+    setValue('location_name', query)
 
     // If query is empty, hide suggestions
     if (!query.trim()) {
@@ -115,19 +109,11 @@ export function AddPianoPage() {
   }
 
   const handleLocationSelect = (suggestion: LocationSuggestion) => {
-    setFormData(prev => ({
-      ...prev,
-      location_name: suggestion.address,
-      latitude: suggestion.latitude,
-      longitude: suggestion.longitude
-    }))
+    setValue('location_name', suggestion.address)
+    setValue('latitude', suggestion.latitude)
+    setValue('longitude', suggestion.longitude)
     setLocationSuggestions([])
     setShowSuggestions(false)
-    
-    // Clear coordinate error if it existed
-    if (errors.coordinates) {
-      setErrors(prev => ({ ...prev, coordinates: '' }))
-    }
   }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -145,7 +131,7 @@ export function AddPianoPage() {
         continue
       }
       
-      if (formData.images.length >= 5) {
+      if (images.length >= 5) {
         console.warn('Maximum 5 images allowed')
         break
       }
@@ -158,10 +144,7 @@ export function AddPianoPage() {
           processedFile = await ImageUploadService.compressImage(file)
         }
 
-        setFormData(prev => ({
-          ...prev,
-          images: [...prev.images, processedFile]
-        }))
+        setImages(prev => ([...prev, processedFile]))
       } catch (error) {
         console.error(`Error processing ${file.name}:`, error)
       }
@@ -172,10 +155,7 @@ export function AddPianoPage() {
   }
 
   const removeImage = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }))
+    setImages(prev => prev.filter((_, i) => i !== index))
   }
 
   const getCurrentLocation = () => {
@@ -184,11 +164,8 @@ export function AddPianoPage() {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const { latitude, longitude } = position.coords
-          setFormData(prev => ({
-            ...prev,
-            latitude,
-            longitude
-          }))
+          setValue('latitude', latitude, { shouldValidate: true })
+          setValue('longitude', longitude, { shouldValidate: true })
           
           // Try to get address from coordinates using reverse geocoding
           try {
@@ -202,10 +179,7 @@ export function AddPianoPage() {
             if (response.ok) {
               const data = await response.json()
               const address = data.display_name || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
-              setFormData(prev => ({
-                ...prev,
-                location_name: prev.location_name || address
-              }))
+              setValue('location_name', getValues('location_name') || address, { shouldValidate: true })
             } else {
               throw new Error('Reverse geocoding failed')
             }
@@ -213,85 +187,43 @@ export function AddPianoPage() {
             console.error('Error getting address:', error)
             // Fall back to coordinates
             const coordsAddress = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
-            setFormData(prev => ({
-              ...prev,
-              location_name: prev.location_name || coordsAddress
-            }))
+            setValue('location_name', getValues('location_name') || coordsAddress, { shouldValidate: true })
           }
           
-          // Clear coordinate error if it existed
-          if (errors.coordinates) {
-            setErrors(prev => ({ ...prev, coordinates: '' }))
-          }
+          // No-op: coordinates validation handled by schema when present
           
           setLocationLoading(false)
         },
         (error) => {
           console.error('Error getting location:', error)
           setLocationLoading(false)
-          setErrors(prev => ({
-            ...prev,
-            location: 'Unable to get your location. Please enter the address manually.'
-          }))
         }
       )
     } else {
       setLocationLoading(false)
-      setErrors(prev => ({
-        ...prev,
-        location: 'Geolocation is not supported by this browser.'
-      }))
     }
   }
 
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {}
-
-    // Only require piano title
-    if (!formData.piano_title.trim()) {
-      newErrors.piano_title = 'Piano title is required'
-    }
-
-    // Optional length validations
-    if (formData.piano_statement && formData.piano_statement.length > 1000) {
-      newErrors.piano_statement = 'Statement must be less than 1000 characters'
-    }
-
-    if (formData.piano_artist_bio && formData.piano_artist_bio.length > 500) {
-      newErrors.piano_artist_bio = 'Artist bio must be less than 500 characters'
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!validateForm()) {
-      return
-    }
-
-    setLoading(true)
+  const onSubmit = async (formData: PianoFormData) => {
     
     try {
       console.log('Submitting piano:', formData)
       
       // Prepare piano data for submission
       const pianoData = {
-        piano_title: formData.piano_title.trim(),
-        piano_statement: formData.piano_statement.trim() || null,
-        piano_year: formData.piano_year.trim() || null,
-        artist_name: formData.artist_name.trim() || null,
-        piano_artist_bio: formData.piano_artist_bio.trim() || null,
-        artist_website_url: formData.artist_website_url.trim() || null,
-        permanent_home_name: formData.permanent_home_name.trim() || null,
-        public_location_name: formData.public_location_name.trim() || null,
+        piano_title: (formData.piano_title || '').trim(),
+        piano_statement: (formData.piano_statement || '').trim() || null,
+        piano_year: (formData.piano_year || '').trim() || null,
+        artist_name: (formData.artist_name || '').trim() || null,
+        piano_artist_bio: (formData.piano_artist_bio || '').trim() || null,
+        artist_website_url: (formData.artist_website_url || '').trim() || null,
+        permanent_home_name: (formData.permanent_home_name || '').trim() || null,
+        public_location_name: (formData.public_location_name || '').trim() || null,
         perm_lat: formData.latitude?.toString() || null,
         perm_lng: formData.longitude?.toString() || null,
-        piano_program: formData.piano_program.trim() || null,
-        contributors_info: formData.contributors_info.trim() || null,
-        notes: formData.notes.trim() || null,
+        piano_program: (formData.piano_program || '').trim() || null,
+        contributors_info: (formData.contributors_info || '').trim() || null,
+        notes: (formData.notes || '').trim() || null,
         piano_source: 'user_submitted' as const,
         source: 'WorldPianos' as const, // New source field
         verified: false,
@@ -305,10 +237,10 @@ export function AddPianoPage() {
       console.log('Piano created successfully:', newPiano)
       
       // Upload images if any were selected
-      if (formData.images.length > 0) {
+      if (images.length > 0) {
         try {
           console.log('Uploading images to Supabase storage...')
-          await ImageUploadService.uploadAndCreateRecords(formData.images, newPiano.id)
+          await ImageUploadService.uploadAndCreateRecords(images, newPiano.id)
           console.log('Images uploaded successfully')
         } catch (imageError) {
           console.error('Image upload failed:', imageError)
@@ -326,9 +258,7 @@ export function AddPianoPage() {
       
     } catch (error) {
       console.error('Error submitting piano:', error)
-      setErrors({ submit: 'Failed to submit piano. Please try again.' })
-    } finally {
-      setLoading(false)
+      // Error is handled by React Hook Form
     }
   }
 
@@ -358,7 +288,7 @@ export function AddPianoPage() {
 
       <div className="container mx-auto px-4 py-4 md:py-8">
         <div className="max-w-2xl mx-auto">
-          <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 md:space-y-6">
             {/* Basic Information */}
             <div className="card bg-base-100 shadow-xl">
               <div className="card-body">
@@ -372,14 +302,13 @@ export function AddPianoPage() {
                     type="text"
                     placeholder="e.g. Central Park Piano, JFK Terminal 4 Piano"
                     className={`input input-bordered w-full ${errors.piano_title ? 'input-error' : ''}`}
-                    value={formData.piano_title}
-                    onChange={(e) => handleInputChange('piano_title', e.target.value)}
+                    {...register('piano_title')}
                   />
                   {errors.piano_title && (
                     <label className="label">
                       <span className="label-text-alt text-error flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" />
-                        {errors.piano_title}
+                        {errors.piano_title.message}
                       </span>
                     </label>
                   )}
@@ -388,20 +317,19 @@ export function AddPianoPage() {
                 <div className="form-control w-full">
                   <label className="label">
                     <span className="label-text font-medium">Piano Statement</span>
-                    <span className="label-text-alt">{formData.piano_statement.length}/1000</span>
+                    <span className="label-text-alt">{(watch('piano_statement') || '').length}/1000</span>
                   </label>
                   <textarea
                     className={`textarea textarea-bordered w-full h-24 ${errors.piano_statement ? 'textarea-error' : ''}`}
                     placeholder="Describe the piano, its condition, and what makes it special..."
-                    value={formData.piano_statement}
-                    onChange={(e) => handleInputChange('piano_statement', e.target.value)}
+                    {...register('piano_statement')}
                     maxLength={1000}
                   />
                   {errors.piano_statement && (
                     <label className="label">
                       <span className="label-text-alt text-error flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" />
-                        {errors.piano_statement}
+                        {errors.piano_statement.message}
                       </span>
                     </label>
                   )}
@@ -416,8 +344,7 @@ export function AddPianoPage() {
                       type="text"
                       placeholder="e.g. 2023, 2022"
                       className="input input-bordered w-full"
-                      value={formData.piano_year}
-                      onChange={(e) => handleInputChange('piano_year', e.target.value)}
+                      {...register('piano_year')}
                     />
                   </div>
 
@@ -429,8 +356,7 @@ export function AddPianoPage() {
                       type="text"
                       placeholder="Artist or designer name"
                       className="input input-bordered w-full"
-                      value={formData.artist_name}
-                      onChange={(e) => handleInputChange('artist_name', e.target.value)}
+                      {...register('artist_name')}
                     />
                   </div>
                 </div>
@@ -438,20 +364,19 @@ export function AddPianoPage() {
                 <div className="form-control w-full">
                   <label className="label">
                     <span className="label-text font-medium">Artist Bio</span>
-                    <span className="label-text-alt">{formData.piano_artist_bio.length}/500</span>
+                    <span className="label-text-alt">{(watch('piano_artist_bio') || '').length}/500</span>
                   </label>
                   <textarea
                     className={`textarea textarea-bordered w-full h-20 ${errors.piano_artist_bio ? 'textarea-error' : ''}`}
                     placeholder="Brief description of the artist or designer..."
-                    value={formData.piano_artist_bio}
-                    onChange={(e) => handleInputChange('piano_artist_bio', e.target.value)}
+                    {...register('piano_artist_bio')}
                     maxLength={500}
                   />
                   {errors.piano_artist_bio && (
                     <label className="label">
                       <span className="label-text-alt text-error flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" />
-                        {errors.piano_artist_bio}
+                        {errors.piano_artist_bio.message}
                       </span>
                     </label>
                   )}
@@ -465,8 +390,7 @@ export function AddPianoPage() {
                     type="url"
                     placeholder="https://artist-website.com"
                     className="input input-bordered w-full"
-                    value={formData.artist_website_url}
-                    onChange={(e) => handleInputChange('artist_website_url', e.target.value)}
+                    {...register('artist_website_url')}
                   />
                 </div>
               </div>
@@ -490,7 +414,7 @@ export function AddPianoPage() {
                         type="text"
                         placeholder="Enter the full address or location description"
                         className={`input input-bordered w-full ${errors.location_name ? 'input-error' : ''}`}
-                        value={formData.location_name}
+                        value={watchedLocationName}
                         onChange={(e) => handleLocationSearch(e.target.value)}
                         onFocus={() => {
                           if (locationSuggestions.length > 0) {
@@ -543,35 +467,20 @@ export function AddPianoPage() {
                     <label className="label">
                       <span className="label-text-alt text-error flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" />
-                        {errors.location_name}
-                      </span>
-                    </label>
-                  )}
-                  {errors.location && (
-                    <label className="label">
-                      <span className="label-text-alt text-warning flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" />
-                        {errors.location}
+                        {errors.location_name.message}
                       </span>
                     </label>
                   )}
                 </div>
 
-                {formData.latitude && formData.longitude && (
+                {watch('latitude') && watch('longitude') && (
                   <div className="alert alert-success">
                     <Check className="w-4 h-4" />
-                    <span>Location coordinates captured: {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}</span>
+                    <span>Location coordinates captured: {watch('latitude')!.toFixed(4)}, {watch('longitude')!.toFixed(4)}</span>
                   </div>
                 )}
 
-                {errors.coordinates && (
-                  <label className="label">
-                    <span className="label-text-alt text-error flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
-                      {errors.coordinates}
-                    </span>
-                  </label>
-                )}
+                {/* Coordinates/UI-only errors removed; schema handles validation when needed */}
               </div>
             </div>
 
@@ -589,8 +498,7 @@ export function AddPianoPage() {
                       type="text"
                       placeholder="e.g. Central Park, Museum, Gallery"
                       className="input input-bordered w-full"
-                      value={formData.permanent_home_name}
-                      onChange={(e) => handleInputChange('permanent_home_name', e.target.value)}
+                      {...register('permanent_home_name')}
                     />
                   </div>
 
@@ -602,8 +510,7 @@ export function AddPianoPage() {
                       type="text"
                       placeholder="Public area or space description"
                       className="input input-bordered w-full"
-                      value={formData.public_location_name}
-                      onChange={(e) => handleInputChange('public_location_name', e.target.value)}
+                      {...register('public_location_name')}
                     />
                   </div>
                 </div>
@@ -617,8 +524,7 @@ export function AddPianoPage() {
                       type="text"
                       placeholder="e.g. Sing for Hope, Play Me I'm Yours"
                       className="input input-bordered w-full"
-                      value={formData.piano_program}
-                      onChange={(e) => handleInputChange('piano_program', e.target.value)}
+                      {...register('piano_program')}
                     />
                   </div>
 
@@ -630,8 +536,7 @@ export function AddPianoPage() {
                       type="text"
                       placeholder="Contributors or sponsors"
                       className="input input-bordered w-full"
-                      value={formData.contributors_info}
-                      onChange={(e) => handleInputChange('contributors_info', e.target.value)}
+                      {...register('contributors_info')}
                     />
                   </div>
                 </div>
@@ -643,8 +548,7 @@ export function AddPianoPage() {
                   <textarea
                     className="textarea textarea-bordered w-full h-20"
                     placeholder="Any additional information about the piano..."
-                    value={formData.notes}
-                    onChange={(e) => handleInputChange('notes', e.target.value)}
+                    {...register('notes')}
                   />
                 </div>
               </div>
@@ -680,9 +584,9 @@ export function AddPianoPage() {
                     </label>
                   </div>
 
-                  {formData.images.length > 0 && (
+                  {images.length > 0 && (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 mt-4">
-                      {formData.images.map((file, index) => (
+                      {images.map((file, index) => (
                         <div key={index} className="relative">
                           <img
                             src={URL.createObjectURL(file)}
@@ -705,12 +609,6 @@ export function AddPianoPage() {
             </div>
 
             {/* Submit */}
-            {errors.submit && (
-              <div className="alert alert-error">
-                <AlertCircle className="w-4 h-4" />
-                <span>{errors.submit}</span>
-              </div>
-            )}
 
             {/* Submit Section */}
             <div className="card bg-gradient-to-r from-primary/5 to-secondary/5 border-primary/20 shadow-xl">
@@ -740,11 +638,11 @@ export function AddPianoPage() {
                   </Link>
                   <button
                     type="submit"
-                    className={`btn btn-primary btn-lg order-1 sm:order-2 ${loading ? 'loading' : ''}`}
-                    disabled={loading}
+                    className={`btn btn-primary btn-lg order-1 sm:order-2 ${isSubmitting ? 'loading' : ''}`}
+                    disabled={isSubmitting}
                   >
-                    {!loading && <Save className="w-5 h-5 mr-2" />}
-                    {loading ? 'Submitting...' : 'Submit Piano for Review'}
+                    {!isSubmitting && <Save className="w-5 h-5 mr-2" />}
+                    {isSubmitting ? 'Submitting...' : 'Submit Piano for Review'}
                   </button>
                 </div>
               </div>

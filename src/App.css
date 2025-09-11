@@ -1,1 +1,440 @@
 /* App styles - using Tailwind CSS and DaisyUI */
+
+/* Mobile fixes for dropdown and form elements */
+@media (max-width: 768px) {
+  /* Fix for small select dropdowns on mobile */
+  .select-sm {
+    font-size: 0.875rem !important; /* 14px - increase from default small size */
+    min-height: 2.5rem !important; /* 40px - increase touch target */
+    padding: 0.5rem 0.75rem !important;
+  }
+  
+  /* Fix for select options text size on mobile */
+  .select option {
+    font-size: 1rem !important; /* 16px - larger for mobile */
+    padding: 0.75rem 0.5rem !important;
+    line-height: 1.5 !important;
+    min-height: 2.5rem !important;
+  }
+  
+  /* Target all option elements specifically */
+  select option {
+    font-size: 1rem !important; /* 16px */
+    padding: 0.75rem 0.5rem !important;
+    line-height: 1.5 !important;
+    min-height: 2.5rem !important;
+  }
+  
+  /* Additional targeting for nested selects */
+  .select-sm option,
+  .select-bordered option {
+    font-size: 1rem !important; /* 16px */
+    padding: 0.75rem 0.5rem !important;
+    line-height: 1.5 !important;
+  }
+  
+  /* Ensure regular selects are also properly sized */
+  .select {
+    font-size: 0.875rem !important;
+    min-height: 2.5rem !important;
+  }
+  
+  /* Fix for button text being too small on mobile */
+  .btn-sm {
+    font-size: 0.875rem !important; /* 14px */
+    min-height: 2.25rem !important; /* 36px */
+    padding: 0.5rem 0.75rem !important;
+  }
+  
+  /* Fix for badge text being too small */
+  .badge-sm {
+    font-size: 0.75rem !important; /* 12px */
+  }
+  
+  /* Fix for input text size */
+  .input-sm {
+    font-size: 0.875rem !important; /* 14px */
+    min-height: 2.5rem !important; /* 40px */
+  }
+  
+  /* Fix for textarea text size */
+  .textarea-sm {
+    font-size: 0.875rem !important; /* 14px */
+  }
+  
+  /* Ensure dropdown content is readable */
+  .dropdown-content {
+    font-size: 0.875rem !important;
+  }
+  
+  .dropdown-content li > * {
+    font-size: 0.875rem !important;
+    padding: 0.5rem 1rem !important;
+  }
+  
+  /* Fix for tab text size */
+  .tab {
+    font-size: 0.875rem !important;
+  }
+  
+  .tab-sm {
+    font-size: 0.75rem !important;
+  }
+  
+  /* Fix for menu items */
+  .menu li > * {
+    font-size: 0.875rem !important;
+    padding: 0.5rem 1rem !important;
+  }
+}
+
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+  /* Fix select appearance on iOS */
+  select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    font-size: 16px !important; /* Prevent zoom on focus in iOS */
+  }
+  
+  /* Fix for iOS select dropdown text */
+  select option {
+    font-size: 16px !important;
+    padding: 12px 8px !important;
+    line-height: 1.5 !important;
+    min-height: 44px !important;
+  }
+  
+  /* Target specific DaisyUI select classes on iOS */
+  .select option,
+  .select-sm option,
+  .select-bordered option,
+  .select.select-bordered option,
+  .select.w-full option,
+  .select.select-bordered.w-full option {
+    font-size: 16px !important;
+    padding: 12px 8px !important;
+    line-height: 1.5 !important;
+  }
+  
+  /* iOS Safari specific dropdown fixes */
+  .dropdown-content {
+    /* iOS momentum scrolling */
+    -webkit-overflow-scrolling: touch !important;
+    /* Prevent zoom on touch */
+    touch-action: manipulation !important;
+    /* Hardware acceleration */
+    will-change: scroll-position !important;
+  }
+  
+  /* iOS specific menu item sizing */
+  .dropdown-content .menu li > * {
+    font-size: 16px !important;
+    min-height: 44px !important;
+    touch-action: manipulation !important;
+  }
+}
+
+/* Additional mobile breakpoint for very small screens */
+@media (max-width: 480px) {
+  .select-sm, .select {
+    font-size: 1rem !important; /* 16px - prevent iOS zoom */
+    min-height: 2.75rem !important; /* 44px - iOS touch target */
+  }
+  
+  /* Force option text size on very small screens */
+  select option,
+  .select option,
+  .select-sm option,
+  .select-bordered option {
+    font-size: 1rem !important; /* 16px */
+    padding: 0.75rem 0.5rem !important;
+    line-height: 1.4 !important;
+    min-height: 2.5rem !important;
+  }
+  
+  .btn-sm {
+    font-size: 0.875rem !important;
+    min-height: 2.75rem !important; /* 44px - iOS touch target */
+  }
+  
+  .input-sm, .input {
+    font-size: 1rem !important; /* 16px - prevent iOS zoom */
+    min-height: 2.75rem !important;
+  }
+  
+  /* Fix for very small screens - ensure all text is readable */
+  * {
+    -webkit-text-size-adjust: none !important;
+    text-size-adjust: none !important;
+  }
+}
+
+/* General mobile improvements */
+@media (max-width: 640px) {
+  /* Improve touch targets for all interactive elements */
+  .btn, .select, .input, .textarea {
+    min-height: 2.5rem !important;
+  }
+  
+  /* Ensure dropdown content has adequate spacing */
+  .dropdown-content {
+    min-width: 12rem !important;
+  }
+  
+  /* Fix for modal content on small screens */
+  .modal-box {
+    max-width: 95vw !important;
+    margin: 1rem !important;
+  }
+  
+  /* Improve table readability on mobile */
+  .table {
+    font-size: 0.875rem !important;
+  }
+  
+  .table th, .table td {
+    padding: 0.75rem 0.5rem !important;
+  }
+  
+  /* Additional DaisyUI dropdown fixes for small screens */
+  .dropdown-content {
+    max-height: 50vh !important;
+    min-width: 200px !important;
+    /* Better positioning on small screens */
+    position: absolute !important;
+  }
+  
+  /* Fix for dropdown positioning issues on mobile */
+  .dropdown {
+    position: relative !important;
+  }
+  
+  .dropdown.dropdown-open .dropdown-content {
+    display: block !important;
+    opacity: 1 !important;
+    transform: scale(1) !important;
+  }
+}
+
+/* Global option text fix - highest priority */
+option {
+  font-size: 1rem !important;
+  padding: 0.75rem 0.5rem !important;
+  line-height: 1.4 !important;
+}
+
+/* Force all select dropdown options to be readable on mobile */
+@media (max-width: 768px) {
+  * option,
+  *[class*="select"] option,
+  select[class*="select"] option,
+  .select.select-bordered option,
+  .select.w-full option {
+    font-size: 1rem !important;
+    padding: 0.75rem 0.5rem !important;
+    line-height: 1.4 !important;
+    color: #000 !important;
+    background: #fff !important;
+  }
+  
+  /* Specific targeting for PianosPage and similar full-width selects */
+  .select.select-bordered.w-full option {
+    font-size: 1rem !important;
+    padding: 0.75rem 0.5rem !important;
+    line-height: 1.4 !important;
+    min-height: 2.5rem !important;
+  }
+  
+  /* Ultra-aggressive targeting for ANY missed dropdowns */
+  select[class] option,
+  *[class*="select"][class*="bordered"] option {
+    font-size: 1rem !important;
+    padding: 0.75rem 0.5rem !important;
+    line-height: 1.4 !important;
+  }
+  
+  /* DaisyUI Dropdown fixes for mobile scrolling */
+  .dropdown-content {
+    /* Fix scrolling on mobile */
+    -webkit-overflow-scrolling: touch !important;
+    overflow-y: auto !important;
+    max-height: 60vh !important;
+    /* Prevent body scroll when dropdown is scrolling */
+    overscroll-behavior: contain !important;
+    /* Improve touch performance */
+    touch-action: pan-y !important;
+    /* Ensure proper z-index on mobile */
+    z-index: 9999 !important;
+    /* Add momentum scrolling for iOS */
+    -webkit-transform: translateZ(0) !important;
+    transform: translateZ(0) !important;
+  }
+  
+  /* Menu items inside dropdown */
+  .dropdown-content .menu li {
+    font-size: 1rem !important;
+    min-height: 2.5rem !important;
+  }
+  
+  .dropdown-content .menu li > * {
+    font-size: 1rem !important;
+    padding: 0.75rem 1rem !important;
+    min-height: 2.5rem !important;
+    line-height: 1.4 !important;
+  }
+}
+
+/* Universal dropdown scrolling fixes - for all devices */
+.dropdown-content,
+.dropdown-content.menu,
+ul[role="listbox"],
+.menu.dropdown-content {
+  /* Core scrolling properties */
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  
+  /* Height constraints for all devices */
+  max-height: min(60vh, 400px) !important;
+  
+  /* Performance optimizations */
+  will-change: scroll-position !important;
+  
+  /* Touch and mouse scrolling */
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(0,0,0,0.3) rgba(0,0,0,0.1) !important;
+  
+  /* Ensure proper positioning and visibility */
+  position: absolute !important;
+  z-index: 9999 !important;
+  min-width: 200px !important;
+  
+  /* Prevent container overflow issues */
+  overflow-x: visible !important;
+}
+
+/* Webkit scrollbar styling for all devices */
+.dropdown-content::-webkit-scrollbar,
+.menu.dropdown-content::-webkit-scrollbar {
+  width: 8px !important;
+}
+
+.dropdown-content::-webkit-scrollbar-track,
+.menu.dropdown-content::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.1) !important;
+  border-radius: 4px !important;
+}
+
+.dropdown-content::-webkit-scrollbar-thumb,
+.menu.dropdown-content::-webkit-scrollbar-thumb {
+  background-color: rgba(0,0,0,0.3) !important;
+  border-radius: 4px !important;
+}
+
+.dropdown-content::-webkit-scrollbar-thumb:hover,
+.menu.dropdown-content::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0,0,0,0.5) !important;
+}
+
+/* Fix for parent containers that might clip dropdowns */
+.dropdown {
+  position: relative !important;
+}
+
+.dropdown-open .dropdown-content {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  /* Maintain scrolling properties in open state */
+  overflow-y: auto !important;
+  max-height: min(60vh, 400px) !important;
+}
+
+/* Force dropdown to maintain scrollable state */
+.dropdown .dropdown-content {
+  overflow-y: auto !important;
+  max-height: min(60vh, 400px) !important;
+}
+
+.dropdown.dropdown-open .dropdown-content {
+  overflow-y: auto !important;
+  max-height: min(60vh, 400px) !important;
+}
+
+/* Ensure modal and card containers don't clip dropdowns */
+.modal-box,
+.card,
+.card-body {
+  overflow: visible !important;
+}
+
+/* Fix for specific filter modal containers */
+.modal .dropdown-content {
+  z-index: 99999 !important;
+}
+
+/* Prevent DaisyUI from overriding scrolling behavior */
+.dropdown:not(.dropdown-open) .dropdown-content {
+  display: none !important;
+}
+
+.dropdown.dropdown-open .dropdown-content {
+  display: block !important;
+  overflow-y: auto !important;
+  max-height: min(60vh, 400px) !important;
+  scrollbar-width: thin !important;
+}
+
+/* Additional state management for consistent behavior */
+.dropdown[class*="dropdown"] .dropdown-content {
+  overflow-y: auto !important;
+  max-height: min(60vh, 400px) !important;
+}
+
+/* Enhanced mobile dropdown scrolling - final fixes */
+@media (max-width: 768px) and (hover: none) and (pointer: coarse) {
+  /* Target mobile devices specifically */
+  .dropdown-content,
+  .dropdown-content.menu,
+  ul[role="listbox"],
+  .menu.dropdown-content {
+    /* Enhanced scrolling properties for mobile */
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+    
+    /* Performance optimizations for smooth scrolling */
+    will-change: scroll-position !important;
+    transform: translateZ(0) !important;
+    backface-visibility: hidden !important;
+    
+    /* Touch behavior optimization */
+    touch-action: pan-y !important;
+    
+    /* Ensure proper height constraints on mobile */
+    max-height: min(50vh, 300px) !important;
+    min-height: 100px !important;
+    
+    /* Better visual feedback */
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(0,0,0,0.3) transparent !important;
+  }
+  
+  /* WebKit scrollbar styling for mobile */
+  .dropdown-content::-webkit-scrollbar,
+  .menu.dropdown-content::-webkit-scrollbar {
+    width: 4px !important;
+  }
+  
+  .dropdown-content::-webkit-scrollbar-track,
+  .menu.dropdown-content::-webkit-scrollbar-track {
+    background: transparent !important;
+  }
+  
+  .dropdown-content::-webkit-scrollbar-thumb,
+  .menu.dropdown-content::-webkit-scrollbar-thumb {
+    background-color: rgba(0,0,0,0.3) !important;
+    border-radius: 2px !important;
+  }
+}

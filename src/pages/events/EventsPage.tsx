@@ -7,6 +7,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { generateEventSlug } from '../../utils/slugUtils'
 import type { Event } from '../../types'
 import { EVENT_CATEGORIES } from '../../types'
+import { DropdownSelect } from '../../components/common/DropdownSelect'
 
 export function EventsPage() {
   const location = useLocation()
@@ -194,28 +195,30 @@ export function EventsPage() {
               <span className="text-sm font-medium text-base-content/70">Filters:</span>
             </div>
             
-            <select
-              className="select select-bordered select-sm"
+            <DropdownSelect
+              placeholder="All Categories"
               value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-            >
-              <option value="">All Categories</option>
-              {EVENT_CATEGORIES.map((category) => (
-                <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
+              options={[
+                { value: '', label: 'All Categories' },
+                ...EVENT_CATEGORIES.map(category => ({ value: category, label: category }))
+              ]}
+              onChange={(val) => setSelectedCategory(val)}
+              buttonClassName="btn-sm"
+            />
 
-            <select
-              className="select select-bordered select-sm"
+            <DropdownSelect
+              placeholder="All Dates"
               value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value as any)}
-            >
-              <option value="all">All Dates</option>
-              <option value="upcoming">Upcoming</option>
-              <option value="today">Today</option>
-              <option value="this_week">This Week</option>
-              <option value="this_month">This Month</option>
-            </select>
+              options={[
+                { value: 'all', label: 'All Dates' },
+                { value: 'upcoming', label: 'Upcoming' },
+                { value: 'today', label: 'Today' },
+                { value: 'this_week', label: 'This Week' },
+                { value: 'this_month', label: 'This Month' }
+              ]}
+              onChange={(val) => setDateFilter(val as any)}
+              buttonClassName="btn-sm"
+            />
 
             <label className="label cursor-pointer">
               <input

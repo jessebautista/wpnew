@@ -4,6 +4,7 @@ import { BookOpen, Search, Calendar, Filter, Plus, Eye, Tag, Clock, Check, Alert
 import { DataService } from '../../services/dataService'
 import { usePermissions } from '../../hooks/usePermissions'
 import type { BlogPost } from '../../types'
+import { DropdownSelect } from '../../components/common/DropdownSelect'
 
 
 // Helper function to strip HTML tags and get plain text
@@ -208,28 +209,31 @@ export function BlogPage() {
               <span className="text-sm font-medium text-base-content/70">Filters:</span>
             </div>
             
-            <select
-              className="select select-bordered select-sm"
+            <DropdownSelect
+              placeholder="All Categories"
               value={selectedCategory}
-              onChange={(e) => handleCategorySelect(e.target.value)}
-            >
-              <option value="">All Categories</option>
-              {actualCategories.map((category) => (
-                <option key={category} value={category || ''}>
-                  {category} ({categoryCounts[category || ''] || 0})
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: '', label: 'All Categories' },
+                ...actualCategories.map(category => ({
+                  value: category || '',
+                  label: `${category} (${categoryCounts[category || ''] || 0})`
+                }))
+              ]}
+              onChange={(val) => handleCategorySelect(val)}
+              buttonClassName="btn-sm"
+            />
 
-            <select
-              className="select select-bordered select-sm"
+            <DropdownSelect
+              placeholder="Sort By"
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-            >
-              <option value="newest">Newest First</option>
-              <option value="oldest">Oldest First</option>
-              <option value="popular">Most Popular</option>
-            </select>
+              options={[
+                { value: 'newest', label: 'Newest First' },
+                { value: 'oldest', label: 'Oldest First' },
+                { value: 'popular', label: 'Most Popular' }
+              ]}
+              onChange={(val) => setSortBy(val as any)}
+              buttonClassName="btn-sm"
+            />
 
             {(selectedCategory || selectedTag) && (
               <button

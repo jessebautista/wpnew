@@ -4,6 +4,7 @@ import { DataService } from '../../services/dataService'
 import type { Piano } from '../../types'
 import { Map, Search, Filter, Locate, List } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { DropdownSelect } from '../../components/common/DropdownSelect'
 
 export function MapPage() {
   const [pianos, setPianos] = useState<Piano[]>([])
@@ -87,8 +88,8 @@ export function MapPage() {
   const clearFilters = () => {
     setSearchQuery('')
     setFilters({
-      category: '',
-      condition: '',
+      source: '',
+      year: '',
       verified: false
     })
   }
@@ -159,26 +160,28 @@ export function MapPage() {
 
             {/* Filters */}
             <div className="flex flex-wrap gap-2">
-              <select 
-                className="select select-bordered select-sm"
+              <DropdownSelect
+                placeholder="All Sources"
                 value={filters.source}
-                onChange={(e) => setFilters(prev => ({ ...prev, source: e.target.value }))}
-              >
-                <option value="">All Sources</option>
-                <option value="sing_for_hope">Sing for Hope</option>
-                <option value="user_submitted">Community Submitted</option>
-              </select>
+                options={[
+                  { value: '', label: 'All Sources' },
+                  { value: 'sing_for_hope', label: 'Sing for Hope' },
+                  { value: 'user_submitted', label: 'Community Submitted' }
+                ]}
+                onChange={(val) => setFilters(prev => ({ ...prev, source: val }))}
+                buttonClassName="btn-sm"
+              />
 
-              <select 
-                className="select select-bordered select-sm"
+              <DropdownSelect
+                placeholder="All Years"
                 value={filters.year}
-                onChange={(e) => setFilters(prev => ({ ...prev, year: e.target.value }))}
-              >
-                <option value="">All Years</option>
-                {years.map(year => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-              </select>
+                options={[
+                  { value: '', label: 'All Years' },
+                  ...years.map(year => ({ value: year.toString(), label: year.toString() }))
+                ]}
+                onChange={(val) => setFilters(prev => ({ ...prev, year: val }))}
+                buttonClassName="btn-sm"
+              />
 
               <label className="label cursor-pointer">
                 <input 
@@ -219,7 +222,7 @@ export function MapPage() {
               <div className="card-body p-0">
                 <MapWithModals
                   items={filteredPianos}
-                  height="600px"
+                  height="h-[60vh] md:h-[70vh]"
                   center={userLocation || [40.7128, -74.0060]}
                   zoom={userLocation ? 12 : 2}
                   itemType="pianos"

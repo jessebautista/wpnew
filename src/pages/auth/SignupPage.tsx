@@ -49,7 +49,7 @@ export function SignupPage() {
         full_name: formData.fullName,
         username: formData.username
       })
-      navigate('/auth/confirm-email')
+      navigate(`/auth/confirm-email?email=${encodeURIComponent(formData.email)}`)
     } catch (err: any) {
       setError(err.message || 'Failed to create account')
     } finally {

@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import './App.css'
 import './styles/accessibility.css'
 import { Navbar } from './components/common/Navbar'
+import { ScrollToTop } from './components/common/ScrollToTop'
 import { Footer } from './components/common/Footer'
 import { SkipLinks } from './components/accessibility/SkipLinks'
 import { HomePage } from './pages/home/HomePage'
@@ -17,8 +18,11 @@ import { BlogPostPage } from './pages/blog/BlogPostPage'
 import { ModerationQueuePage } from './pages/moderation/ModerationQueuePage'
 import { ModerationRulesPage } from './pages/moderation/ModerationRulesPage'
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage'
+import { BlogManagementPage } from './pages/admin/BlogManagementPage'
 import { LoginPage } from './pages/auth/LoginPage'
 import { SignupPage } from './pages/auth/SignupPage'
+import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage'
+import { ResetPasswordPage } from './pages/auth/ResetPasswordPage'
 import { EmailConfirmationPage } from './pages/auth/EmailConfirmationPage'
 import { OAuthCallbackPage } from './pages/auth/OAuthCallbackPage'
 import { DashboardPage } from './pages/profile/DashboardPage'
@@ -51,6 +55,7 @@ function App() {
           <Router>
             <div className="min-h-screen flex flex-col">
               <SkipLinks />
+              <ScrollToTop />
               <Navbar />
               <main id="main-content" className="flex-1" tabIndex={-1}>
                 <Routes>
@@ -67,8 +72,11 @@ function App() {
                   <Route path="/moderation" element={<ModerationQueuePage />} />
                   <Route path="/moderation/rules" element={<ModerationRulesPage />} />
                   <Route path="/admin" element={<AdminDashboardPage />} />
+                  <Route path="/admin/blog" element={<BlogManagementPage />} />
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/signup" element={<SignupPage />} />
+                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                  <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
                   <Route path="/auth/confirm-email" element={<EmailConfirmationPage />} />
                   <Route path="/auth/callback" element={<OAuthCallbackPage />} />
                   <Route path="/dashboard" element={<DashboardPage />} />

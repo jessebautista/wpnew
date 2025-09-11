@@ -383,6 +383,10 @@ function OverviewTab({ stats, recentActivity }: OverviewTabProps) {
               <Settings className="w-4 h-4 mr-2" />
               Moderation Rules
             </Link>
+            <Link to="/admin/blog" className="btn btn-outline">
+              <BookOpen className="w-4 h-4 mr-2" />
+              Blog Management
+            </Link>
           </div>
         </div>
       </div>

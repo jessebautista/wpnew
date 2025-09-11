@@ -58,8 +58,8 @@ export function Navbar() {
           </button>
           <Link to="/" className="btn btn-ghost text-lg sm:text-xl px-2 sm:px-4 flex-shrink-0" aria-label="WorldPianos home">
             <Piano className="w-5 h-5 sm:w-6 sm:h-6 mr-1 sm:mr-2" aria-hidden="true" />
-            <span className="hidden xs:inline sm:inline">WorldPianos</span>
-            <span className="xs:hidden sm:hidden">World Pianos</span>
+            <span className="hidden sm:inline">WorldPianos</span>
+            <span className="sm:hidden">WP</span>
           </Link>
         </div>
       
@@ -200,7 +200,7 @@ export function Navbar() {
 
       {/* Mobile menu overlay */}
       {isMobileMenuOpen && (
-        <div className="fixed top-16 left-0 right-0 bottom-0 bg-black/50 z-40 lg:hidden" onClick={() => setIsMobileMenuOpen(false)}>
+        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" style={{ top: '64px' }} onClick={() => setIsMobileMenuOpen(false)}>
           <div 
             className="bg-base-100 shadow-lg p-4"
             onClick={(e) => e.stopPropagation()}

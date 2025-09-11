@@ -8,6 +8,31 @@ body {
   min-height: 100vh;
 }
 
+/* Mobile-friendly select sizing in Pianos filter modal */
+@media (max-width: 430px) {
+  .filter-modal select,
+  .filter-modal select option {
+    font-size: 18px !important; /* improve readability on iPhone */
+    line-height: 1.75rem !important;
+  }
+  .filter-modal select {
+    min-height: 2.75rem !important; /* larger tap target */
+  }
+  .filter-modal .label-text,
+  .filter-modal .badge,
+  .filter-modal .btn,
+  .filter-modal .label-text-alt {
+    font-size: 1rem; /* keep surrounding text readable */
+  }
+}
+
+/* Improve scroll behavior inside DaisyUI dropdown menus on mobile */
+.dropdown .dropdown-content {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
 /* Blog post content styles */
 .prose-content {
   @apply text-base leading-relaxed;

@@ -1,35 +1,38 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useAuth } from '../../components/auth/AuthProvider'
 import { Eye, EyeOff, Piano, Mail, Lock } from 'lucide-react'
+import { loginSchema, type LoginFormData } from '../../schemas/authSchema'
 
 export function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   
   const { signIn, signInWithOAuth } = useAuth()
   const navigate = useNavigate()
+  
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting }
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema)
+  })
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
+  const onSubmit = async (data: LoginFormData) => {
     setError('')
 
     try {
-      await signIn(email, password)
+      await signIn(data.email, data.password)
       navigate('/')
     } catch (err: any) {
       setError(err.message || 'Failed to sign in')
-    } finally {
-      setLoading(false)
     }
   }
 
   const handleGoogleSignIn = async () => {
-    setLoading(true)
     setError('')
 
     try {
@@ -37,12 +40,10 @@ export function LoginPage() {
       // Navigation will be handled by OAuth redirect
     } catch (err: any) {
       setError(err.message || 'Failed to sign in with Google')
-      setLoading(false)
     }
   }
 
   const handleFacebookSignIn = async () => {
-    setLoading(true)
     setError('')
 
     try {
@@ -50,7 +51,6 @@ export function LoginPage() {
       // Navigation will be handled by OAuth redirect
     } catch (err: any) {
       setError(err.message || 'Failed to sign in with Facebook')
-      setLoading(false)
     }
   }
 
@@ -71,7 +71,7 @@ export function LoginPage() {
 
         <div className="card bg-base-100 shadow-xl">
           <div className="card-body">
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {error && (
                 <div className="alert alert-error">
                   <span>{error}</span>
@@ -86,12 +86,15 @@ export function LoginPage() {
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-base-content/50" />
                   <input
                     type="email"
-                    className="input input-bordered w-full pl-10"
+                    className={`input input-bordered w-full pl-10 ${errors.email ? 'input-error' : ''}`}
                     placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
+                    {...register('email')}
                   />
+                  {errors.email && (
+                    <div className="text-sm text-error mt-1">
+                      {errors.email.message}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -103,11 +106,9 @@ export function LoginPage() {
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-base-content/50" />
                   <input
                     type={showPassword ? 'text' : 'password'}
-                    className="input input-bordered w-full pl-10 pr-10"
+                    className={`input input-bordered w-full pl-10 pr-10 ${errors.password ? 'input-error' : ''}`}
                     placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
+                    {...register('password')}
                   />
                   <button
                     type="button"
@@ -121,6 +122,11 @@ export function LoginPage() {
                     )}
                   </button>
                 </div>
+                {errors.password && (
+                  <div className="text-sm text-error mt-1">
+                    {errors.password.message}
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-between">
@@ -136,9 +142,9 @@ export function LoginPage() {
               <button
                 type="submit"
                 className="btn btn-primary w-full"
-                disabled={loading}
+                disabled={isSubmitting}
               >
-                {loading ? (
+                {isSubmitting ? (
                   <>
                     <span className="loading loading-spinner loading-sm"></span>
                     Signing in...
@@ -155,7 +161,7 @@ export function LoginPage() {
               <button 
                 className="btn btn-outline w-full"
                 onClick={handleGoogleSignIn}
-                disabled={loading}
+                disabled={isSubmitting}
               >
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                   <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -169,7 +175,7 @@ export function LoginPage() {
               <button 
                 className="btn btn-outline w-full"
                 onClick={handleFacebookSignIn}
-                disabled={loading}
+                disabled={isSubmitting}
               >
                 <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>

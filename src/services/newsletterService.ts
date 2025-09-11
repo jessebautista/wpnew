@@ -1,4 +1,5 @@
 import { shouldUseMockData, supabase } from '../lib/supabase'
+import { ResendService } from './resendService'
 
 export interface NewsletterSubscriber {
   id: string
@@ -117,6 +118,14 @@ export class NewsletterService {
       }
 
       this.subscribers.push(subscriber)
+      
+      // Send welcome email
+      try {
+        await this.sendWelcomeEmail(email, firstName)
+      } catch (error) {
+        console.error('Failed to send welcome email, but subscription succeeded:', error)
+      }
+      
       return subscriber
     }
 
@@ -186,6 +195,14 @@ export class NewsletterService {
       }
 
       console.log('[SUPABASE] Newsletter subscription created successfully:', data.id)
+      
+      // Send welcome email
+      try {
+        await this.sendWelcomeEmail(email, firstName)
+      } catch (error) {
+        console.error('Failed to send welcome email, but subscription succeeded:', error)
+      }
+      
       return data
     } catch (error) {
       console.error('Newsletter subscription error:', error)
@@ -488,21 +505,157 @@ export class NewsletterService {
     const campaign = this.campaigns.find(camp => camp.id === campaignId)
     if (!campaign || campaign.status !== 'draft') return false
 
-    // Simulate sending process
-    campaign.status = 'sending'
-    
-    // Mock sending delay
-    setTimeout(() => {
+    // Get recipients based on segment criteria
+    const recipients = await this.getSegmentedSubscribers(campaign.segment_criteria)
+    const recipientEmails = recipients.map(sub => sub.email)
+
+    if (recipientEmails.length === 0) {
+      console.warn('No recipients found for campaign:', campaignId)
+      return false
+    }
+
+    try {
+      // Update campaign status
+      campaign.status = 'sending'
+      console.log(`📮 Sending campaign "${campaign.name}" to ${recipientEmails.length} recipients`)
+
+      // Send via Resend
+      const result = await ResendService.sendNewsletter(
+        campaign.subject,
+        campaign.content,
+        recipientEmails,
+        {
+          tags: [
+            { name: 'campaign-id', value: campaignId },
+            { name: 'campaign-name', value: campaign.name }
+          ]
+        }
+      )
+
+      // Update campaign with results
       campaign.status = 'sent'
       campaign.sent_at = new Date().toISOString()
-      campaign.sent_count = campaign.recipient_count
-      // Mock engagement stats
-      campaign.opened_count = Math.floor(campaign.recipient_count * (0.15 + Math.random() * 0.25)) // 15-40% open rate
+      campaign.sent_count = result.stats.sent
+      campaign.bounced_count = result.stats.failed
+      
+      // Simulate engagement stats (would come from Resend webhooks in production)
+      campaign.opened_count = Math.floor(result.stats.sent * (0.15 + Math.random() * 0.25)) // 15-40% open rate
       campaign.clicked_count = Math.floor(campaign.opened_count * (0.1 + Math.random() * 0.2)) // 10-30% click rate
-      campaign.bounced_count = Math.floor(campaign.recipient_count * (0.01 + Math.random() * 0.03)) // 1-4% bounce rate
-    }, 2000)
 
-    return true
+      console.log(`✅ Campaign sent successfully: ${result.stats.sent} sent, ${result.stats.failed} failed`)
+      return result.success
+    } catch (error) {
+      console.error('❌ Error sending campaign:', error)
+      campaign.status = 'draft' // Reset status on error
+      return false
+    }
+  }
+
+  /**
+   * Send welcome email to new subscriber using Resend
+   */
+  static async sendWelcomeEmail(email: string, firstName?: string): Promise<boolean> {
+    try {
+      console.log(`📧 Sending welcome email to: ${email}`)
+      const result = await ResendService.sendWelcomeEmail(email, firstName)
+      
+      if (result.success) {
+        console.log(`✅ Welcome email sent successfully to ${email}`)
+        return true
+      } else {
+        console.error(`❌ Failed to send welcome email to ${email}:`, result.error)
+        return false
+      }
+    } catch (error) {
+      console.error('❌ Error sending welcome email:', error)
+      return false
+    }
+  }
+
+  /**
+   * Send piano alert to subscribers who opted in
+   */
+  static async sendPianoAlert(
+    piano: {
+      id: string
+      name: string
+      location_name: string
+      category: string
+      condition: string
+    }
+  ): Promise<{ success: boolean; recipientCount: number }> {
+    try {
+      console.log(`🎹 Sending piano alert for: ${piano.name}`)
+      
+      // Get subscribers who want new piano alerts
+      const subscribers = await this.getSubscribers({
+        status: 'active'
+      })
+
+      const alertSubscribers = subscribers.filter(sub => 
+        sub.preferences.new_piano_alerts === true
+      )
+
+      if (alertSubscribers.length === 0) {
+        console.log('No subscribers opted in for piano alerts')
+        return { success: true, recipientCount: 0 }
+      }
+
+      const recipientEmails = alertSubscribers.map(sub => sub.email)
+      const pianoUrl = `${window.location.origin}/pianos/${piano.id}`
+
+      const result = await ResendService.sendPianoAlert(recipientEmails, {
+        name: piano.name,
+        location: piano.location_name,
+        category: piano.category,
+        condition: piano.condition,
+        url: pianoUrl
+      })
+
+      console.log(`✅ Piano alert sent to ${result.stats.sent} subscribers`)
+      return { 
+        success: result.success, 
+        recipientCount: result.stats.sent 
+      }
+    } catch (error) {
+      console.error('❌ Error sending piano alert:', error)
+      return { success: false, recipientCount: 0 }
+    }
+  }
+
+  /**
+   * Test Resend integration
+   */
+  static async testEmailIntegration(): Promise<{ success: boolean; message: string }> {
+    try {
+      console.log('🧪 Testing Resend integration...')
+      const result = await ResendService.testConnection()
+      
+      if (result.success) {
+        console.log('✅ Resend integration test successful')
+      } else {
+        console.error('❌ Resend integration test failed:', result.message)
+      }
+      
+      return result
+    } catch (error: any) {
+      console.error('❌ Error testing Resend integration:', error)
+      return {
+        success: false,
+        message: `Test failed: ${error.message}`
+      }
+    }
+  }
+
+  /**
+   * Get Resend service status
+   */
+  static getEmailServiceStatus(): {
+    configured: boolean
+    apiKeyPresent: boolean
+    message: string
+  } {
+    return ResendService.getStatus()
   }
 
   private static async getSegmentedSubscribers(criteria?: NewsletterCampaign['segment_criteria']): Promise<NewsletterSubscriber[]> {

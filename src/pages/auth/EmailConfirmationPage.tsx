@@ -1,7 +1,40 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { supabase } from '../../lib/supabase'
 import { Mail, Home, CheckCircle, RefreshCw } from 'lucide-react'
 
 export function EmailConfirmationPage() {
+  const [resending, setResending] = useState(false)
+  const [resendMessage, setResendMessage] = useState('')
+  const [searchParams] = useSearchParams()
+  const email = searchParams.get('email')
+
+  const handleResendVerification = async () => {
+    if (!email) {
+      setResendMessage('No email address found. Please try signing up again.')
+      return
+    }
+
+    setResending(true)
+    setResendMessage('')
+
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email
+      })
+
+      if (error) {
+        throw error
+      }
+
+      setResendMessage('Verification email sent! Check your inbox.')
+    } catch (err: any) {
+      setResendMessage(err.message || 'Failed to resend verification email')
+    } finally {
+      setResending(false)
+    }
+  }
   return (
     <div className="min-h-screen flex items-center justify-center bg-base-200 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -37,6 +70,12 @@ export function EmailConfirmationPage() {
               </div>
             </div>
 
+            {resendMessage && (
+              <div className={`alert ${resendMessage.includes('sent') ? 'alert-success' : 'alert-error'}`}>
+                <span>{resendMessage}</span>
+              </div>
+            )}
+
             <div className="alert alert-info">
               <div className="flex items-start">
                 <RefreshCw className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" />
@@ -66,10 +105,20 @@ export function EmailConfirmationPage() {
               </Link>
               <button 
                 className="btn btn-outline flex-1"
-                onClick={() => window.location.reload()}
+                onClick={handleResendVerification}
+                disabled={resending || !email}
               >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Resend Email
+                {resending ? (
+                  <>
+                    <span className="loading loading-spinner loading-sm mr-2"></span>
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Resend Email
+                  </>
+                )}
               </button>
             </div>
 

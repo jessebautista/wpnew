@@ -7,6 +7,7 @@ import { shouldUseMockData } from '../lib/supabase'
 import { supabase } from '../lib/supabase'
 import type { Piano, Event, BlogPost, EventAttendee } from '../types'
 
+
 // Mock data in new Sing for Hope format
 const mockPianos: Piano[] = [
   {
@@ -654,40 +655,6 @@ export class DataService {
     }
   }
 
-  /**
-   * Get all blog posts
-   */
-  static async getBlogPosts(): Promise<BlogPost[]> {
-    if (shouldUseMockData('supabase')) {
-      console.log('[MOCK] Fetching blog posts from mock data')
-      return Promise.resolve(mockBlogPosts)
-    }
-
-    try {
-      // Use direct fetch instead of Supabase client for public access
-      console.log('[DIRECT] Fetching blog posts via direct API call')
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/blog_posts?select=*&published=eq.true`, {
-        headers: {
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        signal: AbortSignal.timeout(10000) // 10 second timeout
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-      }
-
-      const data = await response.json()
-      console.log(`[DIRECT] Successfully fetched ${data.length} blog posts`)
-      return data
-    } catch (error) {
-      console.error('Direct fetch error for blog posts:', error)
-      // Fallback to mock data on connection error
-      return mockBlogPosts
-    }
-  }
 
   /**
    * Get blog post by ID or slug
@@ -1116,6 +1083,216 @@ export class DataService {
     } catch (error) {
       console.error('Error getting events with attendance:', error)
       return events
+    }
+  }
+
+  // ===== BLOG METHODS =====
+
+  /**
+   * Get all blog posts
+   */
+  static async getBlogPosts(): Promise<BlogPost[]> {
+    if (shouldUseMockData('supabase')) {
+      console.log('[MOCK] Fetching mock blog posts')
+      return mockBlogPosts
+    }
+
+    try {
+      console.log('[SUPABASE] Fetching blog posts')
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select('*')
+        .eq('moderation_status', 'approved')
+        .order('published_at', { ascending: false })
+
+      if (error) throw error
+      
+      console.log(`[SUPABASE] Successfully fetched ${data?.length || 0} blog posts`)
+      return data || []
+    } catch (error) {
+      console.error('Error fetching blog posts:', error)
+      console.log('[FALLBACK] Using mock blog posts due to Supabase error')
+      return mockBlogPosts
+    }
+  }
+
+  /**
+   * Get all blog posts including drafts (admin only)
+   */
+  static async getAllBlogPosts(): Promise<BlogPost[]> {
+    if (shouldUseMockData('supabase')) {
+      console.log('[MOCK] Fetching all mock blog posts')
+      return mockBlogPosts
+    }
+
+    try {
+      console.log('[SUPABASE] Fetching all blog posts (admin)')
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      
+      console.log(`[SUPABASE] Successfully fetched ${data?.length || 0} blog posts`)
+      return data || []
+    } catch (error) {
+      console.error('Error fetching all blog posts:', error)
+      console.log('[FALLBACK] Using mock blog posts due to Supabase error')
+      return mockBlogPosts
+    }
+  }
+
+  /**
+   * Get a single blog post by ID
+   */
+  static async getBlogPost(id: string): Promise<BlogPost | null> {
+    if (shouldUseMockData('supabase')) {
+      console.log(`[MOCK] Fetching mock blog post ${id}`)
+      return mockBlogPosts.find(post => post.id === id) || null
+    }
+
+    try {
+      console.log(`[SUPABASE] Fetching blog post ${id}`)
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select('*')
+        .eq('id', id)
+        .single()
+
+      if (error) throw error
+      
+      // Increment view count
+      await supabase
+        .from('blog_posts')
+        .update({ view_count: (data.view_count || 0) + 1 })
+        .eq('id', id)
+
+      console.log(`[SUPABASE] Successfully fetched blog post: ${data.title}`)
+      return data
+    } catch (error) {
+      console.error('Error fetching blog post:', error)
+      console.log('[FALLBACK] Using mock blog post due to Supabase error')
+      return mockBlogPosts.find(post => post.id === id) || null
+    }
+  }
+
+  /**
+   * Create a new blog post
+   */
+  static async createBlogPost(postData: Partial<BlogPost>): Promise<BlogPost> {
+    if (shouldUseMockData('supabase')) {
+      console.log('[MOCK] Creating mock blog post')
+      const mockPost: BlogPost = {
+        id: `mock-${Date.now()}`,
+        title: postData.title || '',
+        slug: postData.slug || '',
+        content: postData.content || '',
+        excerpt: postData.excerpt || null,
+        featured_image: postData.featured_image || null,
+        category: postData.category || null,
+        tags: postData.tags || null,
+        author_id: postData.author_id || 'mock-user',
+        published: postData.published || false,
+        featured: postData.featured || false,
+        allow_comments: postData.allow_comments ?? true,
+        view_count: 0,
+        reading_time: postData.reading_time || null,
+        meta_title: postData.meta_title || null,
+        meta_description: postData.meta_description || null,
+        moderation_status: 'approved',
+        published_at: postData.published ? new Date().toISOString() : null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        legacy_id: null
+      }
+      return Promise.resolve(mockPost)
+    }
+
+    try {
+      console.log('[SUPABASE] Creating blog post')
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .insert([{
+          ...postData,
+          published_at: postData.published ? new Date().toISOString() : null,
+          moderation_status: 'approved' // Auto-approve for admin users
+        }])
+        .select('*')
+        .single()
+
+      if (error) throw error
+      
+      console.log(`[SUPABASE] Successfully created blog post: ${data.title}`)
+      return data
+    } catch (error) {
+      console.error('Error creating blog post:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Update a blog post
+   */
+  static async updateBlogPost(id: string, postData: Partial<BlogPost>): Promise<BlogPost> {
+    if (shouldUseMockData('supabase')) {
+      console.log(`[MOCK] Updating mock blog post ${id}`)
+      const mockPost = mockBlogPosts.find(post => post.id === id)
+      if (!mockPost) throw new Error('Blog post not found')
+      
+      return Promise.resolve({
+        ...mockPost,
+        ...postData,
+        updated_at: new Date().toISOString(),
+        published_at: postData.published ? new Date().toISOString() : mockPost.published_at
+      })
+    }
+
+    try {
+      console.log(`[SUPABASE] Updating blog post ${id}`)
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .update({
+          ...postData,
+          updated_at: new Date().toISOString(),
+          published_at: postData.published ? new Date().toISOString() : postData.published_at
+        })
+        .eq('id', id)
+        .select('*')
+        .single()
+
+      if (error) throw error
+      
+      console.log(`[SUPABASE] Successfully updated blog post: ${data.title}`)
+      return data
+    } catch (error) {
+      console.error('Error updating blog post:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Delete a blog post
+   */
+  static async deleteBlogPost(id: string): Promise<void> {
+    if (shouldUseMockData('supabase')) {
+      console.log(`[MOCK] Deleting mock blog post ${id}`)
+      return Promise.resolve()
+    }
+
+    try {
+      console.log(`[SUPABASE] Deleting blog post ${id}`)
+      const { error } = await supabase
+        .from('blog_posts')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+      
+      console.log(`[SUPABASE] Successfully deleted blog post ${id}`)
+    } catch (error) {
+      console.error('Error deleting blog post:', error)
+      throw error
     }
   }
 }

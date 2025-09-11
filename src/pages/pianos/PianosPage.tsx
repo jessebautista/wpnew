@@ -4,6 +4,7 @@ import { Piano, Map, List, Search, Filter, CheckCircle, X, ChevronLeft, ChevronR
 import { DataService } from '../../services/dataService'
 import { PianoCard } from '../../components/piano'
 import type { Piano as PianoType } from '../../types'
+import { DropdownSelect } from '../../components/common/DropdownSelect'
 
 interface Filters {
   location: string
@@ -294,7 +295,7 @@ export function PianosPage() {
       {/* Filters Modal */}
       {showFilters && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-base-100 rounded-lg shadow-xl w-full max-w-md mx-4">
+          <div className="bg-base-100 rounded-lg shadow-xl w-full max-w-md mx-4 filter-modal">
             <div className="flex items-center justify-between p-6 border-b">
               <h3 className="text-lg font-semibold">Filter Pianos</h3>
               <button
@@ -306,39 +307,27 @@ export function PianosPage() {
             </div>
             
             <div className="p-6 space-y-4">
-              {/* Location Filter */}
-              <div>
-                <label className="label">
-                  <span className="label-text font-medium">Location</span>
-                </label>
-                <select 
-                  className="select select-bordered w-full"
-                  value={filters.location}
-                  onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}
-                >
-                  <option value="">All Locations</option>
-                  {uniqueLocations.map(location => (
-                    <option key={location} value={location}>{location}</option>
-                  ))}
-                </select>
-              </div>
+              {/* Location Filter (DaisyUI Dropdown) */}
+              <DropdownSelect
+                label="Location"
+                placeholder="All Locations"
+                value={filters.location}
+                options={[{ value: '', label: 'All Locations' }, ...uniqueLocations.map(l => ({ value: l, label: l }))]}
+                onChange={(val) => setFilters(prev => ({ ...prev, location: val }))}
+                className="w-full"
+                buttonClassName="text-lg"
+              />
 
-              {/* Category Filter */}
-              <div>
-                <label className="label">
-                  <span className="label-text font-medium">Category</span>
-                </label>
-                <select 
-                  className="select select-bordered w-full"
-                  value={filters.source}
-                  onChange={(e) => setFilters(prev => ({ ...prev, source: e.target.value }))}
-                >
-                  <option value="">All Categories</option>
-                  {uniqueSources.map(source => (
-                    <option key={source.value} value={source.value}>{source.label}</option>
-                  ))}
-                </select>
-              </div>
+              {/* Category Filter (DaisyUI Dropdown) */}
+              <DropdownSelect
+                label="Category"
+                placeholder="All Categories"
+                value={filters.source}
+                options={[{ value: '', label: 'All Categories' }, ...uniqueSources.map(s => ({ value: s.value, label: s.label }))]}
+                onChange={(val) => setFilters(prev => ({ ...prev, source: val }))}
+                className="w-full"
+                buttonClassName="text-lg"
+              />
 
               {/* Current Filters Summary */}
               {hasActiveFilters && (

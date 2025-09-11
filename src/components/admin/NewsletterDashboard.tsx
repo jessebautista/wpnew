@@ -7,7 +7,10 @@ import {
   Eye,
   Download,
   Search,
-  AlertTriangle
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Zap
 } from 'lucide-react'
 import { NewsletterService } from '../../services/newsletterService'
 import { EditSubscriberModal } from './EditSubscriberModal'
@@ -40,6 +43,9 @@ export function NewsletterDashboard({ onClose }: NewsletterDashboardProps) {
           </button>
         )}
       </div>
+
+      {/* Resend Integration Status */}
+      <ResendStatusCard />
 
       {/* Subscribers Content - No tabs needed for now */}
       <SubscribersTab />
@@ -283,6 +289,131 @@ function SubscribersTab() {
         }}
         onSave={handleModalSave}
       />
+    </div>
+  )
+}
+
+function ResendStatusCard() {
+  const [status, setStatus] = useState<{ configured: boolean; apiKeyPresent: boolean; message: string } | null>(null)
+  const [testing, setTesting] = useState(false)
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
+
+  useEffect(() => {
+    // Get Resend service status
+    const serviceStatus = NewsletterService.getEmailServiceStatus()
+    setStatus(serviceStatus)
+  }, [])
+
+  const handleTestConnection = async () => {
+    setTesting(true)
+    setTestResult(null)
+    
+    try {
+      const result = await NewsletterService.testEmailIntegration()
+      setTestResult(result)
+    } catch (error: any) {
+      setTestResult({
+        success: false,
+        message: `Test failed: ${error.message}`
+      })
+    } finally {
+      setTesting(false)
+    }
+  }
+
+  if (!status) return null
+
+  return (
+    <div className="card bg-base-100 shadow-xl">
+      <div className="card-body">
+        <h3 className="card-title flex items-center gap-2">
+          <Zap className="w-5 h-5 text-primary" />
+          Resend Email Integration
+        </h3>
+        
+        <div className="flex items-center gap-4 mb-4">
+          <div className="flex items-center gap-2">
+            {status.configured ? (
+              <CheckCircle className="w-5 h-5 text-success" />
+            ) : (
+              <XCircle className="w-5 h-5 text-error" />
+            )}
+            <span className={status.configured ? 'text-success' : 'text-error'}>
+              {status.configured ? 'Connected' : 'Not Connected'}
+            </span>
+          </div>
+          
+          <div className="divider divider-horizontal"></div>
+          
+          <div className="flex items-center gap-2">
+            {status.apiKeyPresent ? (
+              <CheckCircle className="w-4 h-4 text-success" />
+            ) : (
+              <XCircle className="w-4 h-4 text-warning" />
+            )}
+            <span className="text-sm">
+              API Key {status.apiKeyPresent ? 'Present' : 'Missing'}
+            </span>
+          </div>
+        </div>
+
+        <p className="text-sm text-base-content/70 mb-4">
+          {status.message}
+        </p>
+
+        {!status.configured && (
+          <div className="alert alert-warning mb-4">
+            <AlertTriangle className="w-4 h-4" />
+            <div>
+              <h4 className="font-semibold">Setup Required</h4>
+              <p className="text-sm">
+                Add <code>VITE_RESEND_API_KEY</code> to your .env file to enable email sending.
+                <br />
+                Get your API key from <a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="link link-primary">resend.com</a>
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className="card-actions justify-between">
+          <div className="flex gap-2">
+            <button 
+              className={`btn btn-sm ${testing ? 'loading' : ''}`}
+              onClick={handleTestConnection}
+              disabled={testing}
+            >
+              {!testing && <Zap className="w-4 h-4 mr-1" />}
+              Test Connection
+            </button>
+          </div>
+
+          {testResult && (
+            <div className={`alert alert-sm ${testResult.success ? 'alert-success' : 'alert-error'}`}>
+              <span className="text-sm">{testResult.message}</span>
+            </div>
+          )}
+        </div>
+
+        {status.configured && (
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div className="stat bg-base-200 rounded-lg p-3">
+              <div className="stat-title text-xs">Email Features</div>
+              <div className="stat-value text-sm">✅ Active</div>
+              <div className="stat-desc">Welcome emails, alerts</div>
+            </div>
+            <div className="stat bg-base-200 rounded-lg p-3">
+              <div className="stat-title text-xs">Campaign Sending</div>
+              <div className="stat-value text-sm">✅ Ready</div>
+              <div className="stat-desc">Bulk newsletters</div>
+            </div>
+            <div className="stat bg-base-200 rounded-lg p-3">
+              <div className="stat-title text-xs">Auto Batching</div>
+              <div className="stat-value text-sm">✅ Enabled</div>
+              <div className="stat-desc">Rate limit protection</div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

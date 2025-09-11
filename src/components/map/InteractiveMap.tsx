@@ -254,8 +254,8 @@ export function InteractiveMap({
       <MapContainer
         center={center}
         zoom={zoom}
-        style={{ height, width: '100%' }}
-        className="rounded-lg z-0"
+        style={height.includes('px') ? { height, width: '100%' } : { width: '100%' }}
+        className={`rounded-lg z-0 ${!height.includes('px') ? height : ''}`}
         touchZoom={true}
         doubleClickZoom={false}
         scrollWheelZoom={true}

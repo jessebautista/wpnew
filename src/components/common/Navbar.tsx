@@ -59,7 +59,7 @@ export function Navbar() {
           <Link to="/" className="btn btn-ghost text-lg sm:text-xl px-2 sm:px-4 flex-shrink-0" aria-label="WorldPianos home">
             <Piano className="w-5 h-5 sm:w-6 sm:h-6 mr-1 sm:mr-2" aria-hidden="true" />
             <span className="hidden sm:inline">WorldPianos</span>
-            <span className="sm:hidden">WP</span>
+            <span className="sm:hidden">World Pianos</span>
           </Link>
         </div>
       

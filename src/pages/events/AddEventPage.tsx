@@ -644,16 +644,16 @@ export function AddEventPage() {
                   <label className="label">
                     <span className="label-text font-medium">Special Features</span>
                   </label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-2">
                     {PIANO_SPECIAL_FEATURES.map(feature => (
-                      <label key={feature} className="label cursor-pointer justify-start gap-2">
+                      <label key={feature} className="label cursor-pointer justify-start gap-3 p-2">
                         <input
                           type="checkbox"
-                          className="checkbox checkbox-sm"
+                          className="checkbox checkbox-sm flex-shrink-0"
                           checked={formData.piano_special_features.includes(feature)}
                           onChange={() => handleFeatureToggle(feature)}
                         />
-                        <span className="label-text text-sm">{feature}</span>
+                        <span className="label-text text-sm flex-1">{feature}</span>
                       </label>
                     ))}
                   </div>

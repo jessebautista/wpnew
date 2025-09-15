@@ -69,7 +69,7 @@ export function Navbar() {
             <li role="none"><Link to="/events" className="btn btn-ghost" role="menuitem"><Calendar className="w-4 h-4 mr-2" aria-hidden="true" />{t('nav.events')}</Link></li>
             <li role="none"><Link to="/blog" className="btn btn-ghost" role="menuitem"><BookOpen className="w-4 h-4 mr-2" aria-hidden="true" />{t('nav.blog')}</Link></li>
             {canCreate() && (
-              <li className="dropdown dropdown-hover" role="none">
+              <li className="dropdown dropdown-end" role="none">
                 <div tabIndex={0} role="button" className="btn btn-ghost" aria-haspopup="true" aria-expanded="false">
                   <Plus className="w-4 h-4 mr-2" aria-hidden="true" />Add
                 </div>

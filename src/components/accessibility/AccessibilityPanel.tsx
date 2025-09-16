@@ -38,17 +38,18 @@ export function AccessibilityPanel({ isOpen, onClose }: AccessibilityPanelProps)
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="accessibility-panel-title">
-      <div className="min-h-screen px-4 text-center">
+      <div className="flex min-h-screen items-center justify-center p-4">
         {/* Background overlay */}
         <div className="fixed inset-0 bg-black bg-opacity-25" onClick={onClose} aria-hidden="true"></div>
         
         {/* Panel */}
-        <div className="inline-block w-full max-w-2xl my-8 text-left align-middle transition-all transform bg-base-100 shadow-xl rounded-2xl">
+        <div className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden text-left transition-all transform bg-base-100 shadow-xl rounded-2xl flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-base-300">
-            <h2 id="accessibility-panel-title" className="text-2xl font-bold flex items-center gap-3">
-              <Settings className="w-6 h-6 text-primary" />
-              Accessibility Settings
+          <div className="flex items-center justify-between p-4 sm:p-6 border-b border-base-300 flex-shrink-0">
+            <h2 id="accessibility-panel-title" className="text-lg sm:text-2xl font-bold flex items-center gap-2 sm:gap-3">
+              <Settings className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+              <span className="hidden sm:inline">Accessibility Settings</span>
+              <span className="sm:hidden">Accessibility</span>
             </h2>
             <button
               onClick={onClose}
@@ -60,40 +61,42 @@ export function AccessibilityPanel({ isOpen, onClose }: AccessibilityPanelProps)
           </div>
 
           {/* Tabs */}
-          <div className="tabs tabs-bordered px-6 pt-4">
+          <div className="tabs tabs-bordered px-4 sm:px-6 pt-4 flex-shrink-0">
             <button 
-              className={`tab tab-lg ${activeTab === 'visual' ? 'tab-active' : ''}`}
+              className={`tab tab-sm sm:tab-lg ${activeTab === 'visual' ? 'tab-active' : ''}`}
               onClick={() => setActiveTab('visual')}
               role="tab"
               aria-selected={activeTab === 'visual'}
             >
-              <Eye className="w-4 h-4 mr-2" />
-              Visual
+              <Eye className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Visual</span>
+              <span className="sm:hidden">View</span>
             </button>
             <button 
-              className={`tab tab-lg ${activeTab === 'audio' ? 'tab-active' : ''}`}
+              className={`tab tab-sm sm:tab-lg ${activeTab === 'audio' ? 'tab-active' : ''}`}
               onClick={() => setActiveTab('audio')}
               role="tab"
               aria-selected={activeTab === 'audio'}
             >
-              <Volume2 className="w-4 h-4 mr-2" />
+              <Volume2 className="w-4 h-4 mr-1 sm:mr-2" />
               Audio
             </button>
             <button 
-              className={`tab tab-lg ${activeTab === 'navigation' ? 'tab-active' : ''}`}
+              className={`tab tab-sm sm:tab-lg ${activeTab === 'navigation' ? 'tab-active' : ''}`}
               onClick={() => setActiveTab('navigation')}
               role="tab"
               aria-selected={activeTab === 'navigation'}
             >
-              <Keyboard className="w-4 h-4 mr-2" />
-              Navigation
+              <Keyboard className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Navigation</span>
+              <span className="sm:hidden">Nav</span>
             </button>
           </div>
 
           {/* Tab Content */}
-          <div className="p-6 space-y-6">
+          <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-1">
             {activeTab === 'visual' && (
-              <div className="space-y-6" role="tabpanel" aria-labelledby="visual-tab">
+              <div className="space-y-4 sm:space-y-6" role="tabpanel" aria-labelledby="visual-tab">
                 {/* High Contrast */}
                 <div className="form-control">
                   <label className="label cursor-pointer justify-start gap-4">
@@ -210,7 +213,7 @@ export function AccessibilityPanel({ isOpen, onClose }: AccessibilityPanelProps)
             )}
 
             {activeTab === 'audio' && (
-              <div className="space-y-6" role="tabpanel" aria-labelledby="audio-tab">
+              <div className="space-y-4 sm:space-y-6" role="tabpanel" aria-labelledby="audio-tab">
                 {/* Sound Enabled */}
                 <div className="form-control">
                   <label className="label cursor-pointer justify-start gap-4">
@@ -262,7 +265,7 @@ export function AccessibilityPanel({ isOpen, onClose }: AccessibilityPanelProps)
             )}
 
             {activeTab === 'navigation' && (
-              <div className="space-y-6" role="tabpanel" aria-labelledby="navigation-tab">
+              <div className="space-y-4 sm:space-y-6" role="tabpanel" aria-labelledby="navigation-tab">
                 {/* Keyboard Navigation */}
                 <div className="form-control">
                   <label className="label cursor-pointer justify-start gap-4">
@@ -348,7 +351,7 @@ export function AccessibilityPanel({ isOpen, onClose }: AccessibilityPanelProps)
           </div>
 
           {/* Footer */}
-          <div className="flex justify-end gap-3 p-6 border-t border-base-300">
+          <div className="flex justify-end gap-3 p-4 sm:p-6 border-t border-base-300 flex-shrink-0">
             <button onClick={onClose} className="btn btn-primary">
               Done
             </button>

@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import './App.css'
 import './styles/accessibility.css'
 import { Navbar } from './components/common/Navbar'
@@ -48,6 +48,8 @@ import './utils/directAuth'
 import './utils/csvImport'
 
 function App() {
+  const useHash = import.meta.env.VITE_USE_HASH_ROUTER === 'true'
+  const Router = useHash ? HashRouter : BrowserRouter
   return (
     <LanguageProvider>
       <AccessibilityProvider>

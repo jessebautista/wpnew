@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
 import MarkerClusterGroup from 'react-leaflet-cluster'
 import { Icon, divIcon, point } from 'leaflet'
@@ -229,6 +229,31 @@ export function InteractiveMap({
   onPianoModalOpen,
   onEventModalOpen
 }: InteractiveMapProps) {
+  const [mapError, setMapError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    // Check if Leaflet is available
+    const checkLeaflet = () => {
+      try {
+        if (typeof window !== 'undefined') {
+          const leafletCSS = document.querySelector('link[href*="leaflet"]')
+          console.log('[MAP] Leaflet CSS found:', !!leafletCSS)
+          
+          // Give some time for CSS to load
+          setTimeout(() => {
+            setIsLoading(false)
+          }, 100)
+        }
+      } catch (error) {
+        console.error('[MAP] Error checking Leaflet:', error)
+        setMapError('Leaflet library not available')
+        setIsLoading(false)
+      }
+    }
+    
+    checkLeaflet()
+  }, [])
   const handleItemClick = (item: MapItem) => {
     if (showModal) {
       // Use modal callbacks if provided
@@ -249,9 +274,45 @@ export function InteractiveMap({
   )
 
 
-  return (
-    <div className="relative">
-      <MapContainer
+  console.log('[MAP] Rendering InteractiveMap with', validItems.length, 'valid items')
+  console.log('[MAP] Map center:', center, 'zoom:', zoom)
+  console.log('[MAP] Height style:', height)
+
+  if (isLoading) {
+    return (
+      <div className="relative bg-base-200 rounded-lg flex items-center justify-center" style={{ height, width: '100%' }}>
+        <div className="text-center p-8">
+          <div className="loading loading-spinner loading-lg"></div>
+          <div className="text-sm text-base-content/70 mt-4">Loading map...</div>
+        </div>
+      </div>
+    )
+  }
+
+  if (mapError) {
+    return (
+      <div className="relative bg-base-200 rounded-lg flex items-center justify-center" style={{ height, width: '100%' }}>
+        <div className="text-center p-8">
+          <div className="text-error mb-2">Map failed to load</div>
+          <div className="text-sm text-base-content/70 mb-4">{mapError}</div>
+          <button 
+            className="btn btn-primary btn-sm"
+            onClick={() => {
+              setMapError(null)
+              window.location.reload()
+            }}
+          >
+            Reload Page
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  try {
+    return (
+      <div className="relative">
+        <MapContainer
         center={center}
         zoom={zoom}
         style={height.includes('px') ? { height, width: '100%' } : { width: '100%' }}
@@ -263,10 +324,21 @@ export function InteractiveMap({
         keyboard={true}
         dragging={true}
         zoomControl={true}
+        whenCreated={(map) => {
+          console.log('[MAP] MapContainer created successfully', map)
+        }}
+        whenReady={() => {
+          console.log('[MAP] Map is ready')
+        }}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          eventHandlers={{
+            loading: () => console.log('[MAP] TileLayer loading...'),
+            load: () => console.log('[MAP] TileLayer loaded'),
+            tileerror: (e) => console.error('[MAP] Tile error:', e)
+          }}
         />
         
         <MarkerClusterGroup
@@ -375,5 +447,23 @@ export function InteractiveMap({
         </div>
       </div>
     </div>
-  )
+  ) 
+  } catch (error) {
+    console.error('[MAP] Error rendering map:', error)
+    setMapError(error instanceof Error ? error.message : 'Unknown map error')
+    return (
+      <div className="relative bg-base-200 rounded-lg flex items-center justify-center" style={{ height, width: '100%' }}>
+        <div className="text-center p-8">
+          <div className="text-error mb-2">Map failed to load</div>
+          <div className="text-sm text-base-content/70 mb-4">Please try refreshing the page</div>
+          <button 
+            className="btn btn-primary btn-sm"
+            onClick={() => window.location.reload()}
+          >
+            Reload Page
+          </button>
+        </div>
+      </div>
+    )
+  }
 }

@@ -224,7 +224,7 @@ export function MapPage() {
                 <MapWithModals
                   items={filteredPianos}
                   height="h-[60vh] md:h-[70vh]"
-                  center={userLocation || [40.7128, -74.0060]}
+                  center={userLocation ? [userLocation[1], userLocation[0]] : [-74.0060, 40.7128]}
                   zoom={userLocation ? 12 : 2}
                   itemType="pianos"
                 />

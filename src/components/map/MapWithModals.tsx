@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { InteractiveMap } from './InteractiveMap'
+import { MapboxMap } from './MapboxMap'
 import { PianoModal } from '../piano/PianoModal'
 import { EventModal } from '../event/EventModal'
 import type { Piano, Event } from '../../types'
@@ -49,7 +49,7 @@ export function MapWithModals({
 
   return (
     <>
-      <InteractiveMap
+      <MapboxMap
         items={items}
         height={height}
         center={center}

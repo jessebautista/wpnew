@@ -57,14 +57,14 @@ export function PianoModal({ piano, isOpen, onClose }: PianoModalProps) {
       >
         {/* Modal Container */}
         <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="flex min-h-full items-center justify-center p-4">
             {/* Modal Content */}
             <motion.div 
-              className="relative w-full h-full sm:h-auto sm:max-w-lg bg-base-100 sm:rounded-xl shadow-xl flex flex-col"
+              className="relative w-full max-w-lg mx-4 bg-base-100 rounded-xl shadow-xl flex flex-col max-h-[90vh] overflow-hidden"
               initial={{ 
                 opacity: 0, 
-                scale: window.innerWidth < 640 ? 1 : 0.9,
-                y: window.innerWidth < 640 ? '100%' : 0
+                scale: 0.95,
+                y: 20
               }}
               animate={{ 
                 opacity: 1, 
@@ -73,8 +73,8 @@ export function PianoModal({ piano, isOpen, onClose }: PianoModalProps) {
               }}
               exit={{ 
                 opacity: 0, 
-                scale: window.innerWidth < 640 ? 1 : 0.9,
-                y: window.innerWidth < 640 ? '100%' : 0
+                scale: 0.95,
+                y: 20
               }}
               transition={{
                 type: 'spring',

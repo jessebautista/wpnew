@@ -120,22 +120,23 @@ export function MapPage() {
   return (
     <div className="min-h-screen bg-base-100">
       {/* Header */}
-      <div className="bg-primary text-primary-content py-8">
+      <div className="bg-primary text-primary-content py-6 sm:py-8">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold flex items-center">
-                <Map className="w-8 h-8 mr-3" />
-                Interactive Piano Map
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-bold flex items-center">
+                <Map className="w-6 h-6 sm:w-8 sm:h-8 mr-2 sm:mr-3 flex-shrink-0" />
+                <span className="truncate">Interactive Piano Map</span>
               </h1>
-              <p className="text-primary-content/80 mt-2">
+              <p className="text-primary-content/80 mt-1 sm:mt-2 text-sm sm:text-base">
                 Explore {filteredPianos.length} public pianos worldwide
               </p>
             </div>
-            <div className="flex space-x-2">
-              <Link to="/pianos" className="btn btn-outline text-primary-content border-primary-content hover:bg-primary-content hover:text-primary">
+            <div className="flex justify-end sm:justify-start">
+              <Link to="/pianos" className="btn btn-outline btn-sm sm:btn-md text-primary-content border-primary-content hover:bg-primary-content hover:text-primary">
                 <List className="w-4 h-4 mr-2" />
-                List View
+                <span className="hidden sm:inline">List View</span>
+                <span className="sm:hidden">List</span>
               </Link>
             </div>
           </div>

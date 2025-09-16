@@ -71,11 +71,11 @@ export function Navbar() {
             {canCreate() && (
               <li className="dropdown dropdown-end" role="none">
                 <div tabIndex={0} role="button" className="btn btn-ghost" aria-haspopup="true" aria-expanded="false">
-                  <Plus className="w-4 h-4 mr-2" aria-hidden="true" />Add
+                  <Plus className="w-4 h-4 mr-2" aria-hidden="true" />{t('nav.add')}
                 </div>
                 <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-40" role="menu">
-                  <li role="none"><Link to="/pianos/add" role="menuitem">Add Piano</Link></li>
-                  <li role="none"><Link to="/events/add" role="menuitem">Add Event</Link></li>
+                  <li role="none"><Link to="/pianos/add" role="menuitem">{t('nav.addPiano')}</Link></li>
+                  <li role="none"><Link to="/events/add" role="menuitem">{t('nav.addEvent')}</Link></li>
                 </ul>
               </li>
             )}
@@ -230,6 +230,32 @@ export function Navbar() {
                 <BookOpen className="w-5 h-5 text-accent" />
                 <span>{t('nav.blog')}</span>
               </Link>
+              
+              {/* Language & Accessibility for Mobile */}
+              <div className="divider my-2"></div>
+              <div className="px-3 py-2">
+                <div className="text-sm font-medium text-base-content/70 mb-3">Settings / Configuración</div>
+                <div className="space-y-3">
+                  <div>
+                    <div className="text-xs text-base-content/60 mb-1">Language</div>
+                    <LanguageSelector variant="dropdown" showFlag={true} showText={true} className="w-full" />
+                  </div>
+                  <div>
+                    <button
+                      onClick={() => {
+                        setIsAccessibilityPanelOpen(true)
+                        setIsMobileMenuOpen(false)
+                      }}
+                      className="btn btn-outline btn-sm w-full justify-start"
+                      aria-label="Open accessibility settings"
+                    >
+                      <Accessibility className="w-4 h-4 mr-2" aria-hidden="true" />
+                      Accessibility Settings
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
               {canCreate() && (
                 <>
                   <div className="divider my-2"></div>
@@ -239,7 +265,7 @@ export function Navbar() {
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <Plus className="w-5 h-5 text-primary" />
-                    <span>Add Piano</span>
+                    <span>{t('nav.addPiano')}</span>
                   </Link>
                   <Link 
                     to="/events/add" 
@@ -247,7 +273,7 @@ export function Navbar() {
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <Plus className="w-5 h-5 text-secondary" />
-                    <span>Add Event</span>
+                    <span>{t('nav.addEvent')}</span>
                   </Link>
                 </>
               )}

@@ -334,6 +334,7 @@ export function InteractiveMap({
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          crossOrigin="anonymous"
           eventHandlers={{
             loading: () => console.log('[MAP] TileLayer loading...'),
             load: () => console.log('[MAP] TileLayer loaded'),

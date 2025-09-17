@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
-import mapboxgl from 'mapbox-gl'
-import 'mapbox-gl/dist/mapbox-gl.css'
 import type { Piano, Event } from '../../types'
+
+// Declare mapboxgl as a global variable from the CDN script
+declare global {
+  interface Window {
+    mapboxgl: any
+  }
+}
+
+const mapboxgl = window.mapboxgl
 
 // Type for map item (either Piano or Event)
 type MapItem = Piano | Event
@@ -48,7 +55,7 @@ export function MapboxMap({
   const markers = useRef<mapboxgl.Marker[]>([])
   const [mapLoaded, setMapLoaded] = useState(false)
   const [mapError, setMapError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleItemClick = (item: MapItem) => {
     if (showModal) {
@@ -75,6 +82,14 @@ export function MapboxMap({
   // Initialize map
   useEffect(() => {
     if (!mapContainer.current || map.current) return
+
+    // Check if mapboxgl is available
+    if (!mapboxgl) {
+      console.error('[MAPBOX] Mapbox GL JS not loaded from CDN')
+      setMapError('Mapbox GL JS not loaded')
+      setIsLoading(false)
+      return
+    }
 
     try {
       console.log('[MAPBOX] Initializing map...')
